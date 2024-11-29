@@ -36,9 +36,18 @@
 }
 
 .leaderboard-item.first-place {
-  @apply animate-pulse;
-  background: linear-gradient(145deg, rgba(51, 195, 240, 0.1) 0%, rgba(26, 31, 44, 0.9) 100%);
+  position: relative;
   border: 1px solid rgba(51, 195, 240, 0.2);
+}
+
+.leaderboard-item.first-place::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  background: linear-gradient(145deg, rgba(51, 195, 240, 0.1) 0%, rgba(26, 31, 44, 0.9) 100%);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  z-index: -1;
 }
 
 .leaderboard-rank {
@@ -51,4 +60,13 @@
 
 .leaderboard-amount {
   @apply text-white text-lg font-bold;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
 }
