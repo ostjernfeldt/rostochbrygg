@@ -1,16 +1,22 @@
 import { Settings } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="p-4 pb-24">
       <div className="flex flex-col mb-6 animate-fade-in">
         <h1 className="text-3xl font-bold mb-1 text-left">Välkommen Oscar</h1>
         <p className="text-gray-400 text-lg text-left">Här kan du se statistiken från idag.</p>
-        <div className="flex items-center gap-2 mt-2">
-          <Settings className="text-gray-400" size={24} />
-          <span className="text-gray-400">Inställningar för dagen</span>
-        </div>
+        <button 
+          onClick={() => navigate('/settings')}
+          className="flex items-center gap-2 mt-2 text-gray-400 hover:text-primary transition-colors"
+        >
+          <Settings size={24} />
+          <span>Inställningar för dagen</span>
+        </button>
       </div>
 
       <div className="stat-card animate-fade-in hover:scale-[1.02] transition-transform duration-200">

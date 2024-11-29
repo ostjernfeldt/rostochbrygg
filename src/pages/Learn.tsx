@@ -27,7 +27,7 @@ const Learn = () => {
 
   return (
     <div className="p-4 pb-24">
-      <div className="mb-6">
+      <div className="mb-6 animate-fade-in">
         <h1 className="text-3xl font-bold mb-1">Lär dig mer</h1>
         <p className="text-gray-400 text-lg">Utforska våra utbildningar och artiklar</p>
       </div>
@@ -36,7 +36,8 @@ const Learn = () => {
         {articles.map((article, index) => (
           <div 
             key={index} 
-            className="stat-card"
+            className="stat-card animate-fade-in hover:scale-[1.02] transition-transform duration-200"
+            style={{ animationDelay: `${index * 200}ms` }}
           >
             <div className="mb-3">
               <span className={`px-3 py-1 rounded-full text-sm ${article.categoryColor} text-white`}>
