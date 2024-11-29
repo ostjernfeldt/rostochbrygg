@@ -1,8 +1,12 @@
 import { Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Learn = () => {
+  const navigate = useNavigate();
+  
   const articles = [
     {
+      slug: "kaffe-grundlaggande",
       category: "Kaffekunskap",
       title: "Kaffe - Grundläggande",
       description: "Snabb introduktion till kaffevärlden",
@@ -10,6 +14,7 @@ const Learn = () => {
       categoryColor: "bg-[#8B5E3C]",
     },
     {
+      slug: "dorrforsaljning-101",
       category: "Säljutbildning",
       title: "Dörrförsäljning 101",
       description: "Snabb introduktion till dörrförsäljning",
@@ -17,6 +22,7 @@ const Learn = () => {
       categoryColor: "bg-primary",
     },
     {
+      slug: "oka-snittordervarde",
       category: "Säljutbildning",
       title: "Öka ditt snittordervärde",
       description: "Hur ökar man sitt snittordervärde?",
@@ -36,7 +42,8 @@ const Learn = () => {
         {articles.map((article, index) => (
           <div 
             key={index} 
-            className="stat-card hover:scale-[1.02] transition-transform duration-200"
+            className="stat-card hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
+            onClick={() => navigate(`/learn/${article.slug}`)}
           >
             <div className="mb-3">
               <span className={`px-3 py-1 rounded-full text-sm ${article.categoryColor} text-white`}>

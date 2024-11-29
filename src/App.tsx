@@ -10,6 +10,7 @@ import Competitions from "./pages/Competitions";
 import Leaderboard from "./pages/Leaderboard";
 import Settings from "./pages/Settings";
 import Learn from "./pages/Learn";
+import Article from "./pages/Article";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const AppContent = () => {
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/learn" element={<Learn />} />
+        <Route path="/learn/:slug" element={<Article />} />
       </Routes>
       <BottomNav />
     </div>
