@@ -16,7 +16,7 @@ const Leaderboard = () => {
 
   return (
     <div className="p-4 pb-24">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 animate-fade-in">
         <h1 className="text-2xl font-bold">Dagens topplista</h1>
         <Copy className="text-primary" size={24} />
       </div>
@@ -29,10 +29,11 @@ const Leaderboard = () => {
           { rank: 4, name: "Nicolas Iurea", sales: 23, amount: 3700 },
           { rank: 5, name: "Alvin Ljungman", sales: 23, amount: 3600 },
           { rank: 6, name: "Louisa De Prado", sales: 23, amount: 2300 },
-        ].map((item) => (
+        ].map((item, index) => (
           <div 
             key={item.rank} 
-            className={`leaderboard-item ${item.rank === 1 ? 'first-place' : ''}`}
+            className={`leaderboard-item ${item.rank === 1 ? 'first-place' : ''} animate-fade-in hover:scale-[1.02] transition-transform duration-200`}
+            style={{ animationDelay: `${index * 200}ms` }}
           >
             <div className="flex items-center gap-4">
               <span className={`leaderboard-rank ${getRankClass(item.rank)}`}>#{item.rank}</span>

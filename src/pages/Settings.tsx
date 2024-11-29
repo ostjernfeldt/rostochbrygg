@@ -4,10 +4,10 @@ import { Input } from "@/components/ui/input";
 const Settings = () => {
   return (
     <div className="p-4 pb-24">
-      <h1 className="text-2xl font-bold mb-8">Dagens inställningar</h1>
+      <h1 className="text-2xl font-bold mb-8 animate-fade-in">Dagens inställningar</h1>
 
       <div className="space-y-6">
-        <div className="stat-card">
+        <div className="stat-card animate-fade-in hover:scale-[1.02] transition-transform duration-200">
           <div className="space-y-4">
             <div>
               <label className="block text-white text-lg mb-2">Försäljningsmål</label>
