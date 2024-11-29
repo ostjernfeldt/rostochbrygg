@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,8 +11,19 @@ import Leaderboard from "./pages/Leaderboard";
 import Settings from "./pages/Settings";
 import Learn from "./pages/Learn";
 import Article from "./pages/Article";
+import Login from "./pages/Login";
 
 const queryClient = new QueryClient();
+
+const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  return <>{children}</>;
+};
 
 const AppContent = () => {
   const navigate = useNavigate();
@@ -42,14 +53,39 @@ const AppContent = () => {
   return (
     <div {...handlers} className="min-h-screen bg-background">
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/competitions" element={<Competitions />} />
-        <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/learn" element={<Learn />} />
-        <Route path="/learn/:slug" element={<Article />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={
+          <PrivateRoute>
+            <Home />
+          </PrivateRoute>
+        } />
+        <Route path="/competitions" element={
+          <PrivateRoute>
+            <Competitions />
+          </PrivateRoute>
+        } />
+        <Route path="/leaderboard" element={
+          <PrivateRoute>
+            <Leaderboard />
+          </PrivateRoute>
+        } />
+        <Route path="/settings" element={
+          <PrivateRoute>
+            <Settings />
+          </PrivateRoute>
+        } />
+        <Route path="/learn" element={
+          <PrivateRoute>
+            <Learn />
+          </PrivateRoute>
+        } />
+        <Route path="/learn/:slug" element={
+          <PrivateRoute>
+            <Article />
+          </PrivateRoute>
+        } />
       </Routes>
-      <BottomNav />
+      {location.pathname !== '/login' && <BottomNav />}
     </div>
   );
 };

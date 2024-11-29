@@ -1,22 +1,43 @@
 import { Settings } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/use-toast";
 
 const Home = () => {
   const navigate = useNavigate();
 
+  const handleSignOut = () => {
+    localStorage.removeItem("isAuthenticated");
+    toast({
+      title: "Utloggad",
+      description: "Du har loggats ut",
+      className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
+    });
+    navigate("/login");
+  };
+
   return (
     <div className="p-4 pb-24">
-      <div className="flex flex-col mb-6 animate-fade-in">
-        <h1 className="text-3xl font-bold mb-1 text-left">Välkommen Oscar</h1>
-        <p className="text-gray-400 text-lg text-left">Här kan du se statistiken från idag.</p>
-        <button 
-          onClick={() => navigate('/settings')}
-          className="flex items-center gap-2 mt-2 text-gray-400 hover:text-primary transition-colors"
+      <div className="flex justify-between items-start mb-6 animate-fade-in">
+        <div>
+          <h1 className="text-3xl font-bold mb-1 text-left">Välkommen Oscar</h1>
+          <p className="text-gray-400 text-lg text-left">Här kan du se statistiken från idag.</p>
+          <button 
+            onClick={() => navigate('/settings')}
+            className="flex items-center gap-2 mt-2 text-gray-400 hover:text-primary transition-colors"
+          >
+            <Settings size={24} />
+            <span>Inställningar för dagen</span>
+          </button>
+        </div>
+        <Button
+          variant="outline"
+          onClick={handleSignOut}
+          className="mt-2"
         >
-          <Settings size={24} />
-          <span>Inställningar för dagen</span>
-        </button>
+          Logga ut
+        </Button>
       </div>
 
       <div className="stat-card animate-fade-in hover:scale-[1.02] transition-transform duration-200">
