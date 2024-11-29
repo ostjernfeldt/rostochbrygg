@@ -4,10 +4,7 @@ import { Input } from "@/components/ui/input";
 const Settings = () => {
   return (
     <div className="p-4 pb-24">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Dagens inställningar</h1>
-        <img src="/lovable-uploads/815840c7-8d54-4808-9251-65f7b71abb04.png" alt="R&B" className="h-8" />
-      </div>
+      <h1 className="text-2xl font-bold mb-8">Dagens inställningar</h1>
 
       <div className="space-y-6">
         <div className="stat-card">
