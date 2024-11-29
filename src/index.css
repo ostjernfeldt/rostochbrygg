@@ -28,3 +28,21 @@
 .bottom-nav-item.active {
   @apply text-primary;
 }
+
+.leaderboard-item {
+  @apply flex justify-between items-center p-4 rounded-xl mb-3;
+  background: rgba(26, 31, 44, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.leaderboard-rank {
+  @apply text-primary text-xl font-bold;
+}
+
+.leaderboard-sales {
+  @apply text-gray-400 text-sm;
+}
+
+.leaderboard-amount {
+  @apply text-white text-lg font-bold;
+}
