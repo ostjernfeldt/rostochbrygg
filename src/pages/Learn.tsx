@@ -1,8 +1,11 @@
 import { Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 const Learn = () => {
   const navigate = useNavigate();
+  const [filter, setFilter] = useState("all");
   
   const articles = [
     {
@@ -31,6 +34,14 @@ const Learn = () => {
     },
   ];
 
+  const filteredArticles = articles.filter(article => {
+    if (filter === "all") return true;
+    return article.category === filter;
+  });
+
+  console.log('Current filter:', filter);
+  console.log('Filtered articles:', filteredArticles);
+
   return (
     <div className="p-4 pb-24 animate-fade-in">
       <div className="mb-6">
@@ -38,8 +49,32 @@ const Learn = () => {
         <p className="text-gray-400 text-lg">Utforska våra utbildningar och artiklar</p>
       </div>
 
+      <div className="flex gap-2 mb-6">
+        <Button
+          variant={filter === "all" ? "default" : "outline"}
+          onClick={() => setFilter("all")}
+          className="text-white"
+        >
+          Allt
+        </Button>
+        <Button
+          variant={filter === "Kaffekunskap" ? "default" : "outline"}
+          onClick={() => setFilter("Kaffekunskap")}
+          className={`${filter === "Kaffekunskap" ? "bg-[#8B5E3C]" : ""} hover:bg-[#8B5E3C]/90`}
+        >
+          Kaffekunskap
+        </Button>
+        <Button
+          variant={filter === "Säljutbildning" ? "default" : "outline"}
+          onClick={() => setFilter("Säljutbildning")}
+          className={`${filter === "Säljutbildning" ? "bg-primary" : ""} hover:bg-primary/90`}
+        >
+          Säljutbildning
+        </Button>
+      </div>
+
       <div className="space-y-4">
-        {articles.map((article, index) => (
+        {filteredArticles.map((article, index) => (
           <div 
             key={index} 
             className="stat-card hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
