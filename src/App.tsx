@@ -32,7 +32,7 @@ const AppContent = () => {
         navigate(routes[currentIndex - 1]);
       }
     },
-    preventDefaultTouchmoveEvent: true,
+    touchEventOptions: { passive: false },
     trackMouse: false
   });
 
