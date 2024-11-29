@@ -33,16 +33,16 @@ const Leaderboard = () => {
       await navigator.clipboard.writeText(text);
       
       toast({
-        title: "Copied to clipboard",
-        description: "The leaderboard has been copied to your clipboard",
+        title: "Kopierat till urklipp",
+        description: "Topplistan har kopierats till urklipp",
         duration: 2000,
         className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
       });
     } catch (err) {
       console.error('Failed to copy:', err);
       toast({
-        title: "Failed to copy",
-        description: "Could not copy the leaderboard to clipboard",
+        title: "Kunde inte kopiera",
+        description: "Det gick inte att kopiera topplistan till urklipp",
         variant: "destructive",
         duration: 2000,
         className: "bg-red-500 text-white border-none rounded-xl shadow-lg",
