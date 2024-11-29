@@ -19,6 +19,11 @@ const Home = () => {
 
   return (
     <div className="p-4 pb-24">
+      <img 
+        src="/lovable-uploads/f3b5392a-fb40-467e-b32d-aa71eb2156af.png" 
+        alt="R&B Logo" 
+        className="w-16 h-16 mb-4 mx-auto"
+      />
       <div className="flex justify-between items-start mb-6 animate-fade-in">
         <div>
           <h1 className="text-3xl font-bold mb-1 text-left">Välkommen Oscar</h1>
