@@ -1,8 +1,13 @@
-import { Settings } from "lucide-react";
+import { Settings, UserRound } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -36,13 +41,18 @@ const Home = () => {
             <span>Inställningar för dagen</span>
           </button>
         </div>
-        <Button
-          variant="outline"
-          onClick={handleSignOut}
-          className="mt-2"
-        >
-          Logga ut
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="mt-2">
+              <UserRound size={24} className="text-white hover:text-primary transition-colors" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleSignOut}>
+              Logga ut
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="stat-card animate-fade-in hover:scale-[1.02] transition-transform duration-200">
