@@ -1,4 +1,4 @@
-import { Home, Trophy, Award, Settings } from "lucide-react";
+import { Home, Trophy, Award, Settings, BookOpen } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 export const BottomNav = () => {
@@ -16,6 +16,10 @@ export const BottomNav = () => {
         <Link to="/competitions" className={`bottom-nav-item ${isActive("/competitions") ? "active" : ""}`}>
           <Trophy size={24} />
           <span>Tävlingar</span>
+        </Link>
+        <Link to="/learn" className={`bottom-nav-item ${isActive("/learn") ? "active" : ""}`}>
+          <BookOpen size={24} />
+          <span>Lär dig</span>
         </Link>
         <Link to="/leaderboard" className={`bottom-nav-item ${isActive("/leaderboard") ? "active" : ""}`}>
           <Award size={24} />

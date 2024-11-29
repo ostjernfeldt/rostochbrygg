@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import Competitions from "./pages/Competitions";
 import Leaderboard from "./pages/Leaderboard";
 import Settings from "./pages/Settings";
+import Learn from "./pages/Learn";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/competitions" element={<Competitions />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/learn" element={<Learn />} />
           </Routes>
           <BottomNav />
         </div>
