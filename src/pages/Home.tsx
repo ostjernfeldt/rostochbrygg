@@ -47,8 +47,8 @@ const Home = () => {
               <UserRound size={24} className="text-white hover:text-primary transition-colors" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleSignOut}>
+          <DropdownMenuContent align="end" className="bg-black text-white border-none">
+            <DropdownMenuItem onClick={handleSignOut} className="hover:bg-gray-900 focus:bg-gray-900">
               Logga ut
             </DropdownMenuItem>
           </DropdownMenuContent>
