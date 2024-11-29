@@ -4,33 +4,56 @@ import { Input } from "@/components/ui/input";
 const Settings = () => {
   return (
     <div className="p-4 pb-24">
-      <h1 className="text-2xl font-bold mb-6">Dagens inställningar</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">Dagens inställningar</h1>
+        <img src="/lovable-uploads/815840c7-8d54-4808-9251-65f7b71abb04.png" alt="R&B" className="h-8" />
+      </div>
 
       <div className="space-y-6">
-        <div>
-          <label className="block text-gray-400 mb-2">Försäljningsmål</label>
-          <Input type="number" value="12000" className="bg-card border-gray-700" />
-        </div>
+        <div className="stat-card">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-white text-lg mb-2">Försäljningsmål</label>
+              <Input 
+                type="number" 
+                value="12000" 
+                className="bg-[#1A1F2C] border-none text-white h-12 text-lg" 
+              />
+            </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-gray-400 mb-2">Arbetspass start</label>
-            <Input type="time" value="17:00" className="bg-card border-gray-700" />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-white text-lg mb-2">Arbetspass start</label>
+                <Input 
+                  type="time" 
+                  value="17:00" 
+                  className="bg-[#1A1F2C] border-none text-white h-12 text-lg" 
+                />
+              </div>
+              <div>
+                <label className="block text-white text-lg mb-2">Arbetspass slut</label>
+                <Input 
+                  type="time" 
+                  value="20:00" 
+                  className="bg-[#1A1F2C] border-none text-white h-12 text-lg" 
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-white text-lg mb-2">Dagens bonus</label>
+              <Input 
+                type="number" 
+                value="200" 
+                className="bg-[#1A1F2C] border-none text-white h-12 text-lg" 
+              />
+            </div>
+
+            <Button className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-6 text-lg">
+              Spara inställningar
+            </Button>
           </div>
-          <div>
-            <label className="block text-gray-400 mb-2">Arbetspass slut</label>
-            <Input type="time" value="20:00" className="bg-card border-gray-700" />
-          </div>
         </div>
-
-        <div>
-          <label className="block text-gray-400 mb-2">Dagens bonus</label>
-          <Input type="number" value="200" className="bg-card border-gray-700" />
-        </div>
-
-        <Button className="w-full bg-primary hover:bg-primary/90">
-          Spara inställningar
-        </Button>
       </div>
     </div>
   );
