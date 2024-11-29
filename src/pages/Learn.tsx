@@ -50,27 +50,24 @@ const Learn = () => {
       </div>
 
       <div className="flex gap-2 mb-6">
-        <Button
-          variant={filter === "all" ? "default" : "outline"}
+        <button
           onClick={() => setFilter("all")}
-          className="text-white"
+          className={`px-3 py-1 rounded-full text-sm ${filter === "all" ? "bg-gray-600" : "border border-gray-600"} text-white`}
         >
           Allt
-        </Button>
-        <Button
-          variant={filter === "Kaffekunskap" ? "default" : "outline"}
+        </button>
+        <button
           onClick={() => setFilter("Kaffekunskap")}
-          className={`${filter === "Kaffekunskap" ? "bg-[#8B5E3C]" : ""} hover:bg-[#8B5E3C]/90`}
+          className={`px-3 py-1 rounded-full text-sm ${filter === "Kaffekunskap" ? "bg-[#8B5E3C]" : "border border-[#8B5E3C]"} text-white`}
         >
           Kaffekunskap
-        </Button>
-        <Button
-          variant={filter === "Säljutbildning" ? "default" : "outline"}
+        </button>
+        <button
           onClick={() => setFilter("Säljutbildning")}
-          className={`${filter === "Säljutbildning" ? "bg-primary" : ""} hover:bg-primary/90`}
+          className={`px-3 py-1 rounded-full text-sm ${filter === "Säljutbildning" ? "bg-primary" : "border border-primary"} text-white`}
         >
           Säljutbildning
-        </Button>
+        </button>
       </div>
 
       <div className="space-y-4">
