@@ -1,6 +1,19 @@
 import { Copy } from "lucide-react";
 
 const Leaderboard = () => {
+  const getRankClass = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return "gold";
+      case 2:
+        return "silver";
+      case 3:
+        return "bronze";
+      default:
+        return "";
+    }
+  };
+
   return (
     <div className="p-4 pb-24">
       <div className="flex justify-between items-center mb-6">
@@ -22,7 +35,7 @@ const Leaderboard = () => {
             className={`leaderboard-item ${item.rank === 1 ? 'first-place' : ''}`}
           >
             <div className="flex items-center gap-4">
-              <span className="leaderboard-rank">#{item.rank}</span>
+              <span className={`leaderboard-rank ${getRankClass(item.rank)}`}>#{item.rank}</span>
               <div className="text-left">
                 <h3 className="font-bold text-lg">{item.name}</h3>
                 <p className="leaderboard-sales">{item.sales} sälj</p>

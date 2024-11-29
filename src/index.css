@@ -37,7 +37,7 @@
 
 .leaderboard-item.first-place {
   position: relative;
-  border: 1px solid rgba(51, 195, 240, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.3);
 }
 
 .leaderboard-item.first-place::before {
@@ -45,13 +45,35 @@
   position: absolute;
   inset: 0;
   border-radius: 0.75rem;
-  background: linear-gradient(145deg, rgba(51, 195, 240, 0.1) 0%, rgba(26, 31, 44, 0.9) 100%);
+  background: linear-gradient(145deg, rgba(255, 215, 0, 0.1) 0%, rgba(26, 31, 44, 0.9) 100%);
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   z-index: -1;
 }
 
+.leaderboard-item:nth-child(2) {
+  border: 1px solid rgba(192, 192, 192, 0.3);
+  background: linear-gradient(145deg, rgba(192, 192, 192, 0.05) 0%, rgba(26, 31, 44, 0.95) 100%);
+}
+
+.leaderboard-item:nth-child(3) {
+  border: 1px solid rgba(205, 127, 50, 0.3);
+  background: linear-gradient(145deg, rgba(205, 127, 50, 0.05) 0%, rgba(26, 31, 44, 0.95) 100%);
+}
+
 .leaderboard-rank {
-  @apply text-primary text-xl font-bold;
+  @apply text-xl font-bold;
+}
+
+.leaderboard-rank.gold {
+  color: #FFD700;
+}
+
+.leaderboard-rank.silver {
+  color: #C0C0C0;
+}
+
+.leaderboard-rank.bronze {
+  color: #CD7F32;
 }
 
 .leaderboard-sales {
