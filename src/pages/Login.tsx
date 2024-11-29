@@ -34,6 +34,11 @@ const Login = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
+          <img 
+            src="/lovable-uploads/c6c8c7bb-9f2b-4343-8758-403b947e10d9.png" 
+            alt="R&B Logo" 
+            className="h-32 w-auto mx-auto mb-8"
+          />
           <h2 className="text-3xl font-bold">Välkommen tillbaka</h2>
           <p className="text-gray-400 mt-2">Logga in för att fortsätta</p>
         </div>
