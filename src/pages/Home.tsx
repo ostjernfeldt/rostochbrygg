@@ -22,7 +22,7 @@ const Home = () => {
       <img 
         src="/lovable-uploads/f3b5392a-fb40-467e-b32d-aa71eb2156af.png" 
         alt="R&B Logo" 
-        className="w-16 h-16 mb-4 mx-auto"
+        className="h-16 w-auto mb-4 mx-auto object-contain"
       />
       <div className="flex justify-between items-start mb-6 animate-fade-in">
         <div>
