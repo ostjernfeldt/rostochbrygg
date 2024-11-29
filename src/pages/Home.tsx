@@ -4,12 +4,10 @@ import { Progress } from "@/components/ui/progress";
 const Home = () => {
   return (
     <div className="p-4 pb-24">
-      <div className="flex justify-between items-start mb-6">
-        <div className="text-left">
-          <h1 className="text-3xl font-bold mb-1">Välkommen Oscar</h1>
-          <p className="text-gray-400 text-lg">Här kan du se statistiken från idag.</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col mb-6">
+        <h1 className="text-3xl font-bold mb-1 text-left">Välkommen Oscar</h1>
+        <p className="text-gray-400 text-lg text-left">Här kan du se statistiken från idag.</p>
+        <div className="flex items-center gap-2 mt-2">
           <Settings className="text-gray-400" size={24} />
           <span className="text-gray-400">Inställningar för dagen</span>
         </div>
