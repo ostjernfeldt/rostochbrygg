@@ -36,6 +36,7 @@ const Leaderboard = () => {
         title: "Copied to clipboard",
         description: "The leaderboard has been copied to your clipboard",
         duration: 2000,
+        className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
       });
     } catch (err) {
       console.error('Failed to copy:', err);
@@ -44,6 +45,7 @@ const Leaderboard = () => {
         description: "Could not copy the leaderboard to clipboard",
         variant: "destructive",
         duration: 2000,
+        className: "bg-red-500 text-white border-none rounded-xl shadow-lg",
       });
     }
   };
