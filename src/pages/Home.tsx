@@ -1,42 +1,47 @@
 import { Settings } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 const Home = () => {
   return (
     <div className="p-4 pb-24">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold mb-2">Välkommen Oscar</h1>
-          <p className="text-gray-400">Här kan du se statistiken från idag.</p>
+      <div className="flex justify-between items-start mb-6">
+        <div className="text-left">
+          <h1 className="text-3xl font-bold mb-1">Välkommen Oscar</h1>
+          <p className="text-gray-400 text-lg">Här kan du se statistiken från idag.</p>
         </div>
-        <Settings className="text-primary" size={24} />
-      </div>
-
-      <div className="stat-card">
-        <div className="flex justify-between items-center">
-          <span className="text-gray-400">Tid kvar av dagen</span>
-          <span>20 min</span>
-        </div>
-        <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
-          <div className="bg-primary w-4/5 h-2 rounded-full"></div>
+        <div className="flex items-center gap-2">
+          <Settings className="text-gray-400" size={24} />
+          <span className="text-gray-400">Inställningar för dagen</span>
         </div>
       </div>
 
       <div className="stat-card">
-        <span className="text-gray-400">Total försäljning</span>
-        <div className="text-3xl font-bold">SEK 15,000</div>
-        <span className="text-green-500">+10% från förra gången</span>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-400 text-lg">Tid kvar av dagen</span>
+          <span className="text-lg">20 min</span>
+        </div>
+        <Progress value={80} className="h-2" />
+        <div className="mt-2">
+          <span className="text-gray-400">Dagens mål har uppnåtts</span>
+        </div>
       </div>
 
       <div className="stat-card">
-        <span className="text-gray-400">Antal sälj</span>
-        <div className="text-3xl font-bold">42</div>
-        <span className="text-green-500">+15% från förra gången</span>
+        <span className="text-gray-400 text-lg">Total försäljning</span>
+        <div className="text-4xl font-bold mt-1">SEK 15,000</div>
+        <div className="text-green-500 mt-1">+10% från förra gången</div>
       </div>
 
       <div className="stat-card">
-        <span className="text-gray-400">Snittordervärde</span>
-        <div className="text-3xl font-bold">SEK 327</div>
-        <span className="text-red-500">-5% från förra gången</span>
+        <span className="text-gray-400 text-lg">Antal sälj</span>
+        <div className="text-4xl font-bold mt-1">42</div>
+        <div className="text-green-500 mt-1">+15% från förra gången</div>
+      </div>
+
+      <div className="stat-card">
+        <span className="text-gray-400 text-lg">Snittordervärde</span>
+        <div className="text-4xl font-bold mt-1">SEK 327</div>
+        <div className="text-red-500 mt-1">-5% från förra gången</div>
       </div>
     </div>
   );
