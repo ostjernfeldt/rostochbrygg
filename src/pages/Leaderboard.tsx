@@ -17,7 +17,10 @@ const Leaderboard = () => {
           { rank: 5, name: "Alvin Ljungman", sales: 23, amount: 3600 },
           { rank: 6, name: "Louisa De Prado", sales: 23, amount: 2300 },
         ].map((item) => (
-          <div key={item.rank} className="leaderboard-item">
+          <div 
+            key={item.rank} 
+            className={`leaderboard-item ${item.rank === 1 ? 'first-place' : ''}`}
+          >
             <div className="flex items-center gap-4">
               <span className="leaderboard-rank">#{item.rank}</span>
               <div className="text-left">

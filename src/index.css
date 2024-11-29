@@ -31,8 +31,14 @@
 
 .leaderboard-item {
   @apply flex justify-between items-center p-4 rounded-xl mb-3;
-  background: rgba(26, 31, 44, 0.95);
+  background: rgba(26, 31, 44, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.leaderboard-item.first-place {
+  @apply animate-pulse;
+  background: linear-gradient(145deg, rgba(51, 195, 240, 0.1) 0%, rgba(26, 31, 44, 0.9) 100%);
+  border: 1px solid rgba(51, 195, 240, 0.2);
 }
 
 .leaderboard-rank {
