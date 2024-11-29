@@ -1,4 +1,5 @@
 import { Copy } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const Leaderboard = () => {
   const getRankClass = (rank: number) => {
@@ -14,22 +15,52 @@ const Leaderboard = () => {
     }
   };
 
+  const leaderboardData = [
+    { rank: 1, name: "Fredrik Keränen", sales: 28, amount: 5100 },
+    { rank: 2, name: "Samuel Winqvist", sales: 23, amount: 4900 },
+    { rank: 3, name: "Bruno Wulff", sales: 23, amount: 3900 },
+    { rank: 4, name: "Nicolas Iurea", sales: 23, amount: 3700 },
+    { rank: 5, name: "Alvin Ljungman", sales: 23, amount: 3600 },
+    { rank: 6, name: "Louisa De Prado", sales: 23, amount: 2300 },
+  ];
+
+  const handleCopy = async () => {
+    try {
+      const text = leaderboardData
+        .map(item => `#${item.rank} ${item.name} - ${item.sales} sälj - SEK ${item.amount}`)
+        .join('\n');
+      
+      await navigator.clipboard.writeText(text);
+      
+      toast({
+        title: "Copied to clipboard",
+        description: "The leaderboard has been copied to your clipboard",
+        duration: 2000,
+      });
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy the leaderboard to clipboard",
+        variant: "destructive",
+        duration: 2000,
+      });
+    }
+  };
+
   return (
     <div className="p-4 pb-24 animate-fade-in">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Dagens topplista</h1>
-        <Copy className="text-primary" size={24} />
+        <Copy 
+          className="text-primary cursor-pointer hover:text-primary/80 transition-colors" 
+          size={24} 
+          onClick={handleCopy}
+        />
       </div>
 
       <div className="space-y-3">
-        {[
-          { rank: 1, name: "Fredrik Keränen", sales: 28, amount: 5100 },
-          { rank: 2, name: "Samuel Winqvist", sales: 23, amount: 4900 },
-          { rank: 3, name: "Bruno Wulff", sales: 23, amount: 3900 },
-          { rank: 4, name: "Nicolas Iurea", sales: 23, amount: 3700 },
-          { rank: 5, name: "Alvin Ljungman", sales: 23, amount: 3600 },
-          { rank: 6, name: "Louisa De Prado", sales: 23, amount: 2300 },
-        ].map((item) => (
+        {leaderboardData.map((item) => (
           <div 
             key={item.rank} 
             className={`leaderboard-item ${item.rank === 1 ? 'first-place' : ''} hover:scale-[1.02] transition-transform duration-200`}
