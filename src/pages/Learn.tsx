@@ -1,11 +1,11 @@
-import { Clock } from "lucide-react";
+import { Clock, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 
 const Learn = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   
   const articles = [
     {
@@ -35,11 +35,14 @@ const Learn = () => {
   ];
 
   const filteredArticles = articles.filter(article => {
-    if (filter === "all") return true;
-    return article.category === filter;
+    const matchesFilter = filter === "all" || article.category === filter;
+    const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         article.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
   });
 
   console.log('Current filter:', filter);
+  console.log('Current search:', searchQuery);
   console.log('Filtered articles:', filteredArticles);
 
   return (
@@ -49,7 +52,7 @@ const Learn = () => {
         <p className="text-gray-400 text-lg">Utforska våra utbildningar och artiklar</p>
       </div>
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-4">
         <button
           onClick={() => setFilter("all")}
           className={`px-3 py-1 rounded-full text-sm ${filter === "all" ? "bg-gray-600" : "border border-gray-600"} text-white`}
@@ -68,6 +71,17 @@ const Learn = () => {
         >
           Säljutbildning
         </button>
+      </div>
+
+      <div className="relative mb-6">
+        <input
+          type="text"
+          placeholder="Sök efter artikel..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-4 py-2 pl-10 bg-card/50 border border-gray-800 rounded-full text-sm text-white placeholder-gray-400 focus:outline-none focus:border-primary/50"
+        />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
       </div>
 
       <div className="space-y-4">
