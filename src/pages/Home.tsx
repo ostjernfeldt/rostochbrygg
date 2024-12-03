@@ -32,39 +32,54 @@ const Home = () => {
       const endTime = localStorage.getItem("workEndTime") || "20:00";
       
       const now = new Date();
-      const currentTime = now.getHours() * 60 + now.getMinutes();
+      const currentTime = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
       
       const [startHours, startMinutes] = startTime.split(":").map(Number);
       const [endHours, endMinutes] = endTime.split(":").map(Number);
       
-      const startTimeMinutes = startHours * 60 + startMinutes;
-      const endTimeMinutes = endHours * 60 + endMinutes;
+      const startTimeSeconds = startHours * 3600 + startMinutes * 60;
+      const endTimeSeconds = endHours * 3600 + endMinutes * 60;
       
       // Calculate total work duration and time elapsed
-      const totalDuration = endTimeMinutes - startTimeMinutes;
-      const timeElapsed = currentTime - startTimeMinutes;
+      const totalDuration = endTimeSeconds - startTimeSeconds;
+      const timeElapsed = currentTime - startTimeSeconds;
       
       // Calculate remaining time and progress
-      let remainingMinutes = endTimeMinutes - currentTime;
+      let remainingSeconds = endTimeSeconds - currentTime;
       let progress = (timeElapsed / totalDuration) * 100;
       
       // Handle cases where current time is outside work hours
-      if (currentTime < startTimeMinutes) {
-        remainingMinutes = totalDuration;
+      if (currentTime < startTimeSeconds) {
+        remainingSeconds = totalDuration;
         progress = 0;
-      } else if (currentTime > endTimeMinutes) {
-        remainingMinutes = 0;
+      } else if (currentTime > endTimeSeconds) {
+        remainingSeconds = 0;
         progress = 100;
       }
+
+      // Convert remaining seconds to hours, minutes and seconds
+      const hours = Math.floor(Math.max(0, remainingSeconds) / 3600);
+      const minutes = Math.floor((Math.max(0, remainingSeconds) % 3600) / 60);
+      const seconds = Math.floor(Math.max(0, remainingSeconds) % 60);
+
+      // Format the time string
+      let timeString = "";
+      if (hours > 0) {
+        timeString += `${hours}h `;
+      }
+      if (minutes > 0 || hours > 0) {
+        timeString += `${minutes}m `;
+      }
+      timeString += `${seconds}s`;
       
       // Update state
-      setTimeLeft(`${Math.max(0, Math.round(remainingMinutes))} min`);
+      setTimeLeft(timeString);
       setProgressValue(Math.min(100, Math.max(0, progress)));
     };
 
-    // Update immediately and then every minute
+    // Update immediately and then every second
     updateTimeLeft();
-    const interval = setInterval(updateTimeLeft, 60000);
+    const interval = setInterval(updateTimeLeft, 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -105,7 +120,7 @@ const Home = () => {
       <div className="stat-card animate-fade-in hover:scale-[1.02] transition-transform duration-200">
         <div className="flex justify-between items-center mb-2">
           <span className="text-gray-400 text-lg">Tid kvar av dagen</span>
-          <span className="text-lg">{timeLeft}</span>
+          <span className="text-lg font-mono">{timeLeft}</span>
         </div>
         <Progress value={progressValue} className="h-2" />
         <div className="mt-2">
