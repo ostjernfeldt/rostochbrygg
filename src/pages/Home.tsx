@@ -2,6 +2,7 @@ import { Settings, UserRound } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
+import { useEffect, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +12,8 @@ import {
 
 const Home = () => {
   const navigate = useNavigate();
+  const [timeLeft, setTimeLeft] = useState("0 min");
+  const [progressValue, setProgressValue] = useState(0);
 
   const handleSignOut = () => {
     localStorage.removeItem("isAuthenticated");
@@ -18,9 +21,53 @@ const Home = () => {
       title: "Utloggad",
       description: "Du har loggats ut",
       className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
+      duration: 1000,
     });
     navigate("/login");
   };
+
+  useEffect(() => {
+    const updateTimeLeft = () => {
+      const startTime = localStorage.getItem("workStartTime") || "17:00";
+      const endTime = localStorage.getItem("workEndTime") || "20:00";
+      
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+      
+      const [startHours, startMinutes] = startTime.split(":").map(Number);
+      const [endHours, endMinutes] = endTime.split(":").map(Number);
+      
+      const startTimeMinutes = startHours * 60 + startMinutes;
+      const endTimeMinutes = endHours * 60 + endMinutes;
+      
+      // Calculate total work duration and time elapsed
+      const totalDuration = endTimeMinutes - startTimeMinutes;
+      const timeElapsed = currentTime - startTimeMinutes;
+      
+      // Calculate remaining time and progress
+      let remainingMinutes = endTimeMinutes - currentTime;
+      let progress = (timeElapsed / totalDuration) * 100;
+      
+      // Handle cases where current time is outside work hours
+      if (currentTime < startTimeMinutes) {
+        remainingMinutes = totalDuration;
+        progress = 0;
+      } else if (currentTime > endTimeMinutes) {
+        remainingMinutes = 0;
+        progress = 100;
+      }
+      
+      // Update state
+      setTimeLeft(`${Math.max(0, Math.round(remainingMinutes))} min`);
+      setProgressValue(Math.min(100, Math.max(0, progress)));
+    };
+
+    // Update immediately and then every minute
+    updateTimeLeft();
+    const interval = setInterval(updateTimeLeft, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="p-4 pb-24">
@@ -58,11 +105,13 @@ const Home = () => {
       <div className="stat-card animate-fade-in hover:scale-[1.02] transition-transform duration-200">
         <div className="flex justify-between items-center mb-2">
           <span className="text-gray-400 text-lg">Tid kvar av dagen</span>
-          <span className="text-lg">20 min</span>
+          <span className="text-lg">{timeLeft}</span>
         </div>
-        <Progress value={80} className="h-2" />
+        <Progress value={progressValue} className="h-2" />
         <div className="mt-2">
-          <span className="text-gray-400">Dagens mål har uppnåtts</span>
+          <span className="text-gray-400">
+            {progressValue >= 100 ? "Dagens arbetspass är slut" : "Arbetspasset pågår"}
+          </span>
         </div>
       </div>
 
