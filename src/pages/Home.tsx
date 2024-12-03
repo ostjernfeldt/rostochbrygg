@@ -2,7 +2,7 @@ import { Settings, UserRound } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +14,9 @@ const Home = () => {
   const navigate = useNavigate();
   const [timeLeft, setTimeLeft] = useState("0 min");
   const [progressValue, setProgressValue] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [startY, setStartY] = useState(0);
+  const [pullDistance, setPullDistance] = useState(0);
 
   const handleSignOut = () => {
     localStorage.removeItem("isAuthenticated");
@@ -24,6 +27,33 @@ const Home = () => {
       duration: 1000,
     });
     navigate("/login");
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const scrollTop = document.documentElement.scrollTop;
+    if (scrollTop <= 0) {
+      setStartY(e.touches[0].clientY);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startY > 0) {
+      const currentY = e.touches[0].clientY;
+      const distance = currentY - startY;
+      if (distance > 0 && distance < 200) {
+        setPullDistance(distance);
+      }
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (pullDistance > 100) {
+      setIsRefreshing(true);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      window.location.reload();
+    }
+    setStartY(0);
+    setPullDistance(0);
   };
 
   useEffect(() => {
@@ -40,15 +70,12 @@ const Home = () => {
       const startTimeSeconds = startHours * 3600 + startMinutes * 60;
       const endTimeSeconds = endHours * 3600 + endMinutes * 60;
       
-      // Calculate total work duration and time elapsed
       const totalDuration = endTimeSeconds - startTimeSeconds;
       const timeElapsed = currentTime - startTimeSeconds;
       
-      // Calculate remaining time and progress
       let remainingSeconds = endTimeSeconds - currentTime;
       let progress = (timeElapsed / totalDuration) * 100;
       
-      // Handle cases where current time is outside work hours
       if (currentTime < startTimeSeconds) {
         remainingSeconds = totalDuration;
         progress = 0;
@@ -57,12 +84,10 @@ const Home = () => {
         progress = 100;
       }
 
-      // Convert remaining seconds to hours, minutes and seconds
       const hours = Math.floor(Math.max(0, remainingSeconds) / 3600);
       const minutes = Math.floor((Math.max(0, remainingSeconds) % 3600) / 60);
       const seconds = Math.floor(Math.max(0, remainingSeconds) % 60);
 
-      // Format the time string
       let timeString = "";
       if (hours > 0) {
         timeString += `${hours}h `;
@@ -72,12 +97,10 @@ const Home = () => {
       }
       timeString += `${seconds}s`;
       
-      // Update state
       setTimeLeft(timeString);
       setProgressValue(Math.min(100, Math.max(0, progress)));
     };
 
-    // Update immediately and then every second
     updateTimeLeft();
     const interval = setInterval(updateTimeLeft, 1000);
 
@@ -85,7 +108,29 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="p-4 pb-24">
+    <div 
+      className="p-4 pb-24 relative"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {pullDistance > 0 && (
+        <div 
+          className="fixed top-0 left-0 right-0 flex justify-center items-center"
+          style={{ 
+            height: `${pullDistance}px`,
+            transition: isRefreshing ? 'none' : 'height 0.2s ease-out'
+          }}
+        >
+          <div className={`
+            w-8 h-8 border-2 border-t-primary border-r-primary border-b-transparent border-l-transparent 
+            rounded-full 
+            ${isRefreshing ? 'animate-spin' : 'transform'} 
+            ${!isRefreshing && `rotate-[${Math.min(pullDistance * 2, 360)}deg]`}
+          `} />
+        </div>
+      )}
+
       <img 
         src="/lovable-uploads/f3b5392a-fb40-467e-b32d-aa71eb2156af.png" 
         alt="R&B Logo" 
