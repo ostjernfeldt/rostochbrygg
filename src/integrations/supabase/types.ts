@@ -9,7 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      purchases: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string
+          id: string
+          payment_type: string | null
+          products: Json | null
+          raw_data: Json | null
+          timestamp: string
+          updated_at: string | null
+          vat_amount: number | null
+          zettle_purchase_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency: string
+          id?: string
+          payment_type?: string | null
+          products?: Json | null
+          raw_data?: Json | null
+          timestamp: string
+          updated_at?: string | null
+          vat_amount?: number | null
+          zettle_purchase_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          payment_type?: string | null
+          products?: Json | null
+          raw_data?: Json | null
+          timestamp?: string
+          updated_at?: string | null
+          vat_amount?: number | null
+          zettle_purchase_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

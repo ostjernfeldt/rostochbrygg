@@ -1,1 +1,4 @@
 project_id = "fdowkbceorqxbborsjlp"
+
+[functions.zettle-webhook]
+verify_jwt = false
