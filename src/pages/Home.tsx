@@ -2,7 +2,8 @@ import { Settings, UserRound } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
+import { useCountAnimation } from "@/hooks/useCountAnimation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +18,8 @@ const Home = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [startY, setStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
+  
+  const animatedSalesAmount = useCountAnimation(15000, 2000);
 
   const handleSignOut = () => {
     localStorage.removeItem("isAuthenticated");
@@ -177,7 +180,7 @@ const Home = () => {
 
       <div className="stat-card animate-fade-in [animation-delay:200ms] hover:scale-[1.02] transition-transform duration-200">
         <span className="text-gray-400 text-lg">Total försäljning</span>
-        <div className="text-4xl font-bold mt-1">SEK 15,000</div>
+        <div className="text-4xl font-bold mt-1">SEK {animatedSalesAmount.toLocaleString()}</div>
         <div className="text-green-500 mt-1">+10% från förra gången</div>
       </div>
 
