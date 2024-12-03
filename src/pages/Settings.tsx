@@ -5,7 +5,7 @@ import { toast } from "@/components/ui/use-toast";
 
 const Settings = () => {
   const [salesGoal, setSalesGoal] = useState("12000");
-  const [startTime, setStartTime] = useState("17:00");
+  const [startTime, setStartTime] = useState("16:30");
   const [endTime, setEndTime] = useState("20:00");
   const [bonus, setBonus] = useState("200");
 
