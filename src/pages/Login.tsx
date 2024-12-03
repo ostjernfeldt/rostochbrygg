@@ -18,6 +18,7 @@ const Login = () => {
         title: "Inloggad",
         description: "Du är nu inloggad",
         className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
+        duration: 1000, // 1 second
       });
       navigate("/");
     } else {
@@ -26,6 +27,7 @@ const Login = () => {
         description: "Vänligen fyll i alla fält",
         variant: "destructive",
         className: "bg-red-500 text-white border-none rounded-xl shadow-lg",
+        duration: 1000, // 1 second
       });
     }
   };
