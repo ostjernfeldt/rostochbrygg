@@ -20,6 +20,8 @@ const Home = () => {
   const [pullDistance, setPullDistance] = useState(0);
   
   const animatedSalesAmount = useCountAnimation(15000, 2000);
+  const animatedSalesCount = useCountAnimation(42, 2000);
+  const animatedAverageValue = useCountAnimation(327, 2000);
 
   const handleSignOut = () => {
     localStorage.removeItem("isAuthenticated");
@@ -186,13 +188,13 @@ const Home = () => {
 
       <div className="stat-card animate-fade-in [animation-delay:400ms] hover:scale-[1.02] transition-transform duration-200">
         <span className="text-gray-400 text-lg">Antal sälj</span>
-        <div className="text-4xl font-bold mt-1">42</div>
+        <div className="text-4xl font-bold mt-1">{animatedSalesCount}</div>
         <div className="text-green-500 mt-1">+15% från förra gången</div>
       </div>
 
       <div className="stat-card animate-fade-in [animation-delay:600ms] hover:scale-[1.02] transition-transform duration-200">
         <span className="text-gray-400 text-lg">Snittordervärde</span>
-        <div className="text-4xl font-bold mt-1">SEK 327</div>
+        <div className="text-4xl font-bold mt-1">SEK {animatedAverageValue}</div>
         <div className="text-red-500 mt-1">-5% från förra gången</div>
       </div>
     </div>
