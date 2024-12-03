@@ -18,10 +18,32 @@ const Home = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [startY, setStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
   
-  const animatedSalesAmount = useCountAnimation(15000, 2000);
-  const animatedSalesCount = useCountAnimation(42, 2000);
-  const animatedAverageValue = useCountAnimation(327, 2000);
+  // Only animate if the page was actually refreshed
+  useEffect(() => {
+    const lastRefreshTime = localStorage.getItem('lastRefreshTime');
+    const currentTime = Date.now();
+    
+    // If there's no last refresh time, or if it's been more than 1 second since last refresh
+    if (!lastRefreshTime || currentTime - parseInt(lastRefreshTime) > 1000) {
+      setShouldAnimate(true);
+      localStorage.setItem('lastRefreshTime', currentTime.toString());
+    } else {
+      setShouldAnimate(false);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (shouldAnimate) {
+        setShouldAnimate(false);
+      }
+    };
+  }, []);
+
+  const animatedSalesAmount = useCountAnimation(shouldAnimate ? 15000 : 0, 2000);
+  const animatedSalesCount = useCountAnimation(shouldAnimate ? 42 : 0, 2000);
+  const animatedAverageValue = useCountAnimation(shouldAnimate ? 327 : 0, 2000);
 
   const handleSignOut = () => {
     localStorage.removeItem("isAuthenticated");
@@ -182,19 +204,19 @@ const Home = () => {
 
       <div className="stat-card animate-fade-in [animation-delay:200ms] hover:scale-[1.02] transition-transform duration-200">
         <span className="text-gray-400 text-lg">Total försäljning</span>
-        <div className="text-4xl font-bold mt-1">SEK {animatedSalesAmount.toLocaleString()}</div>
+        <div className="text-4xl font-bold mt-1">SEK {shouldAnimate ? animatedSalesAmount.toLocaleString() : "15,000"}</div>
         <div className="text-green-500 mt-1">+10% från förra gången</div>
       </div>
 
       <div className="stat-card animate-fade-in [animation-delay:400ms] hover:scale-[1.02] transition-transform duration-200">
         <span className="text-gray-400 text-lg">Antal sälj</span>
-        <div className="text-4xl font-bold mt-1">{animatedSalesCount}</div>
+        <div className="text-4xl font-bold mt-1">{shouldAnimate ? animatedSalesCount : "42"}</div>
         <div className="text-green-500 mt-1">+15% från förra gången</div>
       </div>
 
       <div className="stat-card animate-fade-in [animation-delay:600ms] hover:scale-[1.02] transition-transform duration-200">
         <span className="text-gray-400 text-lg">Snittordervärde</span>
-        <div className="text-4xl font-bold mt-1">SEK {animatedAverageValue}</div>
+        <div className="text-4xl font-bold mt-1">SEK {shouldAnimate ? animatedAverageValue : "327"}</div>
         <div className="text-red-500 mt-1">-5% från förra gången</div>
       </div>
     </div>
