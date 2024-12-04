@@ -1,80 +1,113 @@
-import { Copy } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+interface UserSales {
+  "User Display Name": string;
+  totalAmount: number;
+  salesCount: number;
+}
 
 const Leaderboard = () => {
-  const getRankClass = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return "gold";
-      case 2:
-        return "silver";
-      case 3:
-        return "bronze";
-      default:
-        return "";
-    }
-  };
-
-  const leaderboardData = [
-    { rank: 1, name: "Fredrik Keränen", sales: 28, amount: 5100 },
-    { rank: 2, name: "Samuel Winqvist", sales: 23, amount: 4900 },
-    { rank: 3, name: "Bruno Wulff", sales: 23, amount: 3900 },
-    { rank: 4, name: "Nicolas Iurea", sales: 23, amount: 3700 },
-    { rank: 5, name: "Alvin Ljungman", sales: 23, amount: 3600 },
-    { rank: 6, name: "Louisa De Prado", sales: 23, amount: 2300 },
-  ];
-
-  const handleCopy = async () => {
-    try {
-      const text = leaderboardData
-        .map(item => `#${item.rank} ${item.name} - ${item.sales} sälj - SEK ${item.amount}`)
-        .join('\n');
+  const { data: leaderboardData, isLoading } = useQuery({
+    queryKey: ["leaderboard"],
+    queryFn: async () => {
+      console.log("Fetching leaderboard data...");
       
-      await navigator.clipboard.writeText(text);
-      
-      toast({
-        title: "Kopierat till urklipp",
-        description: "Topplistan har kopierats till urklipp",
-        duration: 2000,
-        className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
-      });
-    } catch (err) {
-      console.error('Failed to copy:', err);
-      toast({
-        title: "Kunde inte kopiera",
-        description: "Det gick inte att kopiera topplistan till urklipp",
-        variant: "destructive",
-        duration: 2000,
-        className: "bg-red-500 text-white border-none rounded-xl shadow-lg",
-      });
+      // First, get the latest date
+      const { data: dateData, error: dateError } = await supabase
+        .from("purchases")
+        .select("Timestamp")
+        .order("Timestamp", { ascending: false })
+        .limit(1);
+
+      if (dateError) {
+        console.error("Error fetching latest date:", dateError);
+        throw dateError;
+      }
+
+      if (!dateData || dateData.length === 0) {
+        console.log("No sales data found");
+        return [];
+      }
+
+      const latestDate = new Date(dateData[0].Timestamp);
+      console.log("Latest date found:", latestDate);
+
+      // Create start and end of day dates
+      const startOfDay = new Date(latestDate);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(latestDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      // Then get all sales for that date
+      const { data: salesData, error: salesError } = await supabase
+        .from("purchases")
+        .select("Amount, User Display Name")
+        .gte("Timestamp", startOfDay.toISOString())
+        .lte("Timestamp", endOfDay.toISOString())
+        .not("User Display Name", "is", null);
+
+      if (salesError) {
+        console.error("Error fetching sales data:", salesError);
+        throw salesError;
+      }
+
+      console.log("Sales data fetched:", salesData);
+
+      // Group and sum sales by user
+      const userSales = salesData.reduce((acc: { [key: string]: UserSales }, sale) => {
+        const userName = sale["User Display Name"] as string;
+        const amount = sale.Amount ? Number(sale.Amount) : 0;
+
+        if (!acc[userName]) {
+          acc[userName] = {
+            "User Display Name": userName,
+            totalAmount: 0,
+            salesCount: 0
+          };
+        }
+
+        acc[userName].totalAmount += amount;
+        acc[userName].salesCount += 1;
+
+        return acc;
+      }, {});
+
+      // Convert to array and sort by total amount
+      return Object.values(userSales).sort((a, b) => b.totalAmount - a.totalAmount);
     }
-  };
+  });
+
+  if (isLoading) {
+    return <div className="p-4">Loading leaderboard data...</div>;
+  }
+
+  if (!leaderboardData || leaderboardData.length === 0) {
+    return <div className="p-4">No sales data available for today.</div>;
+  }
 
   return (
-    <div className="p-4 pb-24 animate-fade-in">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Dagens topplista</h1>
-        <Copy 
-          className="text-primary cursor-pointer hover:text-primary/80 transition-colors" 
-          size={24} 
-          onClick={handleCopy}
-        />
-      </div>
-
+    <div className="p-4 pb-24">
+      <h1 className="text-2xl font-bold mb-6">Dagens topplista</h1>
       <div className="space-y-3">
-        {leaderboardData.map((item) => (
+        {leaderboardData.map((user, index) => (
           <div 
-            key={item.rank} 
-            className={`leaderboard-item ${item.rank === 1 ? 'first-place' : ''} hover:scale-[1.02] transition-transform duration-200`}
+            key={user["User Display Name"]} 
+            className={`leaderboard-item ${index === 0 ? 'first-place' : ''}`}
           >
             <div className="flex items-center gap-4">
-              <span className={`leaderboard-rank ${getRankClass(item.rank)}`}>#{item.rank}</span>
+              <span className={`leaderboard-rank ${
+                index === 0 ? 'gold' : 
+                index === 1 ? 'silver' : 
+                index === 2 ? 'bronze' : ''
+              }`}>#{index + 1}</span>
               <div className="text-left">
-                <h3 className="font-bold text-lg">{item.name}</h3>
-                <p className="leaderboard-sales">{item.sales} sälj</p>
+                <h3 className="font-bold text-lg">{user["User Display Name"]}</h3>
+                <p className="leaderboard-sales">{user.salesCount} sälj</p>
               </div>
             </div>
-            <span className="leaderboard-amount">SEK {item.amount}</span>
+            <span className="leaderboard-amount">SEK {user.totalAmount.toLocaleString()}</span>
           </div>
         ))}
       </div>
