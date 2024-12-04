@@ -49,7 +49,8 @@ export const useSalesData = () => {
       console.log("Sales data fetched:", salesData);
 
       const totalAmount = salesData.reduce((sum, sale) => {
-        const amount = parseFloat(sale.Amount) || 0;
+        // Ensure we're handling the Amount as a number and default to 0 if null
+        const amount = sale.Amount ? Number(sale.Amount) : 0;
         return sum + amount;
       }, 0);
 
