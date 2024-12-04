@@ -63,39 +63,47 @@ export const AllTimeStats = () => {
 
       const topAverageValue = averageValues.sort((a, b) => b.value - a.value)[0] as TopPerformer;
 
-      // Get presence data and calculate average weekly presence
+      // Get presence data and calculate average weekly sessions
       const { data: presenceData, error: presenceError } = await supabase
         .from("user_presence")
-        .select('user_display_name, presence_start, presence_end')
+        .select('user_display_name, presence_start')
         .not('presence_end', 'is', null);
 
       if (presenceError) throw presenceError;
 
-      const userPresence = presenceData.reduce((acc: { [key: string]: { totalHours: number; weekCount: Set<string> } }, record) => {
+      const userPresence = presenceData.reduce((acc: { [key: string]: { sessions: Map<string, Set<string>> } }, record) => {
         const userName = record.user_display_name;
         if (!acc[userName]) {
-          acc[userName] = { totalHours: 0, weekCount: new Set() };
+          acc[userName] = { sessions: new Map() };
         }
 
-        const start = new Date(record.presence_start);
-        const end = new Date(record.presence_end!);
-        const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-        
+        const date = new Date(record.presence_start);
         // Get week number for the presence record
-        const weekKey = `${start.getFullYear()}-${Math.floor(start.getTime() / (7 * 24 * 60 * 60 * 1000))}`;
-        acc[userName].weekCount.add(weekKey);
-        acc[userName].totalHours += hours;
+        const weekKey = `${date.getFullYear()}-${Math.floor(date.getTime() / (7 * 24 * 60 * 60 * 1000))}`;
+        const dateKey = date.toISOString().split('T')[0]; // Get just the date part
+
+        if (!acc[userName].sessions.has(weekKey)) {
+          acc[userName].sessions.set(weekKey, new Set());
+        }
+        acc[userName].sessions.get(weekKey)?.add(dateKey);
         
         return acc;
       }, {});
 
-      const averageWeeklyPresence = Object.entries(userPresence).map(([name, { totalHours, weekCount }]) => ({
-        "User Display Name": name,
-        value: totalHours / weekCount.size // Average hours per week
-      }));
+      const averageWeeklySessions = Object.entries(userPresence).map(([name, { sessions }]) => {
+        let totalSessions = 0;
+        sessions.forEach((datesSet) => {
+          totalSessions += datesSet.size; // Count unique dates per week
+        });
 
-      const topPresence = averageWeeklyPresence.length > 0 
-        ? averageWeeklyPresence.sort((a, b) => b.value - a.value)[0]
+        return {
+          "User Display Name": name,
+          value: totalSessions / sessions.size // Average sessions per week
+        };
+      });
+
+      const topPresence = averageWeeklySessions.length > 0 
+        ? averageWeeklySessions.sort((a, b) => b.value - a.value)[0]
         : { "User Display Name": "Ingen data", value: 0 };
 
       return {
@@ -160,7 +168,7 @@ export const AllTimeStats = () => {
         <h3 className="text-gray-400">Högst snittnärvaro per vecka</h3>
         <div className="mt-2">
           <div className="font-bold text-xl">{stats.topPresence["User Display Name"]}</div>
-          <div className="text-blue-500">{Math.round(stats.topPresence.value)} timmar</div>
+          <div className="text-blue-500">{Math.round(stats.topPresence.value)} pass</div>
         </div>
       </div>
     </div>
