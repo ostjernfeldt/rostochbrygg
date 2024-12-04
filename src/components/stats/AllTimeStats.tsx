@@ -64,12 +64,18 @@ export const AllTimeStats = () => {
       const topAverageValue = averageValues.sort((a, b) => b.value - a.value)[0] as TopPerformer;
 
       // Get presence data and calculate average weekly sessions
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)); // Look back 30 days to ensure we have enough data
+
       const { data: presenceData, error: presenceError } = await supabase
         .from("user_presence")
         .select('user_display_name, presence_start')
-        .not('presence_end', 'is', null);
+        .gte('presence_start', thirtyDaysAgo.toISOString())
+        .lte('presence_start', now.toISOString());
 
       if (presenceError) throw presenceError;
+
+      console.log("Presence data:", presenceData);
 
       const userPresence = presenceData.reduce((acc: { [key: string]: { sessions: Map<string, Set<string>> } }, record) => {
         const userName = record.user_display_name;
@@ -78,9 +84,10 @@ export const AllTimeStats = () => {
         }
 
         const date = new Date(record.presence_start);
-        // Get week number for the presence record
-        const weekKey = `${date.getFullYear()}-${Math.floor(date.getTime() / (7 * 24 * 60 * 60 * 1000))}`;
-        const dateKey = date.toISOString().split('T')[0]; // Get just the date part
+        // Calculate week number relative to current date
+        const weeksDiff = Math.floor((now.getTime() - date.getTime()) / (7 * 24 * 60 * 60 * 1000));
+        const weekKey = `week-${weeksDiff}`;
+        const dateKey = date.toISOString().split('T')[0];
 
         if (!acc[userName].sessions.has(weekKey)) {
           acc[userName].sessions.set(weekKey, new Set());
@@ -90,15 +97,20 @@ export const AllTimeStats = () => {
         return acc;
       }, {});
 
+      console.log("Processed user presence:", userPresence);
+
       const averageWeeklySessions = Object.entries(userPresence).map(([name, { sessions }]) => {
         let totalSessions = 0;
         sessions.forEach((datesSet) => {
           totalSessions += datesSet.size; // Count unique dates per week
         });
 
+        const averageSessions = sessions.size > 0 ? totalSessions / sessions.size : 0;
+        console.log(`${name}: ${totalSessions} total sessions over ${sessions.size} weeks = ${averageSessions} avg`);
+
         return {
           "User Display Name": name,
-          value: totalSessions / sessions.size // Average sessions per week
+          value: averageSessions
         };
       });
 
