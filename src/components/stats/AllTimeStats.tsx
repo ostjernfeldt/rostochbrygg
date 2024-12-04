@@ -76,9 +76,9 @@ export const AllTimeStats = () => {
       />
 
       <StatCard
-        title="Högst snittnärvaro per vecka"
+        title="Högst närvaro senaste 30 dagarna"
         userName={stats.topPresence["User Display Name"]}
-        value={`${Math.round(stats.topPresence.value)} pass`}
+        value={`${Math.round(stats.topPresence.value)} dagar`}
         animationDelay="600ms"
       />
     </div>

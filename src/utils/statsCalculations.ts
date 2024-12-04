@@ -48,65 +48,51 @@ export const calculateTopAverageValue = (sales: Purchase[]): TopPerformer => {
   return averageValues.sort((a, b) => b.value - a.value)[0];
 };
 
-export const calculateTopPresence = (sales: Purchase[]): TopPerformer => {
+export const calculateTopPresence = (sales: any[]) => {
+  console.log("Calculating top presence from sales data...");
+  
+  // Get current date and date 30 days ago
   const now = new Date();
-  const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(now.getDate() - 30);
+  
+  console.log("Date range:", {
+    from: thirtyDaysAgo.toISOString(),
+    to: now.toISOString()
+  });
 
-  console.log("Calculating presence from:", thirtyDaysAgo.toISOString(), "to:", now.toISOString());
-
-  // Filter sales to last 30 days
+  // Filter sales to last 30 days and get unique dates per seller
   const recentSales = sales.filter(sale => {
-    const saleDate = new Date(sale.Timestamp!);
+    const saleDate = new Date(sale.Timestamp);
     return saleDate >= thirtyDaysAgo && saleDate <= now;
   });
 
-  console.log("Recent sales count:", recentSales.length);
+  console.log("Found recent sales:", recentSales.length);
 
-  if (recentSales.length === 0) {
-    return { "User Display Name": "Ingen data", value: 0 };
-  }
-
-  // Group sales by user and week
-  const userWeeklyPresence = recentSales.reduce((acc: { [key: string]: { [week: string]: Set<string> } }, sale) => {
+  // Count unique dates per seller
+  const presenceCounts = recentSales.reduce((acc: { [key: string]: Set<string> }, sale) => {
     const userName = sale["User Display Name"] as string;
-    const saleDate = new Date(sale.Timestamp!);
+    const dateKey = new Date(sale.Timestamp).toISOString().split('T')[0];
     
-    // Calculate week number relative to current date
-    const weeksDiff = Math.floor((now.getTime() - saleDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
-    const weekKey = `week-${weeksDiff}`;
-    const dateKey = saleDate.toISOString().split('T')[0];
-
     if (!acc[userName]) {
-      acc[userName] = {};
+      acc[userName] = new Set();
     }
-    if (!acc[userName][weekKey]) {
-      acc[userName][weekKey] = new Set();
-    }
-    acc[userName][weekKey].add(dateKey);
+    acc[userName].add(dateKey);
     
     return acc;
   }, {});
 
-  console.log("User weekly presence:", userWeeklyPresence);
+  // Convert to array and find seller with most unique dates
+  const presenceArray = Object.entries(presenceCounts).map(([name, dates]) => ({
+    "User Display Name": name,
+    value: dates.size
+  }));
 
-  // Calculate average presence per week for each user
-  const averagePresence = Object.entries(userWeeklyPresence).map(([name, weeks]) => {
-    const weekCount = Object.keys(weeks).length;
-    const totalDays = Object.values(weeks).reduce((sum, dates) => sum + dates.size, 0);
-    const average = weekCount > 0 ? totalDays / weekCount : 0;
+  console.log("Presence counts:", presenceArray);
 
-    console.log(`${name}: ${totalDays} total days over ${weekCount} weeks = ${average} avg days/week`);
+  if (presenceArray.length === 0) {
+    return { "User Display Name": "Ingen data", value: 0 };
+  }
 
-    return {
-      "User Display Name": name,
-      value: average
-    };
-  });
-
-  const topPresence = averagePresence.length > 0 
-    ? averagePresence.sort((a, b) => b.value - a.value)[0]
-    : { "User Display Name": "Ingen data", value: 0 };
-
-  console.log("Top presence:", topPresence);
-  return topPresence;
+  return presenceArray.sort((a, b) => b.value - a.value)[0];
 };
