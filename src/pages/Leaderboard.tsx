@@ -96,6 +96,8 @@ const Leaderboard = () => {
       toast({
         title: "Kopierat!",
         description: "Leaderboard data har kopierats till urklipp",
+        className: "bg-green-500 text-white border-none",
+        duration: 1000,
       });
     });
   };
@@ -114,12 +116,11 @@ const Leaderboard = () => {
         <h1 className="text-2xl font-bold">Dagens topplista</h1>
         <Button
           variant="outline"
-          size="sm"
+          size="icon"
           onClick={copyToClipboard}
-          className="gap-2"
+          className="w-10 h-10"
         >
           <Copy className="h-4 w-4" />
-          Kopiera
         </Button>
       </div>
       <div className="space-y-3">
