@@ -21,6 +21,11 @@ export const SalesStats = ({ shouldAnimate = false }) => {
     return <div>Loading sales data...</div>;
   }
 
+  const formatPercentage = (value: number) => {
+    const rounded = Math.round(value * 10) / 10;
+    return `${rounded >= 0 ? '+' : ''}${rounded}%`;
+  };
+
   return (
     <>
       <div className="stat-card animate-fade-in [animation-delay:200ms] hover:scale-[1.02] transition-transform duration-200">
@@ -28,7 +33,9 @@ export const SalesStats = ({ shouldAnimate = false }) => {
         <div className="text-4xl font-bold mt-1">
           SEK {shouldAnimate ? animatedSalesAmount.toLocaleString() : salesData?.totalAmount.toLocaleString()}
         </div>
-        <div className="text-green-500 mt-1">+10% från förra gången</div>
+        <div className={`mt-1 ${salesData?.percentageChanges.totalAmount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+          {formatPercentage(salesData?.percentageChanges.totalAmount || 0)} från förra gången
+        </div>
       </div>
 
       <div className="stat-card animate-fade-in [animation-delay:400ms] hover:scale-[1.02] transition-transform duration-200">
@@ -36,7 +43,9 @@ export const SalesStats = ({ shouldAnimate = false }) => {
         <div className="text-4xl font-bold mt-1">
           {shouldAnimate ? animatedSalesCount : salesData?.salesCount}
         </div>
-        <div className="text-green-500 mt-1">+15% från förra gången</div>
+        <div className={`mt-1 ${salesData?.percentageChanges.salesCount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+          {formatPercentage(salesData?.percentageChanges.salesCount || 0)} från förra gången
+        </div>
       </div>
 
       <div className="stat-card animate-fade-in [animation-delay:600ms] hover:scale-[1.02] transition-transform duration-200">
@@ -44,7 +53,9 @@ export const SalesStats = ({ shouldAnimate = false }) => {
         <div className="text-4xl font-bold mt-1">
           SEK {shouldAnimate ? animatedAverageValue : Math.round(salesData?.averageValue || 0)}
         </div>
-        <div className="text-red-500 mt-1">-5% från förra gången</div>
+        <div className={`mt-1 ${salesData?.percentageChanges.averageValue >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+          {formatPercentage(salesData?.percentageChanges.averageValue || 0)} från förra gången
+        </div>
       </div>
     </>
   );
