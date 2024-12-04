@@ -48,7 +48,7 @@ export const calculateTopAverageValue = (sales: Purchase[]): TopPerformer => {
   return averageValues.sort((a, b) => b.value - a.value)[0];
 };
 
-export const calculateTopPresence = (sales: any[]) => {
+export const calculateTopPresence = (sales: Purchase[]): TopPerformer => {
   console.log("Calculating top presence from sales data...");
   
   // Get current date and date 30 days ago
@@ -63,7 +63,7 @@ export const calculateTopPresence = (sales: any[]) => {
 
   // Filter sales to last 30 days and get unique dates per seller
   const recentSales = sales.filter(sale => {
-    const saleDate = new Date(sale.Timestamp);
+    const saleDate = new Date(sale.Timestamp as string);
     return saleDate >= thirtyDaysAgo && saleDate <= now;
   });
 
@@ -72,10 +72,10 @@ export const calculateTopPresence = (sales: any[]) => {
   // Count unique dates per seller
   const presenceCounts = recentSales.reduce((acc: { [key: string]: Set<string> }, sale) => {
     const userName = sale["User Display Name"] as string;
-    const dateKey = new Date(sale.Timestamp).toISOString().split('T')[0];
+    const dateKey = new Date(sale.Timestamp as string).toISOString().split('T')[0];
     
     if (!acc[userName]) {
-      acc[userName] = new Set();
+      acc[userName] = new Set<string>();
     }
     acc[userName].add(dateKey);
     
