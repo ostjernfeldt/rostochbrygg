@@ -65,7 +65,9 @@ export const AllTimeStats = () => {
 
       // Get presence data and calculate average weekly sessions
       const now = new Date();
-      const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)); // Look back 30 days to ensure we have enough data
+      const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+
+      console.log("Fetching presence data from:", thirtyDaysAgo.toISOString(), "to:", now.toISOString());
 
       const { data: presenceData, error: presenceError } = await supabase
         .from("user_presence")
@@ -75,7 +77,21 @@ export const AllTimeStats = () => {
 
       if (presenceError) throw presenceError;
 
-      console.log("Presence data:", presenceData);
+      console.log("Raw presence data:", presenceData);
+
+      // Early return for empty presence data
+      if (!presenceData || presenceData.length === 0) {
+        console.log("No presence data found");
+        return {
+          topAccumulatedSeller,
+          highestSale: {
+            "User Display Name": highestSale["User Display Name"],
+            value: highestSale.Amount
+          } as TopPerformer,
+          topAverageValue,
+          topPresence: { "User Display Name": "Ingen data", value: 0 }
+        };
+      }
 
       const userPresence = presenceData.reduce((acc: { [key: string]: { sessions: Map<string, Set<string>> } }, record) => {
         const userName = record.user_display_name;
@@ -100,13 +116,13 @@ export const AllTimeStats = () => {
       console.log("Processed user presence:", userPresence);
 
       const averageWeeklySessions = Object.entries(userPresence).map(([name, { sessions }]) => {
-        let totalSessions = 0;
+        let totalDays = 0;
         sessions.forEach((datesSet) => {
-          totalSessions += datesSet.size; // Count unique dates per week
+          totalDays += datesSet.size;
         });
 
-        const averageSessions = sessions.size > 0 ? totalSessions / sessions.size : 0;
-        console.log(`${name}: ${totalSessions} total sessions over ${sessions.size} weeks = ${averageSessions} avg`);
+        const averageSessions = sessions.size > 0 ? totalDays / sessions.size : 0;
+        console.log(`${name}: ${totalDays} total days over ${sessions.size} weeks = ${averageSessions} avg sessions/week`);
 
         return {
           "User Display Name": name,
@@ -117,6 +133,8 @@ export const AllTimeStats = () => {
       const topPresence = averageWeeklySessions.length > 0 
         ? averageWeeklySessions.sort((a, b) => b.value - a.value)[0]
         : { "User Display Name": "Ingen data", value: 0 };
+
+      console.log("Top presence:", topPresence);
 
       return {
         topAccumulatedSeller,
