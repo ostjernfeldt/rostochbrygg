@@ -11,43 +11,67 @@ export type Database = {
     Tables: {
       purchases: {
         Row: {
-          amount: number
-          created_at: string | null
-          currency: string
+          Amount: string | null
+          Cost: string | null
+          Currency: string | null
+          "Discount Amount": string | null
+          "Discount Quantity": string | null
+          "Discount Value": string | null
+          "Gross Tax": string | null
+          "Gross Value": string | null
           id: string
-          payment_type: string | null
-          products: Json | null
-          raw_data: Json | null
-          timestamp: string
-          updated_at: string | null
-          vat_amount: number | null
-          zettle_purchase_id: string
+          "Payment Type": string | null
+          "Product Name": string | null
+          "Purchase Number": string | null
+          "Purchase UUID": string | null
+          Refunded: string | null
+          "Tax Amount": string | null
+          Timestamp: string | null
+          "Unit Price": string | null
+          "User Display Name": string | null
+          "VAT Amount": string | null
         }
         Insert: {
-          amount: number
-          created_at?: string | null
-          currency: string
+          Amount?: string | null
+          Cost?: string | null
+          Currency?: string | null
+          "Discount Amount"?: string | null
+          "Discount Quantity"?: string | null
+          "Discount Value"?: string | null
+          "Gross Tax"?: string | null
+          "Gross Value"?: string | null
           id?: string
-          payment_type?: string | null
-          products?: Json | null
-          raw_data?: Json | null
-          timestamp: string
-          updated_at?: string | null
-          vat_amount?: number | null
-          zettle_purchase_id: string
+          "Payment Type"?: string | null
+          "Product Name"?: string | null
+          "Purchase Number"?: string | null
+          "Purchase UUID"?: string | null
+          Refunded?: string | null
+          "Tax Amount"?: string | null
+          Timestamp?: string | null
+          "Unit Price"?: string | null
+          "User Display Name"?: string | null
+          "VAT Amount"?: string | null
         }
         Update: {
-          amount?: number
-          created_at?: string | null
-          currency?: string
+          Amount?: string | null
+          Cost?: string | null
+          Currency?: string | null
+          "Discount Amount"?: string | null
+          "Discount Quantity"?: string | null
+          "Discount Value"?: string | null
+          "Gross Tax"?: string | null
+          "Gross Value"?: string | null
           id?: string
-          payment_type?: string | null
-          products?: Json | null
-          raw_data?: Json | null
-          timestamp?: string
-          updated_at?: string | null
-          vat_amount?: number | null
-          zettle_purchase_id?: string
+          "Payment Type"?: string | null
+          "Product Name"?: string | null
+          "Purchase Number"?: string | null
+          "Purchase UUID"?: string | null
+          Refunded?: string | null
+          "Tax Amount"?: string | null
+          Timestamp?: string | null
+          "Unit Price"?: string | null
+          "User Display Name"?: string | null
+          "VAT Amount"?: string | null
         }
         Relationships: []
       }
