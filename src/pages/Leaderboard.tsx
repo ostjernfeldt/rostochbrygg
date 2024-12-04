@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Copy } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface UserSales {
   "User Display Name": string;
@@ -8,6 +11,7 @@ interface UserSales {
 }
 
 const Leaderboard = () => {
+  const { toast } = useToast();
   const { data: leaderboardData, isLoading } = useQuery({
     queryKey: ["leaderboard"],
     queryFn: async () => {
@@ -79,6 +83,23 @@ const Leaderboard = () => {
     }
   });
 
+  const copyToClipboard = () => {
+    if (!leaderboardData) return;
+
+    const formattedData = leaderboardData
+      .map((user, index) => 
+        `${index + 1}. ${user["User Display Name"]}: ${user.salesCount} sälj - SEK ${user.totalAmount.toLocaleString()}`
+      )
+      .join('\n');
+
+    navigator.clipboard.writeText(formattedData).then(() => {
+      toast({
+        title: "Kopierat!",
+        description: "Leaderboard data har kopierats till urklipp",
+      });
+    });
+  };
+
   if (isLoading) {
     return <div className="p-4">Loading leaderboard data...</div>;
   }
@@ -89,7 +110,18 @@ const Leaderboard = () => {
 
   return (
     <div className="p-4 pb-24">
-      <h1 className="text-2xl font-bold mb-6">Dagens topplista</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Dagens topplista</h1>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={copyToClipboard}
+          className="gap-2"
+        >
+          <Copy className="h-4 w-4" />
+          Kopiera
+        </Button>
+      </div>
       <div className="space-y-3">
         {leaderboardData.map((user, index) => (
           <div 
