@@ -43,7 +43,7 @@ const Leaderboard = () => {
       // Then get all sales for that date
       const { data: salesData, error: salesError } = await supabase
         .from("purchases")
-        .select("Amount, User Display Name")
+        .select('"User Display Name", Amount')
         .gte("Timestamp", startOfDay.toISOString())
         .lte("Timestamp", endOfDay.toISOString())
         .not("User Display Name", "is", null);
