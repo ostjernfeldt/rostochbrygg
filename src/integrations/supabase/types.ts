@@ -81,6 +81,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_presence: {
+        Row: {
+          created_at: string | null
+          id: string
+          presence_end: string | null
+          presence_start: string
+          updated_at: string | null
+          user_display_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          presence_end?: string | null
+          presence_start: string
+          updated_at?: string | null
+          user_display_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          presence_end?: string | null
+          presence_start?: string
+          updated_at?: string | null
+          user_display_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

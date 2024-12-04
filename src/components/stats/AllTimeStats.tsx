@@ -63,13 +63,49 @@ export const AllTimeStats = () => {
 
       const topAverageValue = averageValues.sort((a, b) => b.value - a.value)[0] as TopPerformer;
 
+      // Get presence data and calculate average weekly presence
+      const { data: presenceData, error: presenceError } = await supabase
+        .from("user_presence")
+        .select('user_display_name, presence_start, presence_end')
+        .not('presence_end', 'is', null);
+
+      if (presenceError) throw presenceError;
+
+      const userPresence = presenceData.reduce((acc: { [key: string]: { totalHours: number; weekCount: Set<string> } }, record) => {
+        const userName = record.user_display_name;
+        if (!acc[userName]) {
+          acc[userName] = { totalHours: 0, weekCount: new Set() };
+        }
+
+        const start = new Date(record.presence_start);
+        const end = new Date(record.presence_end!);
+        const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+        
+        // Get week number for the presence record
+        const weekKey = `${start.getFullYear()}-${Math.floor(start.getTime() / (7 * 24 * 60 * 60 * 1000))}`;
+        acc[userName].weekCount.add(weekKey);
+        acc[userName].totalHours += hours;
+        
+        return acc;
+      }, {});
+
+      const averageWeeklyPresence = Object.entries(userPresence).map(([name, { totalHours, weekCount }]) => ({
+        "User Display Name": name,
+        value: totalHours / weekCount.size // Average hours per week
+      }));
+
+      const topPresence = averageWeeklyPresence.length > 0 
+        ? averageWeeklyPresence.sort((a, b) => b.value - a.value)[0]
+        : { "User Display Name": "Ingen data", value: 0 };
+
       return {
         topAccumulatedSeller,
         highestSale: {
           "User Display Name": highestSale["User Display Name"],
           value: highestSale.Amount
         } as TopPerformer,
-        topAverageValue
+        topAverageValue,
+        topPresence
       };
     }
   });
@@ -77,7 +113,7 @@ export const AllTimeStats = () => {
   if (isLoading) {
     return (
       <div className="space-y-4 mt-8">
-        {[1, 2, 3].map((i) => (
+        {[1, 2, 3, 4].map((i) => (
           <div key={i} className="stat-card animate-pulse">
             <div className="h-6 bg-gray-700 rounded w-1/3 mb-2"></div>
             <div className="h-8 bg-gray-700 rounded w-2/3"></div>
@@ -117,6 +153,14 @@ export const AllTimeStats = () => {
         <div className="mt-2">
           <div className="font-bold text-xl">{stats.topAverageValue["User Display Name"]}</div>
           <div className="text-green-500">SEK {Math.round(stats.topAverageValue.value).toLocaleString()}</div>
+        </div>
+      </div>
+
+      <div className="stat-card animate-fade-in [animation-delay:600ms]">
+        <h3 className="text-gray-400">Högst snittnärvaro per vecka</h3>
+        <div className="mt-2">
+          <div className="font-bold text-xl">{stats.topPresence["User Display Name"]}</div>
+          <div className="text-blue-500">{Math.round(stats.topPresence.value)} timmar</div>
         </div>
       </div>
     </div>
