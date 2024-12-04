@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 export const TimeLeftCard = () => {
   const [timeLeft, setTimeLeft] = useState("0 min");
   const [progressValue, setProgressValue] = useState(0);
+  const [isWorkInProgress, setIsWorkInProgress] = useState(false);
 
   useEffect(() => {
     const updateTimeLeft = () => {
@@ -28,9 +29,13 @@ export const TimeLeftCard = () => {
       if (currentTime < startTimeSeconds) {
         remainingSeconds = totalDuration;
         progress = 0;
+        setIsWorkInProgress(false);
       } else if (currentTime > endTimeSeconds) {
         remainingSeconds = 0;
         progress = 100;
+        setIsWorkInProgress(false);
+      } else {
+        setIsWorkInProgress(true);
       }
 
       const hours = Math.floor(Math.max(0, remainingSeconds) / 3600);
@@ -64,9 +69,15 @@ export const TimeLeftCard = () => {
       </div>
       <Progress value={progressValue} className="h-2" />
       <div className="mt-2">
-        <span className="text-gray-400">
-          {progressValue >= 100 ? "Dagens arbetspass är slut" : "Arbetspasset pågår"}
-        </span>
+        {isWorkInProgress ? (
+          <span className="text-gray-400">Arbetspasset pågår</span>
+        ) : progressValue >= 100 ? (
+          <span className="text-gray-400">Dagens arbetspass är slut</span>
+        ) : (
+          <span className="text-gray-400">
+            Inget pass igång för tillfället, visar data från senaste passet
+          </span>
+        )}
       </div>
     </div>
   );
