@@ -27,12 +27,19 @@ export const useSalesData = () => {
       const latestDate = new Date(dateData[0].Timestamp);
       console.log("Latest date found:", latestDate);
 
+      // Create start and end of day dates
+      const startOfDay = new Date(latestDate);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(latestDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
       // Then get all sales for that date
       const { data: salesData, error: salesError } = await supabase
         .from("purchases")
         .select("Amount")
-        .gte("Timestamp", new Date(latestDate.setHours(0,0,0,0)).toISOString())
-        .lte("Timestamp", new Date(latestDate.setHours(23,59,59,999)).toISOString());
+        .gte("Timestamp", startOfDay.toISOString())
+        .lte("Timestamp", endOfDay.toISOString());
 
       if (salesError) {
         console.error("Error fetching sales data:", salesError);
