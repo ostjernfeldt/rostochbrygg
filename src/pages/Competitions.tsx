@@ -1,4 +1,5 @@
 import { Trophy, Gift, Laptop } from "lucide-react";
+import { AllTimeStats } from "@/components/stats/AllTimeStats";
 
 const Competitions = () => {
   return (
@@ -37,6 +38,8 @@ const Competitions = () => {
         </div>
         <p className="text-green-500 mt-2">Belöning: 200 SEK bonus + 10% per köp</p>
       </div>
+
+      <AllTimeStats />
     </div>
   );
 };
