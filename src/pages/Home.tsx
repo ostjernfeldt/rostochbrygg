@@ -1,31 +1,27 @@
 import { Settings, UserRound } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { useEffect, useState } from "react";
-import { useCountAnimation } from "@/hooks/useCountAnimation";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { TimeLeftCard } from "@/components/stats/TimeLeftCard";
+import { SalesStats } from "@/components/stats/SalesStats";
 
 const Home = () => {
   const navigate = useNavigate();
-  const [timeLeft, setTimeLeft] = useState("0 min");
-  const [progressValue, setProgressValue] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [startY, setStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
   const [shouldAnimate, setShouldAnimate] = useState(false);
   
-  // Only animate if the page was actually refreshed
   useEffect(() => {
     const lastRefreshTime = localStorage.getItem('lastRefreshTime');
     const currentTime = Date.now();
     
-    // If there's no last refresh time, or if it's been more than 1 second since last refresh
     if (!lastRefreshTime || currentTime - parseInt(lastRefreshTime) > 1000) {
       setShouldAnimate(true);
       localStorage.setItem('lastRefreshTime', currentTime.toString());
@@ -33,17 +29,12 @@ const Home = () => {
       setShouldAnimate(false);
     }
 
-    // Cleanup on unmount
     return () => {
       if (shouldAnimate) {
         setShouldAnimate(false);
       }
     };
   }, []);
-
-  const animatedSalesAmount = useCountAnimation(shouldAnimate ? 15000 : 0, 2000);
-  const animatedSalesCount = useCountAnimation(shouldAnimate ? 42 : 0, 2000);
-  const animatedAverageValue = useCountAnimation(shouldAnimate ? 327 : 0, 2000);
 
   const handleSignOut = () => {
     localStorage.removeItem("isAuthenticated");
@@ -82,57 +73,6 @@ const Home = () => {
     setStartY(0);
     setPullDistance(0);
   };
-
-  useEffect(() => {
-    const updateTimeLeft = () => {
-      const startTime = localStorage.getItem("workStartTime") || "17:00";
-      const endTime = localStorage.getItem("workEndTime") || "20:00";
-      
-      const now = new Date();
-      const currentTime = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-      
-      const [startHours, startMinutes] = startTime.split(":").map(Number);
-      const [endHours, endMinutes] = endTime.split(":").map(Number);
-      
-      const startTimeSeconds = startHours * 3600 + startMinutes * 60;
-      const endTimeSeconds = endHours * 3600 + endMinutes * 60;
-      
-      const totalDuration = endTimeSeconds - startTimeSeconds;
-      const timeElapsed = currentTime - startTimeSeconds;
-      
-      let remainingSeconds = endTimeSeconds - currentTime;
-      let progress = (timeElapsed / totalDuration) * 100;
-      
-      if (currentTime < startTimeSeconds) {
-        remainingSeconds = totalDuration;
-        progress = 0;
-      } else if (currentTime > endTimeSeconds) {
-        remainingSeconds = 0;
-        progress = 100;
-      }
-
-      const hours = Math.floor(Math.max(0, remainingSeconds) / 3600);
-      const minutes = Math.floor((Math.max(0, remainingSeconds) % 3600) / 60);
-      const seconds = Math.floor(Math.max(0, remainingSeconds) % 60);
-
-      let timeString = "";
-      if (hours > 0) {
-        timeString += `${hours}h `;
-      }
-      if (minutes > 0 || hours > 0) {
-        timeString += `${minutes}m `;
-      }
-      timeString += `${seconds}s`;
-      
-      setTimeLeft(timeString);
-      setProgressValue(Math.min(100, Math.max(0, progress)));
-    };
-
-    updateTimeLeft();
-    const interval = setInterval(updateTimeLeft, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div 
@@ -189,36 +129,8 @@ const Home = () => {
         </DropdownMenu>
       </div>
 
-      <div className="stat-card animate-fade-in hover:scale-[1.02] transition-transform duration-200">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-400 text-lg">Tid kvar av dagen</span>
-          <span className="text-lg font-mono">{timeLeft}</span>
-        </div>
-        <Progress value={progressValue} className="h-2" />
-        <div className="mt-2">
-          <span className="text-gray-400">
-            {progressValue >= 100 ? "Dagens arbetspass är slut" : "Arbetspasset pågår"}
-          </span>
-        </div>
-      </div>
-
-      <div className="stat-card animate-fade-in [animation-delay:200ms] hover:scale-[1.02] transition-transform duration-200">
-        <span className="text-gray-400 text-lg">Total försäljning</span>
-        <div className="text-4xl font-bold mt-1">SEK {shouldAnimate ? animatedSalesAmount.toLocaleString() : "15,000"}</div>
-        <div className="text-green-500 mt-1">+10% från förra gången</div>
-      </div>
-
-      <div className="stat-card animate-fade-in [animation-delay:400ms] hover:scale-[1.02] transition-transform duration-200">
-        <span className="text-gray-400 text-lg">Antal sälj</span>
-        <div className="text-4xl font-bold mt-1">{shouldAnimate ? animatedSalesCount : "42"}</div>
-        <div className="text-green-500 mt-1">+15% från förra gången</div>
-      </div>
-
-      <div className="stat-card animate-fade-in [animation-delay:600ms] hover:scale-[1.02] transition-transform duration-200">
-        <span className="text-gray-400 text-lg">Snittordervärde</span>
-        <div className="text-4xl font-bold mt-1">SEK {shouldAnimate ? animatedAverageValue : "327"}</div>
-        <div className="text-red-500 mt-1">-5% från förra gången</div>
-      </div>
+      <TimeLeftCard />
+      <SalesStats shouldAnimate={shouldAnimate} />
     </div>
   );
 };
