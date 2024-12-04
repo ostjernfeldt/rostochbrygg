@@ -52,7 +52,7 @@ export const AllTimeStats = () => {
     <div className="space-y-4 mt-8">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
         <Trophy className="text-yellow-500" size={24} />
-        All-time Topplista
+        R&B Hall of Fame
       </h2>
 
       <StatCard
