@@ -54,10 +54,13 @@ export const useSalesData = () => {
         return sum + amount;
       }, 0);
 
+      // Count the number of transactions
+      const salesCount = salesData.length;
+
       return {
         totalAmount,
-        salesCount: salesData.length,
-        averageValue: salesData.length > 0 ? totalAmount / salesData.length : 0
+        salesCount,
+        averageValue: salesCount > 0 ? totalAmount / salesCount : 0
       };
     }
   });
