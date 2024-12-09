@@ -9,7 +9,6 @@ const Settings = () => {
   const [salesGoal, setSalesGoal] = useState("12000");
   const [startTime, setStartTime] = useState("16:30");
   const [endTime, setEndTime] = useState("20:00");
-  const [bonus, setBonus] = useState("200");
   
   // Challenge states
   const [dailyChallenge, setDailyChallenge] = useState("");
@@ -65,7 +64,6 @@ const Settings = () => {
     localStorage.setItem("workStartTime", startTime);
     localStorage.setItem("workEndTime", endTime);
     localStorage.setItem("salesGoal", salesGoal);
-    localStorage.setItem("dailyBonus", bonus);
 
     try {
       const { error } = await supabase
@@ -134,16 +132,6 @@ const Settings = () => {
                   className="bg-[#1A1F2C] border-none text-white h-12 text-lg" 
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-white text-lg mb-2">Dagens bonus</label>
-              <Input 
-                type="number" 
-                value={bonus}
-                onChange={(e) => setBonus(e.target.value)}
-                className="bg-[#1A1F2C] border-none text-white h-12 text-lg" 
-              />
             </div>
           </div>
         </div>
