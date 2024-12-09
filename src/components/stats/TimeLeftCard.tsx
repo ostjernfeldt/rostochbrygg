@@ -67,7 +67,20 @@ export const TimeLeftCard = () => {
         <span className="text-gray-400 text-lg">Tid kvar av dagen</span>
         <span className="text-lg font-mono">{timeLeft}</span>
       </div>
-      <Progress value={progressValue} className="h-2" />
+      <div className="relative">
+        <Progress 
+          value={progressValue} 
+          className="h-2 relative z-10 bg-opacity-50 [&>div]:animate-pulse [&>div]:shadow-[0_0_10px_rgba(51,195,240,0.7)] [&>div]:bg-primary" 
+        />
+        <div 
+          className="absolute inset-0 bg-primary/20 blur-md rounded-full"
+          style={{
+            transform: `scaleX(${progressValue / 100})`,
+            transformOrigin: 'left',
+            transition: 'transform 0.3s ease-out'
+          }}
+        />
+      </div>
       <div className="mt-2">
         {isWorkInProgress ? (
           <span className="text-gray-400">Arbetspasset pågår</span>
