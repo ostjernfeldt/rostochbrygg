@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ChallengeCard } from "@/components/settings/ChallengeCard";
 
 const Settings = () => {
   const [salesGoal, setSalesGoal] = useState("12000");
@@ -20,7 +20,6 @@ const Settings = () => {
   const [monthlyReward, setMonthlyReward] = useState("");
   const [challengeId, setChallengeId] = useState<string | null>(null);
 
-  // Load saved settings and challenges when component mounts
   useEffect(() => {
     const loadSettings = () => {
       const savedStartTime = localStorage.getItem("workStartTime");
@@ -41,11 +40,11 @@ const Settings = () => {
 
         if (data) {
           setDailyChallenge(data.daily_challenge);
-          setDailyReward(data.daily_reward);
+          setDailyReward(data.daily_reward.replace(/[^\d.]/g, ''));
           setWeeklyChallenge(data.weekly_challenge);
-          setWeeklyReward(data.weekly_reward);
+          setWeeklyReward(data.weekly_reward.replace(/[^\d.]/g, ''));
           setMonthlyChallenge(data.monthly_challenge);
-          setMonthlyReward(data.monthly_reward);
+          setMonthlyReward(data.monthly_reward.replace(/[^\d.]/g, ''));
           setChallengeId(data.id);
         }
       } catch (error) {
@@ -63,23 +62,21 @@ const Settings = () => {
   }, []);
 
   const handleSave = async () => {
-    // Save local settings
     localStorage.setItem("workStartTime", startTime);
     localStorage.setItem("workEndTime", endTime);
     localStorage.setItem("salesGoal", salesGoal);
     localStorage.setItem("dailyBonus", bonus);
 
-    // Save challenges to Supabase
     try {
       const { error } = await supabase
         .from('challenges')
         .update({
           daily_challenge: dailyChallenge,
-          daily_reward: dailyReward,
+          daily_reward: `${dailyReward} SEK bonus`,
           weekly_challenge: weeklyChallenge,
-          weekly_reward: weeklyReward,
+          weekly_reward: `${weeklyReward} SEK bonus`,
           monthly_challenge: monthlyChallenge,
-          monthly_reward: monthlyReward,
+          monthly_reward: `${monthlyReward} SEK bonus`,
         })
         .eq('id', challengeId);
 
@@ -151,59 +148,29 @@ const Settings = () => {
           </div>
         </div>
 
-        <div className="stat-card animate-fade-in hover:scale-[1.02] transition-transform duration-200">
-          <h2 className="text-xl font-bold mb-4">Utmaningar</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-white text-lg mb-2">Dagens utmaning</label>
-              <Textarea 
-                value={dailyChallenge}
-                onChange={(e) => setDailyChallenge(e.target.value)}
-                className="bg-[#1A1F2C] border-none text-white text-lg resize-none" 
-              />
-              <Input 
-                type="text"
-                placeholder="Belöning"
-                value={dailyReward}
-                onChange={(e) => setDailyReward(e.target.value)}
-                className="bg-[#1A1F2C] border-none text-white h-12 text-lg mt-2" 
-              />
-            </div>
+        <ChallengeCard
+          title="Dagens utmaning"
+          challenge={dailyChallenge}
+          setChallenge={setDailyChallenge}
+          reward={dailyReward}
+          setReward={setDailyReward}
+        />
 
-            <div>
-              <label className="block text-white text-lg mb-2">Veckans utmaning</label>
-              <Textarea 
-                value={weeklyChallenge}
-                onChange={(e) => setWeeklyChallenge(e.target.value)}
-                className="bg-[#1A1F2C] border-none text-white text-lg resize-none" 
-              />
-              <Input 
-                type="text"
-                placeholder="Belöning"
-                value={weeklyReward}
-                onChange={(e) => setWeeklyReward(e.target.value)}
-                className="bg-[#1A1F2C] border-none text-white h-12 text-lg mt-2" 
-              />
-            </div>
+        <ChallengeCard
+          title="Veckans utmaning"
+          challenge={weeklyChallenge}
+          setChallenge={setWeeklyChallenge}
+          reward={weeklyReward}
+          setReward={setWeeklyReward}
+        />
 
-            <div>
-              <label className="block text-white text-lg mb-2">Månadens utmaning</label>
-              <Textarea 
-                value={monthlyChallenge}
-                onChange={(e) => setMonthlyChallenge(e.target.value)}
-                className="bg-[#1A1F2C] border-none text-white text-lg resize-none" 
-              />
-              <Input 
-                type="text"
-                placeholder="Belöning"
-                value={monthlyReward}
-                onChange={(e) => setMonthlyReward(e.target.value)}
-                className="bg-[#1A1F2C] border-none text-white h-12 text-lg mt-2" 
-              />
-            </div>
-          </div>
-        </div>
+        <ChallengeCard
+          title="Månadens utmaning"
+          challenge={monthlyChallenge}
+          setChallenge={setMonthlyChallenge}
+          reward={monthlyReward}
+          setReward={setMonthlyReward}
+        />
 
         <Button 
           onClick={handleSave}
