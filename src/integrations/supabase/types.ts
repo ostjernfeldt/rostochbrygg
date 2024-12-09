@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      challenges: {
+        Row: {
+          created_at: string | null
+          daily_challenge: string
+          daily_reward: string
+          id: string
+          monthly_challenge: string
+          monthly_reward: string
+          updated_at: string | null
+          weekly_challenge: string
+          weekly_reward: string
+        }
+        Insert: {
+          created_at?: string | null
+          daily_challenge?: string
+          daily_reward?: string
+          id?: string
+          monthly_challenge?: string
+          monthly_reward?: string
+          updated_at?: string | null
+          weekly_challenge?: string
+          weekly_reward?: string
+        }
+        Update: {
+          created_at?: string | null
+          daily_challenge?: string
+          daily_reward?: string
+          id?: string
+          monthly_challenge?: string
+          monthly_reward?: string
+          updated_at?: string | null
+          weekly_challenge?: string
+          weekly_reward?: string
+        }
+        Relationships: []
+      }
       purchases: {
         Row: {
           Amount: number | null
