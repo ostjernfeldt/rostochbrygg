@@ -8,28 +8,26 @@
   }
   
   html {
-    height: 100vh;
+    height: 100%;
     height: -webkit-fill-available;
-    overflow: hidden;
   }
   
   body {
     @apply bg-background text-white;
-    height: 100vh;
-    height: -webkit-fill-available;
-    overflow: hidden;
-    position: fixed;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    position: relative;
     width: 100%;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: none;
   }
   
   #root {
-    height: 100%;
-    overflow-y: auto;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    padding-bottom: 4rem;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-    padding-bottom: calc(env(safe-area-inset-bottom) + 4rem);
   }
 }
 
@@ -43,7 +41,6 @@
   @apply fixed bottom-0 left-0 right-0 bg-card border-t border-gray-800 p-2;
   background: linear-gradient(180deg, rgba(26,31,44,0.9) 0%, rgba(26,31,44,1) 100%);
   backdrop-filter: blur(10px);
-  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
 }
 
 .bottom-nav-item {
@@ -123,3 +120,4 @@
 .animate-fade-in {
   animation: fade-in 0.5s ease-out forwards;
 }
+
