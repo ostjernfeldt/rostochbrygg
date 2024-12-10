@@ -3,8 +3,31 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: dark;
+  }
+  
+  html {
+    height: 100vh;
+    height: -webkit-fill-available;
+    overflow: hidden;
+  }
+  
   body {
     @apply bg-background text-white;
+    height: 100vh;
+    height: -webkit-fill-available;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
+  }
+  
+  #root {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
   }
 }
@@ -19,6 +42,7 @@
   @apply fixed bottom-0 left-0 right-0 bg-card border-t border-gray-800 p-2;
   background: linear-gradient(180deg, rgba(26,31,44,0.9) 0%, rgba(26,31,44,1) 100%);
   backdrop-filter: blur(10px);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .bottom-nav-item {
