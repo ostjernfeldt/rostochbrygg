@@ -44,15 +44,17 @@ const Leaderboard = () => {
       console.log("Found sales dates:", uniqueDates);
       return uniqueDates;
     },
-    onSuccess: (dates) => {
-      if (dates && dates.length > 0 && !selectedDay) {
-        // Set the most recent date as default
-        const latestDate = dates[0];
-        setSelectedDay(latestDate);
-        
-        // Set the week containing the latest date as default
-        const latestWeekStart = format(startOfWeek(parseISO(latestDate)), 'yyyy-MM-dd');
-        setSelectedWeek(latestWeekStart);
+    meta: {
+      onSuccess: (dates: string[]) => {
+        if (dates && dates.length > 0 && !selectedDay) {
+          // Set the most recent date as default
+          const latestDate = dates[0];
+          setSelectedDay(latestDate);
+          
+          // Set the week containing the latest date as default
+          const latestWeekStart = format(startOfWeek(parseISO(latestDate)), 'yyyy-MM-dd');
+          setSelectedWeek(latestWeekStart);
+        }
       }
     }
   });

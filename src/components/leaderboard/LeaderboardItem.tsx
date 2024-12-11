@@ -5,15 +5,24 @@ interface LeaderboardItemProps {
   displayName: string;
   salesCount: number;
   totalAmount: number;
+  onClick?: () => void;
 }
 
-export const LeaderboardItem = ({ rank, displayName, salesCount, totalAmount }: LeaderboardItemProps) => {
+export const LeaderboardItem = ({ rank, displayName, salesCount, totalAmount, onClick }: LeaderboardItemProps) => {
   const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      navigate(`/staff/${encodeURIComponent(displayName)}`);
+    }
+  };
 
   return (
     <div 
       className={`leaderboard-item ${rank === 1 ? 'first-place' : ''} hover:bg-gray-800 transition-colors cursor-pointer`}
-      onClick={() => navigate(`/staff/${encodeURIComponent(displayName)}`)}
+      onClick={handleClick}
     >
       <div className="flex items-center gap-4">
         <span className={`leaderboard-rank ${
