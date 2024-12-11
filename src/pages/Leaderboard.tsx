@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, parseISO } from "date-fns";
 import { useState } from "react";
 import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection";
 
@@ -14,14 +14,44 @@ interface UserSales {
 interface PurchaseData {
   "User Display Name": string;
   Amount: number;
+  Timestamp: string;
 }
 
 const Leaderboard = () => {
+  const [selectedDay, setSelectedDay] = useState(() => format(new Date(), 'yyyy-MM-dd'));
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [selectedWeek, setSelectedWeek] = useState(() => {
     const now = new Date();
     return `${format(startOfWeek(now), 'yyyy-MM-dd')}`;
   });
+
+  // Fetch dates with sales activity for the daily filter
+  const { data: salesDates } = useQuery({
+    queryKey: ["salesDates"],
+    queryFn: async () => {
+      console.log("Fetching dates with sales activity...");
+      const { data, error } = await supabase
+        .from("purchases")
+        .select("Timestamp")
+        .order("Timestamp", { ascending: false });
+
+      if (error) throw error;
+
+      // Get unique dates and format them
+      const uniqueDates = Array.from(new Set(
+        data.map(purchase => format(new Date(purchase.Timestamp), 'yyyy-MM-dd'))
+      ));
+
+      console.log("Found sales dates:", uniqueDates);
+      return uniqueDates;
+    }
+  });
+
+  // Generate date options from sales dates
+  const dayOptions = (salesDates || []).map(date => ({
+    value: date,
+    label: format(parseISO(date), 'd MMMM yyyy')
+  }));
 
   // Generate last 12 months for the dropdown
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
@@ -65,30 +95,19 @@ const Leaderboard = () => {
   };
 
   const { data: dailyLeaderboard, isLoading: isDailyLoading } = useQuery({
-    queryKey: ["dailyLeaderboard"],
+    queryKey: ["dailyLeaderboard", selectedDay],
     queryFn: async () => {
       console.log("Fetching daily leaderboard data...");
-      
-      const { data: dateData, error: dateError } = await supabase
-        .from("purchases")
-        .select("Timestamp")
-        .order("Timestamp", { ascending: false })
-        .limit(1);
-
-      if (dateError) throw dateError;
-      if (!dateData?.length) return [];
-
-      const latestDate = new Date(dateData[0].Timestamp);
-      const startOfDay = new Date(latestDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(latestDate);
-      endOfDay.setHours(23, 59, 59, 999);
+      const dayStart = parseISO(selectedDay);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setHours(23, 59, 59, 999);
 
       const { data: salesData, error: salesError } = await supabase
         .from("purchases")
-        .select('"User Display Name", Amount')
-        .gte("Timestamp", startOfDay.toISOString())
-        .lte("Timestamp", endOfDay.toISOString())
+        .select('"User Display Name", Amount, Timestamp')
+        .gte("Timestamp", dayStart.toISOString())
+        .lte("Timestamp", dayEnd.toISOString())
         .not("User Display Name", "is", null);
 
       if (salesError) throw salesError;
@@ -142,6 +161,12 @@ const Leaderboard = () => {
           title="Dagens topplista"
           data={dailyLeaderboard}
           isLoading={isDailyLoading}
+          filter={{
+            options: dayOptions,
+            value: selectedDay,
+            onValueChange: setSelectedDay,
+            placeholder: "Välj datum"
+          }}
         />
 
         <LeaderboardSection

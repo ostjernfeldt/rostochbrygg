@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 interface LeaderboardItemProps {
   rank: number;
   displayName: string;
@@ -6,8 +8,13 @@ interface LeaderboardItemProps {
 }
 
 export const LeaderboardItem = ({ rank, displayName, salesCount, totalAmount }: LeaderboardItemProps) => {
+  const navigate = useNavigate();
+
   return (
-    <div className={`leaderboard-item ${rank === 1 ? 'first-place' : ''}`}>
+    <div 
+      className={`leaderboard-item ${rank === 1 ? 'first-place' : ''} hover:bg-gray-800 transition-colors cursor-pointer`}
+      onClick={() => navigate(`/staff/${encodeURIComponent(displayName)}`)}
+    >
       <div className="flex items-center gap-4">
         <span className={`leaderboard-rank ${
           rank === 1 ? 'gold' : 
