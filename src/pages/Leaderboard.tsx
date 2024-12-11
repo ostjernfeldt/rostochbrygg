@@ -124,7 +124,7 @@ const Leaderboard = () => {
 
       const { data: salesData, error: salesError } = await supabase
         .from("purchases")
-        .select('"User Display Name", Amount')
+        .select('"User Display Name", Amount, Timestamp')
         .gte("Timestamp", weekStart.toISOString())
         .lte("Timestamp", weekEnd.toISOString())
         .not("User Display Name", "is", null);
@@ -144,7 +144,7 @@ const Leaderboard = () => {
 
       const { data: salesData, error: salesError } = await supabase
         .from("purchases")
-        .select('"User Display Name", Amount')
+        .select('"User Display Name", Amount, Timestamp')
         .gte("Timestamp", monthStart.toISOString())
         .lte("Timestamp", monthEnd.toISOString())
         .not("User Display Name", "is", null);
