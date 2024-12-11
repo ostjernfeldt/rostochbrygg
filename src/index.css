@@ -45,7 +45,10 @@
 }
 
 .leaderboard-item {
-  @apply p-4 rounded-xl bg-card flex justify-between items-center;
+  @apply p-4 rounded-xl bg-card flex justify-between items-center mb-3;
+  background: linear-gradient(145deg, rgba(26,31,44,0.95) 0%, rgba(26,31,44,0.85) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .leaderboard-rank {
@@ -54,14 +57,17 @@
 
 .leaderboard-rank.gold {
   color: #FFD700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 }
 
 .leaderboard-rank.silver {
   color: #C0C0C0;
+  text-shadow: 0 0 10px rgba(192, 192, 192, 0.3);
 }
 
 .leaderboard-rank.bronze {
   color: #CD7F32;
+  text-shadow: 0 0 10px rgba(205, 127, 50, 0.3);
 }
 
 .leaderboard-sales {
@@ -70,4 +76,16 @@
 
 .leaderboard-amount {
   @apply text-primary font-bold;
+}
+
+.percentage-change {
+  @apply text-sm font-medium ml-2;
+}
+
+.percentage-change.positive {
+  @apply text-green-500;
+}
+
+.percentage-change.negative {
+  @apply text-red-500;
 }
