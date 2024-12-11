@@ -111,10 +111,13 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
           }, {});
 
           const sortedTotals = Object.entries(totals)
-            .sort(([, a], [, b]) => Number(b) - Number(a));
+            .sort(([, a], [, b]) => b - a);
 
           return sortedTotals.length > 0 
-            ? { name: sortedTotals[0][0], amount: sortedTotals[0][1] }
+            ? { 
+                name: sortedTotals[0][0], 
+                amount: Number(sortedTotals[0][1]) // Ensure amount is a number
+              }
             : null;
         };
 
