@@ -8,27 +8,87 @@ const TransactionList = () => {
   const navigate = useNavigate();
   
   const { data: transactions, isLoading } = useQuery({
-    queryKey: ["todaysTransactions"],
+    queryKey: ["latestTransactions"],
     queryFn: async () => {
-      console.log("Fetching today's transactions...");
+      console.log("Fetching transactions...");
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const { data, error } = await supabase
+      // First try to get today's transactions
+      const todayResult = await supabase
         .from("purchases")
         .select("*")
         .gte("Timestamp", today.toISOString())
         .order("Timestamp", { ascending: false });
-        
-      if (error) {
-        console.error("Error fetching transactions:", error);
-        throw error;
+
+      if (todayResult.error) {
+        console.error("Error fetching today's transactions:", todayResult.error);
+        throw todayResult.error;
       }
+
+      console.log("Today's transactions:", todayResult.data);
+
+      // If we have transactions for today, return them
+      if (todayResult.data && todayResult.data.length > 0) {
+        return {
+          transactions: todayResult.data,
+          date: today
+        };
+      }
+
+      // If no transactions today, find the latest date with transactions
+      const latestDateResult = await supabase
+        .from("purchases")
+        .select("Timestamp")
+        .order("Timestamp", { ascending: false })
+        .limit(1);
+
+      if (latestDateResult.error) {
+        console.error("Error fetching latest date:", latestDateResult.error);
+        throw latestDateResult.error;
+      }
+
+      if (!latestDateResult.data || latestDateResult.data.length === 0) {
+        return {
+          transactions: [],
+          date: today
+        };
+      }
+
+      const latestDate = new Date(latestDateResult.data[0].Timestamp);
+      latestDate.setHours(0, 0, 0, 0);
       
-      console.log("Fetched transactions:", data);
-      return data;
+      // Get all transactions for the latest date
+      const latestTransactions = await supabase
+        .from("purchases")
+        .select("*")
+        .gte("Timestamp", latestDate.toISOString())
+        .lt("Timestamp", new Date(latestDate.getTime() + 24 * 60 * 60 * 1000).toISOString())
+        .order("Timestamp", { ascending: false });
+
+      if (latestTransactions.error) {
+        console.error("Error fetching latest transactions:", latestTransactions.error);
+        throw latestTransactions.error;
+      }
+
+      console.log("Latest transactions:", latestTransactions.data);
+      return {
+        transactions: latestTransactions.data,
+        date: latestDate
+      };
     }
   });
+
+  const formatDate = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (date.getTime() === today.getTime()) {
+      return "Dagens";
+    }
+    
+    return format(date, "d MMMM yyyy");
+  };
 
   return (
     <div className="p-4 pb-24">
@@ -39,7 +99,9 @@ const TransactionList = () => {
         >
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-2xl font-bold">Dagens transaktioner</h1>
+        <h1 className="text-2xl font-bold">
+          {transactions?.date ? `${formatDate(transactions.date)} transaktioner` : 'Transaktioner'}
+        </h1>
       </div>
 
       {isLoading ? (
@@ -51,9 +113,9 @@ const TransactionList = () => {
             </div>
           ))}
         </div>
-      ) : transactions && transactions.length > 0 ? (
+      ) : transactions?.transactions && transactions.transactions.length > 0 ? (
         <div className="space-y-4">
-          {transactions.map((transaction) => (
+          {transactions.transactions.map((transaction) => (
             <div key={transaction.id} className="bg-card rounded-xl p-4 hover:scale-[1.02] transition-transform duration-200">
               <div className="flex justify-between items-start mb-2">
                 <span className="text-gray-400">
@@ -72,7 +134,7 @@ const TransactionList = () => {
         </div>
       ) : (
         <div className="text-center text-gray-400 mt-8">
-          Inga transaktioner idag
+          Inga transaktioner hittades
         </div>
       )}
     </div>
