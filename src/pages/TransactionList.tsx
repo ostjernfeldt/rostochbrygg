@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { SalesChart } from "@/components/SalesChart";
+import { PageLayout } from "@/components/PageLayout";
 
 const TransactionList = () => {
   const navigate = useNavigate();
@@ -107,7 +108,7 @@ const TransactionList = () => {
   );
 
   return (
-    <div className="p-4 pb-24">
+    <PageLayout>
       <div className="flex items-center gap-2 mb-6">
         <button 
           onClick={() => navigate("/")}
@@ -192,7 +193,7 @@ const TransactionList = () => {
           Inga transaktioner hittades
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 };
 

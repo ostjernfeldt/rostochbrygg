@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageLayout } from "@/components/PageLayout";
 
 const articles = {
   "kaffe-grundlaggande": {
@@ -57,18 +58,18 @@ const Article = () => {
 
   if (!article) {
     return (
-      <div className="p-4">
+      <PageLayout>
         <Button onClick={() => navigate("/learn")} variant="ghost" className="mb-4">
           <ArrowLeft className="mr-2" />
           Tillbaka
         </Button>
         <p>Artikel hittades inte.</p>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="p-4 pb-24 animate-fade-in">
+    <PageLayout>
       <Button onClick={() => navigate("/learn")} variant="ghost" className="mb-4">
         <ArrowLeft className="mr-2" />
         Tillbaka
@@ -86,7 +87,7 @@ const Article = () => {
         className="prose prose-invert max-w-none"
         dangerouslySetInnerHTML={{ __html: article.content }}
       />
-    </div>
+    </PageLayout>
   );
 };
 
