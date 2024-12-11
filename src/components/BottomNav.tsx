@@ -18,6 +18,7 @@ export const BottomNav = () => {
     { path: "/leaderboard", label: "Topplista" },
     { path: "/staff", label: "Personal" },
     { path: "/learn", label: "Kunskap" },
+    { path: "/overview", label: "Översikt" },
     { path: "/settings", label: "Inställningar" },
   ];
 
