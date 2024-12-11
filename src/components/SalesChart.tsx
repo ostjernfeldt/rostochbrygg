@@ -29,7 +29,7 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
       if (transaction.Amount) {
         cumulativeAmount += transaction.Amount;
       }
-      console.log(`Transaction at ${format(new Date(transaction.Timestamp), 'HH:mm')}: ${transaction.Amount}, Cumulative: ${cumulativeAmount}`);
+      console.log(`Transaction at ${format(new Date(transaction.Timestamp), 'yyyy-MM-dd')}: ${transaction.Amount}, Cumulative: ${cumulativeAmount}`);
       return {
         timestamp: transaction.Timestamp,
         amount: cumulativeAmount
@@ -55,7 +55,7 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
           <XAxis 
             dataKey="timestamp" 
             stroke="#666"
-            tickFormatter={(value) => format(new Date(value), 'HH:mm', { locale: sv })}
+            tickFormatter={(value) => format(new Date(value), 'yyyy-MM-dd', { locale: sv })}
           />
           <YAxis 
             stroke="#666"
@@ -69,7 +69,7 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
               borderRadius: '8px'
             }}
             formatter={(value: number) => [`${value.toLocaleString()} kr`, 'Total försäljning']}
-            labelFormatter={(label) => format(new Date(label), 'HH:mm, dd MMMM yyyy', { locale: sv })}
+            labelFormatter={(label) => format(new Date(label), 'yyyy-MM-dd HH:mm', { locale: sv })}
           />
           <Area 
             type="monotone" 
