@@ -21,9 +21,9 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
         if (!latestSale) {
           console.log("No sales found");
           return {
-            dailyLeader: null,
-            weeklyLeader: null,
-            monthlyLeader: null
+            dailyLeaders: [],
+            weeklyLeaders: [],
+            monthlyLeaders: []
           };
         }
 
@@ -56,34 +56,41 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
 
         if (salesError) throw salesError;
 
-        const calculateLeader = (sales: any[] | null) => {
-          if (!sales || sales.length === 0) return null;
+        const calculateLeaders = (sales: any[] | null) => {
+          if (!sales || sales.length === 0) return [];
           
-          const totals = sales.reduce((acc: { [key: string]: number }, sale) => {
+          // Group sales by user and calculate total amount and count
+          const userTotals = sales.reduce((acc: { [key: string]: { totalAmount: number; salesCount: number } }, sale) => {
             const name = sale["User Display Name"];
             const amount = Number(sale.Amount || 0);
-            acc[name] = (acc[name] || 0) + amount;
+            
+            if (!acc[name]) {
+              acc[name] = { totalAmount: 0, salesCount: 0 };
+            }
+            
+            acc[name].totalAmount += amount;
+            acc[name].salesCount += 1;
+            
             return acc;
           }, {});
 
-          const sortedTotals = Object.entries(totals)
-            .sort(([, a], [, b]) => Number(b) - Number(a));
-
-          return sortedTotals.length > 0 
-            ? { 
-                name: sortedTotals[0][0], 
-                amount: Number(sortedTotals[0][1])
-              }
-            : null;
+          // Convert to array and sort by total amount
+          return Object.entries(userTotals)
+            .map(([name, { totalAmount, salesCount }]) => ({
+              "User Display Name": name,
+              totalAmount,
+              salesCount
+            }))
+            .sort((a, b) => b.totalAmount - a.totalAmount);
         };
 
-        const leader = calculateLeader(sales || []);
-        console.log(`${type} leader calculated:`, leader);
+        const leaders = calculateLeaders(sales || []);
+        console.log(`${type} leaders calculated:`, leaders);
 
         return {
-          dailyLeader: type === 'daily' ? leader : null,
-          weeklyLeader: type === 'weekly' ? leader : null,
-          monthlyLeader: type === 'monthly' ? leader : null
+          dailyLeaders: type === 'daily' ? leaders : [],
+          weeklyLeaders: type === 'weekly' ? leaders : [],
+          monthlyLeaders: type === 'monthly' ? leaders : []
         };
       } catch (error) {
         console.error(`Error in ${type} challenge leaders query:`, error);

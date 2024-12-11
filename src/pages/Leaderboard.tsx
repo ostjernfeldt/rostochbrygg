@@ -56,16 +56,6 @@ const Leaderboard = () => {
   const { data: weeklyLeaderboard, isLoading: isWeeklyLoading } = useLeaderboardData('weekly', selectedWeek);
   const { data: monthlyLeaderboard, isLoading: isMonthlyLoading } = useLeaderboardData('monthly', selectedMonth);
 
-  // Transform leader data to match UserSales[] type
-  const transformLeaderToUserSales = (leader: { name: string; amount: number } | null) => {
-    if (!leader) return [];
-    return [{
-      "User Display Name": leader.name,
-      totalAmount: leader.amount,
-      salesCount: 1 // Since we don't have the actual sales count, we'll default to 1
-    }];
-  };
-
   const handleUserClick = (userName: string) => {
     navigate(`/staff/${encodeURIComponent(userName)}`);
   };
@@ -75,7 +65,7 @@ const Leaderboard = () => {
       <div className="space-y-8">
         <LeaderboardSection
           title="Dagens topplista"
-          data={dailyLeaderboard?.dailyLeader ? transformLeaderToUserSales(dailyLeaderboard.dailyLeader) : []}
+          data={dailyLeaderboard?.dailyLeaders || []}
           isLoading={isDailyLoading}
           filter={{
             options: dayOptions,
@@ -88,7 +78,7 @@ const Leaderboard = () => {
 
         <LeaderboardSection
           title="Veckans topplista"
-          data={weeklyLeaderboard?.weeklyLeader ? transformLeaderToUserSales(weeklyLeaderboard.weeklyLeader) : []}
+          data={weeklyLeaderboard?.weeklyLeaders || []}
           isLoading={isWeeklyLoading}
           filter={{
             options: weekOptions,
@@ -101,7 +91,7 @@ const Leaderboard = () => {
 
         <LeaderboardSection
           title="Månadens topplista"
-          data={monthlyLeaderboard?.monthlyLeader ? transformLeaderToUserSales(monthlyLeaderboard.monthlyLeader) : []}
+          data={monthlyLeaderboard?.monthlyLeaders || []}
           isLoading={isMonthlyLoading}
           filter={{
             options: monthOptions,
