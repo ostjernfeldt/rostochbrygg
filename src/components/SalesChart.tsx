@@ -12,20 +12,25 @@ interface SalesChartProps {
 
 export const SalesChart = ({ transactions }: SalesChartProps) => {
   const chartData = useMemo(() => {
-    // Group transactions by date and sum amounts
+    // Group transactions by hour and sum amounts
     const groupedData = transactions.reduce((acc: Record<string, number>, curr) => {
-      const date = format(new Date(curr.Timestamp), 'yyyy-MM-dd');
-      acc[date] = (acc[date] || 0) + (curr.Amount || 0);
+      // Format timestamp to include both date and hour
+      const timestamp = new Date(curr.Timestamp);
+      // Set minutes and seconds to 0 to group by hour
+      timestamp.setMinutes(0, 0, 0);
+      const hourKey = timestamp.toISOString();
+      
+      acc[hourKey] = (acc[hourKey] || 0) + (curr.Amount || 0);
       return acc;
     }, {});
 
-    // Convert to array and sort by date
+    // Convert to array and sort by timestamp
     return Object.entries(groupedData)
-      .map(([date, amount]) => ({
-        date,
+      .map(([timestamp, amount]) => ({
+        timestamp,
         amount
       }))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }, [transactions]);
 
   if (chartData.length === 0) return null;
@@ -41,9 +46,9 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
             </linearGradient>
           </defs>
           <XAxis 
-            dataKey="date" 
+            dataKey="timestamp" 
             stroke="#666"
-            tickFormatter={(value) => format(new Date(value), 'd MMM', { locale: sv })}
+            tickFormatter={(value) => format(new Date(value), 'HH:mm', { locale: sv })}
           />
           <YAxis 
             stroke="#666"
@@ -56,7 +61,7 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
               borderRadius: '8px'
             }}
             formatter={(value: number) => [`${value.toLocaleString()} kr`, 'Försäljning']}
-            labelFormatter={(label) => format(new Date(label), 'dd MMMM yyyy', { locale: sv })}
+            labelFormatter={(label) => format(new Date(label), 'HH:mm, dd MMMM yyyy', { locale: sv })}
           />
           <Area 
             type="monotone" 
