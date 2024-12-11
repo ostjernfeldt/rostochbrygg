@@ -99,11 +99,14 @@ export default function Overview() {
     },
   });
 
-  // Create date filter options
-  const dateFilterOptions = salesDates?.map(date => ({
-    value: date,
-    label: format(new Date(date), 'd MMMM yyyy', { locale: sv })
-  })) || [];
+  // Create date filter options with a clear option
+  const dateFilterOptions = [
+    { value: "", label: "Välj period" },
+    ...(salesDates?.map(date => ({
+      value: date,
+      label: format(new Date(date), 'd MMMM yyyy', { locale: sv })
+    })) || [])
+  ];
 
   return (
     <PageLayout>
