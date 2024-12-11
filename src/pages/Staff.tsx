@@ -130,7 +130,7 @@ const Staff = () => {
             placeholder="Sök säljare..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 bg-card border-gray-800"
           />
         </div>
         
@@ -139,12 +139,16 @@ const Staff = () => {
             value={sortField}
             onValueChange={(value) => setSortField(value as SortField)}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] bg-card border-gray-800">
               <SelectValue placeholder="Sortera efter" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-card border-gray-800">
               {sortOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
+                <SelectItem 
+                  key={option.value} 
+                  value={option.value}
+                  className="focus:bg-gray-800"
+                >
                   {option.label}
                 </SelectItem>
               ))}
@@ -155,12 +159,12 @@ const Staff = () => {
             value={sortDirection}
             onValueChange={(value) => setSortDirection(value as 'asc' | 'desc')}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] bg-card border-gray-800">
               <SelectValue placeholder="Sorteringsordning" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="desc">Högst först</SelectItem>
-              <SelectItem value="asc">Lägst först</SelectItem>
+            <SelectContent className="bg-card border-gray-800">
+              <SelectItem value="desc" className="focus:bg-gray-800">Högst först</SelectItem>
+              <SelectItem value="asc" className="focus:bg-gray-800">Lägst först</SelectItem>
             </SelectContent>
           </Select>
         </div>
