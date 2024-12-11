@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { format, startOfDay, addHours } from "date-fns";
+import { format, addHours } from "date-fns";
 import { sv } from "date-fns/locale";
 
 interface SalesChartProps {
@@ -14,15 +14,27 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
   const chartData = useMemo(() => {
     if (transactions.length === 0) return [];
 
-    // Find the start of the day for the first transaction
-    const firstTransaction = new Date(transactions[0].Timestamp);
-    const dayStart = startOfDay(firstTransaction);
+    // Find the first and last transaction times
+    const sortedTransactions = [...transactions].sort(
+      (a, b) => new Date(a.Timestamp).getTime() - new Date(b.Timestamp).getTime()
+    );
     
-    // Create an array of all hours in the day
+    const firstTransaction = new Date(sortedTransactions[0].Timestamp);
+    const lastTransaction = new Date(sortedTransactions[sortedTransactions.length - 1].Timestamp);
+    
+    // Set to start of the hour for first transaction
+    firstTransaction.setMinutes(0, 0, 0);
+    
+    // Set to end of the hour for last transaction
+    lastTransaction.setMinutes(59, 59, 999);
+
+    // Create an array of all hours between first and last transaction
     const hourlyData: Record<string, number> = {};
-    for (let i = 0; i < 24; i++) {
-      const hourTimestamp = addHours(dayStart, i);
-      hourlyData[hourTimestamp.toISOString()] = 0;
+    let currentHour = new Date(firstTransaction);
+    
+    while (currentHour <= lastTransaction) {
+      hourlyData[currentHour.toISOString()] = 0;
+      currentHour = addHours(currentHour, 1);
     }
 
     // Group transactions by hour
@@ -63,6 +75,7 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
           <YAxis 
             stroke="#666"
             tickFormatter={(value) => value.toLocaleString()}
+            scale="linear"
           />
           <Tooltip 
             contentStyle={{ 
