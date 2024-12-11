@@ -67,17 +67,22 @@ export default function Overview() {
         sales.map((sale) => sale["User Display Name"])
       );
 
-      // Calculate payment method statistics
-      const paymentMethods = sales.reduce((acc, sale) => {
+      // Calculate payment method statistics with amounts
+      const paymentMethodStats = sales.reduce((acc, sale) => {
         const method = sale["Payment Type"] || "Okänd";
-        acc[method] = (acc[method] || 0) + 1;
+        if (!acc[method]) {
+          acc[method] = { count: 0, amount: 0 };
+        }
+        acc[method].count += 1;
+        acc[method].amount += sale.Amount || 0;
         return acc;
-      }, {} as Record<string, number>);
+      }, {} as Record<string, { count: number; amount: number }>);
 
       const totalSales = sales.length;
-      const paymentMethodStats = Object.entries(paymentMethods).map(([method, count]) => ({
+      const paymentMethodStatsArray = Object.entries(paymentMethodStats).map(([method, { count, amount }]) => ({
         method,
         count,
+        amount,
         percentage: ((count / totalSales) * 100).toFixed(1)
       }));
 
@@ -94,7 +99,7 @@ export default function Overview() {
         uniqueSellers: uniqueSellers.size,
         dailyAverage: uniqueDates.size > 0 ? totalAmount / uniqueDates.size : 0,
         transactions: sales,
-        paymentMethodStats
+        paymentMethodStats: paymentMethodStatsArray
       };
     },
   });
@@ -199,3 +204,4 @@ export default function Overview() {
     </PageLayout>
   );
 }
+};
