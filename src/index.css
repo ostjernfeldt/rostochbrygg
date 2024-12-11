@@ -53,17 +53,33 @@
 
 .leaderboard-item:first-child {
   border-color: #FFD700;
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+  animation: goldPulse 2s infinite;
 }
 
 .leaderboard-item:nth-child(2) {
   border-color: #C0C0C0;
-  box-shadow: 0 0 15px rgba(192, 192, 192, 0.2);
+  box-shadow: 0 0 15px rgba(192, 192, 192, 0.3);
 }
 
 .leaderboard-item:nth-child(3) {
   border-color: #CD7F32;
-  box-shadow: 0 0 15px rgba(205, 127, 50, 0.2);
+  box-shadow: 0 0 15px rgba(205, 127, 50, 0.3);
+}
+
+@keyframes goldPulse {
+  0% {
+    border-color: #FFD700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    border-color: #FFC800;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+  }
+  100% {
+    border-color: #FFD700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+  }
 }
 
 .leaderboard-rank {
