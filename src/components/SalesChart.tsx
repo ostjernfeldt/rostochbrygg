@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { format } from "date-fns";
+import { format, startOfDay, addHours } from "date-fns";
 import { sv } from "date-fns/locale";
 
 interface SalesChartProps {
@@ -12,24 +12,33 @@ interface SalesChartProps {
 
 export const SalesChart = ({ transactions }: SalesChartProps) => {
   const chartData = useMemo(() => {
-    // Group transactions by hour and sum amounts
-    const groupedData = transactions.reduce((acc: Record<string, number>, curr) => {
-      // Format timestamp to include both date and hour
-      const timestamp = new Date(curr.Timestamp);
-      // Set minutes and seconds to 0 to group by hour
+    if (transactions.length === 0) return [];
+
+    // Find the start of the day for the first transaction
+    const firstTransaction = new Date(transactions[0].Timestamp);
+    const dayStart = startOfDay(firstTransaction);
+    
+    // Create an array of all hours in the day
+    const hourlyData: Record<string, number> = {};
+    for (let i = 0; i < 24; i++) {
+      const hourTimestamp = addHours(dayStart, i);
+      hourlyData[hourTimestamp.toISOString()] = 0;
+    }
+
+    // Group transactions by hour
+    transactions.forEach(transaction => {
+      const timestamp = new Date(transaction.Timestamp);
       timestamp.setMinutes(0, 0, 0);
       const hourKey = timestamp.toISOString();
-      
-      acc[hourKey] = (acc[hourKey] || 0) + (curr.Amount || 0);
-      return acc;
-    }, {});
+      hourlyData[hourKey] = (hourlyData[hourKey] || 0) + (transaction.Amount || 0);
+    });
 
-    // Convert to array, sort by timestamp, and calculate cumulative amounts
+    // Calculate cumulative amounts
     let cumulativeAmount = 0;
-    return Object.entries(groupedData)
+    return Object.entries(hourlyData)
       .map(([timestamp, amount]) => ({
         timestamp,
-        amount: (cumulativeAmount += amount) // Calculate running total
+        amount: (cumulativeAmount += amount)
       }))
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }, [transactions]);
