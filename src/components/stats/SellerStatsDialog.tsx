@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -99,33 +100,35 @@ export const SellerStatsDialog = ({ isOpen, onClose, type }: SellerStatsDialogPr
             Statistik från senaste säljpasset
           </div>
         </DialogTitle>
-        <div className="space-y-4 mt-4">
-          {isLoading ? (
-            <div className="text-center">Laddar statistik...</div>
-          ) : !stats || stats.length === 0 ? (
-            <div className="text-center">Ingen data tillgänglig</div>
-          ) : (
-            stats.map((seller, index) => (
-              <div
-                key={seller["User Display Name"]}
-                className="flex justify-between items-center p-4 bg-card rounded-lg"
-              >
-                <div>
-                  <div className="font-medium">{seller["User Display Name"]}</div>
-                  <div className="text-sm text-gray-500">
-                    {type === "sales" 
-                      ? `${seller.salesCount} sälj`
-                      : `SEK ${seller.averageValue.toLocaleString()}`
-                    }
+        <ScrollArea className="h-[60vh] mt-4">
+          <div className="space-y-4 pr-4">
+            {isLoading ? (
+              <div className="text-center">Laddar statistik...</div>
+            ) : !stats || stats.length === 0 ? (
+              <div className="text-center">Ingen data tillgänglig</div>
+            ) : (
+              stats.map((seller, index) => (
+                <div
+                  key={seller["User Display Name"]}
+                  className="flex justify-between items-center p-4 bg-card rounded-lg"
+                >
+                  <div>
+                    <div className="font-medium">{seller["User Display Name"]}</div>
+                    <div className="text-sm text-gray-500">
+                      {type === "sales" 
+                        ? `${seller.salesCount} sälj`
+                        : `SEK ${seller.averageValue.toLocaleString()}`
+                      }
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-primary">
+                    #{index + 1}
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-primary">
-                  #{index + 1}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
