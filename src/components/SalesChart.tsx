@@ -25,28 +25,33 @@ export const SalesChart = ({ transactions, groupByWeek = false }: SalesChartProp
     console.log("Sorted transactions:", sortedTransactions);
 
     if (groupByWeek) {
-      // Group transactions by week and calculate total amount for each week
+      // Group transactions by week and calculate cumulative amount for each week
+      let cumulativeAmount = 0;
       const weeklyData = sortedTransactions.reduce((acc, transaction) => {
         const date = new Date(transaction.Timestamp);
         const weekStart = startOfWeek(date, { locale: sv });
         const weekKey = format(weekStart, "yyyy-MM-dd");
         
         if (!acc[weekKey]) {
+          if (transaction.Amount) {
+            cumulativeAmount += transaction.Amount;
+          }
           acc[weekKey] = {
             timestamp: weekStart.toISOString(),
-            amount: 0
+            amount: cumulativeAmount
           };
-        }
-        
-        if (transaction.Amount) {
-          acc[weekKey].amount += transaction.Amount;
+        } else {
+          if (transaction.Amount) {
+            cumulativeAmount += transaction.Amount;
+            acc[weekKey].amount = cumulativeAmount;
+          }
         }
         
         return acc;
       }, {} as Record<string, { timestamp: string; amount: number }>);
 
       const result = Object.values(weeklyData);
-      console.log("Weekly chart data:", result);
+      console.log("Weekly cumulative chart data:", result);
       return result;
     } else {
       // Calculate cumulative amount for each transaction
@@ -101,7 +106,7 @@ export const SalesChart = ({ transactions, groupByWeek = false }: SalesChartProp
             }}
             formatter={(value: number) => [
               `${value.toLocaleString()} kr`, 
-              groupByWeek ? 'Försäljning denna vecka' : 'Total försäljning'
+              groupByWeek ? 'Total försäljning' : 'Total försäljning'
             ]}
             labelFormatter={(label) => {
               const date = new Date(label);
