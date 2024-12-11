@@ -4,6 +4,7 @@ import { Calendar } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 type ChallengeType = "daily" | "weekly" | "monthly";
 
@@ -14,6 +15,7 @@ export const ChallengeManager = () => {
   const [week, setWeek] = useState(format(new Date(), "yyyy-'W'ww"));
   const [month, setMonth] = useState(format(new Date(), "yyyy-MM"));
   const [reward, setReward] = useState("");
+  const queryClient = useQueryClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,8 +58,10 @@ export const ChallengeManager = () => {
         className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
       });
 
+      // Reset form and refresh challenges list
       setShowForm(false);
       setReward("");
+      queryClient.invalidateQueries({ queryKey: ["active-challenges"] });
     } catch (error) {
       console.error("Error creating challenge:", error);
       toast({

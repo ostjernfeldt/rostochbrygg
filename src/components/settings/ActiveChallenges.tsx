@@ -2,10 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Trash } from "lucide-react";
+import { Trash, Edit2, Check, X } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
 
 export const ActiveChallenges = () => {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingReward, setEditingReward] = useState("");
+
   const { data: challenges, refetch } = useQuery({
     queryKey: ["active-challenges"],
     queryFn: async () => {
@@ -40,6 +45,38 @@ export const ActiveChallenges = () => {
       toast({
         title: "Ett fel uppstod",
         description: "Kunde inte ta bort utmaningen",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = (id: string, currentReward: number) => {
+    setEditingId(id);
+    setEditingReward(currentReward.toString());
+  };
+
+  const handleSave = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("challenges")
+        .update({ reward: parseFloat(editingReward) })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Utmaning uppdaterad",
+        description: "Beloppet har uppdaterats",
+        className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
+      });
+
+      setEditingId(null);
+      refetch();
+    } catch (error) {
+      console.error("Error updating challenge:", error);
+      toast({
+        title: "Ett fel uppstod",
+        description: "Kunde inte uppdatera utmaningen",
         variant: "destructive",
       });
     }
@@ -89,21 +126,66 @@ export const ActiveChallenges = () => {
             key={challenge.id}
             className="flex items-center justify-between p-4 bg-[#1A1F2C] rounded-lg"
           >
-            <div>
+            <div className="flex-grow">
               <h3 className="font-bold">{getTypeLabel(challenge.type)}</h3>
               <p className="text-gray-400">
                 {formatDateRange(challenge.start_date, challenge.end_date, challenge.type)}
               </p>
-              <p className="text-green-500">{challenge.reward} SEK bonus</p>
+              {editingId === challenge.id ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    type="number"
+                    value={editingReward}
+                    onChange={(e) => setEditingReward(e.target.value)}
+                    className="w-32 h-8 text-sm"
+                  />
+                  <span className="text-gray-400">SEK bonus</span>
+                </div>
+              ) : (
+                <p className="text-green-500">{challenge.reward} SEK bonus</p>
+              )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleDelete(challenge.id)}
-              className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-            >
-              <Trash size={20} />
-            </Button>
+            <div className="flex items-center gap-2">
+              {editingId === challenge.id ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleSave(challenge.id)}
+                    className="text-green-500 hover:text-green-600 hover:bg-green-500/10"
+                  >
+                    <Check size={20} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setEditingId(null)}
+                    className="text-gray-400 hover:text-gray-500 hover:bg-gray-500/10"
+                  >
+                    <X size={20} />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEdit(challenge.id, challenge.reward)}
+                    className="text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+                  >
+                    <Edit2 size={20} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(challenge.id)}
+                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                  >
+                    <Trash size={20} />
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         ))}
       </div>
