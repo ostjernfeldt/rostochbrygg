@@ -24,11 +24,12 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
       return acc;
     }, {});
 
-    // Convert to array and sort by timestamp
+    // Convert to array, sort by timestamp, and calculate cumulative amounts
+    let cumulativeAmount = 0;
     return Object.entries(groupedData)
       .map(([timestamp, amount]) => ({
         timestamp,
-        amount
+        amount: (cumulativeAmount += amount) // Calculate running total
       }))
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }, [transactions]);
@@ -52,7 +53,7 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
           />
           <YAxis 
             stroke="#666"
-            tickFormatter={(value) => `${value.toLocaleString()} kr`}
+            tickFormatter={(value) => value.toLocaleString()}
           />
           <Tooltip 
             contentStyle={{ 
@@ -60,7 +61,7 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
               border: '1px solid rgba(51, 195, 240, 0.2)',
               borderRadius: '8px'
             }}
-            formatter={(value: number) => [`${value.toLocaleString()} kr`, 'Försäljning']}
+            formatter={(value: number) => [`${value.toLocaleString()} kr`, 'Total försäljning']}
             labelFormatter={(label) => format(new Date(label), 'HH:mm, dd MMMM yyyy', { locale: sv })}
           />
           <Area 
