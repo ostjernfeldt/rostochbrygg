@@ -1,7 +1,7 @@
 import { Trophy, Gift, Laptop } from "lucide-react";
 import { ChallengeCard } from "./ChallengeCard";
 import { format, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChallengeDateFilter } from "./ChallengeDateFilter";
@@ -19,6 +19,11 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
     const now = new Date();
     return `${format(startOfWeek(now), 'yyyy-MM-dd')}`;
   });
+
+  // Update selectedDay when defaultDate changes
+  useEffect(() => {
+    setSelectedDay(defaultDate);
+  }, [defaultDate]);
 
   const { data: challenges } = useQuery({
     queryKey: ["challenges"],
@@ -116,7 +121,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
           return sortedTotals.length > 0 
             ? { 
                 name: sortedTotals[0][0], 
-                amount: Number(sortedTotals[0][1]) // Ensure amount is a number
+                amount: Number(sortedTotals[0][1])
               }
             : null;
         };
