@@ -1,7 +1,9 @@
 import { useCountAnimation } from "@/hooks/useCountAnimation";
 import { useSalesData } from "@/hooks/useSalesData";
+import { useNavigate } from "react-router-dom";
 
 export const SalesStats = ({ shouldAnimate = false }) => {
+  const navigate = useNavigate();
   const { data: salesData, isLoading } = useSalesData();
   
   const animatedSalesAmount = useCountAnimation(
@@ -36,7 +38,6 @@ export const SalesStats = ({ shouldAnimate = false }) => {
     );
   }
 
-  // If data is undefined, show empty state
   if (!salesData) {
     return (
       <>
@@ -66,7 +67,10 @@ export const SalesStats = ({ shouldAnimate = false }) => {
 
   return (
     <>
-      <div className="stat-card animate-fade-in [animation-delay:200ms] hover:scale-[1.02] transition-transform duration-200">
+      <div 
+        onClick={() => navigate("/transactions")}
+        className="stat-card animate-fade-in [animation-delay:200ms] hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
+      >
         <span className="text-gray-400 text-lg">Total försäljning</span>
         <div className="text-4xl font-bold mt-1">
           SEK {shouldAnimate ? animatedSalesAmount.toLocaleString() : salesData.totalAmount.toLocaleString()}

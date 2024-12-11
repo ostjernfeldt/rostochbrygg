@@ -12,6 +12,7 @@ import Settings from "./pages/Settings";
 import Learn from "./pages/Learn";
 import Article from "./pages/Article";
 import Login from "./pages/Login";
+import TransactionList from "./pages/TransactionList";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +83,11 @@ const AppContent = () => {
         <Route path="/learn/:slug" element={
           <PrivateRoute>
             <Article />
+          </PrivateRoute>
+        } />
+        <Route path="/transactions" element={
+          <PrivateRoute>
+            <TransactionList />
           </PrivateRoute>
         } />
       </Routes>
