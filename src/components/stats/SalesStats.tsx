@@ -1,10 +1,13 @@
 import { useCountAnimation } from "@/hooks/useCountAnimation";
 import { useSalesData } from "@/hooks/useSalesData";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { SellerStatsDialog } from "./SellerStatsDialog";
 
 export const SalesStats = ({ shouldAnimate = false }) => {
   const navigate = useNavigate();
   const { data: salesData, isLoading } = useSalesData();
+  const [dialogType, setDialogType] = useState<"sales" | "average" | null>(null);
   
   const animatedSalesAmount = useCountAnimation(
     shouldAnimate ? (salesData?.totalAmount || 0) : 0,
@@ -80,7 +83,10 @@ export const SalesStats = ({ shouldAnimate = false }) => {
         </div>
       </div>
 
-      <div className="stat-card animate-fade-in [animation-delay:400ms] hover:scale-[1.02] transition-transform duration-200">
+      <div 
+        onClick={() => setDialogType("sales")}
+        className="stat-card animate-fade-in [animation-delay:400ms] hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
+      >
         <span className="text-gray-400 text-lg">Antal sälj</span>
         <div className="text-4xl font-bold mt-1">
           {shouldAnimate ? animatedSalesCount : salesData.salesCount}
@@ -90,7 +96,10 @@ export const SalesStats = ({ shouldAnimate = false }) => {
         </div>
       </div>
 
-      <div className="stat-card animate-fade-in [animation-delay:600ms] hover:scale-[1.02] transition-transform duration-200">
+      <div 
+        onClick={() => setDialogType("average")}
+        className="stat-card animate-fade-in [animation-delay:600ms] hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
+      >
         <span className="text-gray-400 text-lg">Snittordervärde</span>
         <div className="text-4xl font-bold mt-1">
           SEK {shouldAnimate ? animatedAverageValue : Math.round(salesData.averageValue)}
@@ -99,6 +108,12 @@ export const SalesStats = ({ shouldAnimate = false }) => {
           {formatPercentage(salesData.percentageChanges.averageValue)} från förra gången
         </div>
       </div>
+
+      <SellerStatsDialog 
+        isOpen={dialogType !== null}
+        onClose={() => setDialogType(null)}
+        type={dialogType || "sales"}
+      />
     </>
   );
 };
