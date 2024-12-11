@@ -25,7 +25,6 @@
   #root {
     min-height: 100vh;
     min-height: -webkit-fill-available;
-    padding-bottom: 4rem;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
   }
@@ -120,4 +119,3 @@
 .animate-fade-in {
   animation: fade-in 0.5s ease-out forwards;
 }
-

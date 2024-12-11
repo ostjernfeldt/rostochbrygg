@@ -1,30 +1,51 @@
-import { Home, Trophy, Award, BookOpen, Settings } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Menu } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export const BottomNav = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const isActive = (path: string) => location.pathname === path;
+  const menuItems = [
+    { path: "/", label: "Hem" },
+    { path: "/competitions", label: "Tävlingar" },
+    { path: "/leaderboard", label: "Topplista" },
+    { path: "/learn", label: "Lär dig" },
+    { path: "/settings", label: "Inställningar" },
+  ];
 
   return (
-    <nav className="bottom-nav">
-      <div className="flex justify-around items-center">
-        <Link to="/" className={`bottom-nav-item ${isActive("/") ? "active" : ""}`}>
-          <Home size={24} />
-        </Link>
-        <Link to="/competitions" className={`bottom-nav-item ${isActive("/competitions") ? "active" : ""}`}>
-          <Trophy size={24} />
-        </Link>
-        <Link to="/leaderboard" className={`bottom-nav-item ${isActive("/leaderboard") ? "active" : ""}`}>
-          <Award size={24} />
-        </Link>
-        <Link to="/learn" className={`bottom-nav-item ${isActive("/learn") ? "active" : ""}`}>
-          <BookOpen size={24} />
-        </Link>
-        <Link to="/settings" className={`bottom-nav-item ${isActive("/settings") ? "active" : ""}`}>
-          <Settings size={24} />
-        </Link>
-      </div>
-    </nav>
+    <div className="fixed top-4 left-4 z-50">
+      <Sheet>
+        <SheetTrigger asChild>
+          <button className="p-2 rounded-lg bg-card hover:bg-card/80 transition-colors">
+            <Menu className="h-6 w-6 text-white" />
+          </button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-[250px] bg-card border-r border-gray-800">
+          <nav className="flex flex-col gap-2 mt-8">
+            {menuItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => {
+                  navigate(item.path);
+                }}
+                className={`p-3 text-left rounded-lg transition-colors ${
+                  location.pathname === item.path
+                    ? "bg-primary text-white"
+                    : "text-gray-400 hover:bg-card/80"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        </SheetContent>
+      </Sheet>
+    </div>
   );
 };
