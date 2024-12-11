@@ -18,13 +18,34 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     
+    if (!email || !password) {
+      toast({
+        variant: "destructive",
+        title: "Ogiltig inmatning",
+        description: "Både e-post och lösenord krävs.",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    console.log("Attempting login with email:", email);
+    
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim(),
       });
 
-      if (error) throw error;
+      console.log("Login response:", error ? "Error occurred" : "Success", data?.user ? "User exists" : "No user");
+
+      if (error) {
+        console.error("Login error details:", error);
+        throw error;
+      }
+
+      if (!data?.user) {
+        throw new Error("No user data received");
+      }
 
       toast({
         title: "Inloggningen lyckades!",
@@ -34,10 +55,16 @@ const Login = () => {
       navigate("/");
     } catch (error: any) {
       console.error("Login error:", error);
+      
+      let errorMessage = "Ett fel uppstod vid inloggning.";
+      if (error.message.includes("Invalid login credentials")) {
+        errorMessage = "Felaktig e-post eller lösenord.";
+      }
+
       toast({
         variant: "destructive",
         title: "Inloggningen misslyckades",
-        description: error.message || "Kontrollera dina uppgifter och försök igen.",
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
@@ -48,8 +75,18 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Ogiltig inmatning",
+        description: "E-post krävs för att återställa lösenord.",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
@@ -93,6 +130,7 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLoading}
               />
               {!isResetMode && (
                 <Input
@@ -101,6 +139,7 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
               )}
             </div>
@@ -118,6 +157,7 @@ const Login = () => {
               variant="link"
               className="w-full"
               onClick={() => setIsResetMode(!isResetMode)}
+              disabled={isLoading}
             >
               {isResetMode ? "Tillbaka till inloggning" : "Glömt lösenord?"}
             </Button>
