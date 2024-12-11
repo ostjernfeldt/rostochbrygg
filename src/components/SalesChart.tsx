@@ -23,30 +23,19 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
     
     console.log("Sorted transactions:", sortedTransactions);
 
-    // Group transactions by hour and calculate total amount for each hour
-    const hourlyData = sortedTransactions.reduce((acc, transaction) => {
-      const date = new Date(transaction.Timestamp);
-      // Format the hour as YYYY-MM-DD HH:00 to group by hour
-      const hourKey = format(date, "yyyy-MM-dd HH:00");
-      
-      if (!acc[hourKey]) {
-        acc[hourKey] = {
-          timestamp: date.toISOString(),
-          amount: 0
-        };
-      }
-      
+    // Calculate cumulative amount for each transaction
+    let cumulativeAmount = 0;
+    const result = sortedTransactions.map(transaction => {
       if (transaction.Amount) {
-        acc[hourKey].amount += transaction.Amount;
+        cumulativeAmount += transaction.Amount;
       }
-      
-      return acc;
-    }, {} as Record<string, { timestamp: string; amount: number }>);
-
-    // Convert the grouped data to an array
-    const result = Object.values(hourlyData);
+      return {
+        timestamp: transaction.Timestamp,
+        amount: cumulativeAmount
+      };
+    });
     
-    console.log("Hourly chart data:", result);
+    console.log("Cumulative chart data:", result);
     return result;
   }, [transactions]);
 
@@ -78,7 +67,7 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
               border: '1px solid rgba(51, 195, 240, 0.2)',
               borderRadius: '8px'
             }}
-            formatter={(value: number) => [`${value.toLocaleString()} kr`, 'Försäljning denna timme']}
+            formatter={(value: number) => [`${value.toLocaleString()} kr`, 'Total försäljning']}
             labelFormatter={(label) => format(new Date(label), 'HH:mm', { locale: sv })}
           />
           <Area 
