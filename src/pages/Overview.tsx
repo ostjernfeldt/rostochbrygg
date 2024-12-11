@@ -1,59 +1,72 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
-import { format, parseISO, startOfDay, endOfDay } from "date-fns";
-import { sv } from "date-fns/locale";
-import { SalesChart } from "@/components/SalesChart";
-import { CalendarIcon, BarChart3 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { BarChart3 } from "lucide-react";
 import { useState } from "react";
 import { DateRange } from "react-day-picker";
-import { OverviewStatsGrid } from "@/components/stats/OverviewStatsGrid";
-import { PaymentMethodStats } from "@/components/stats/PaymentMethodStats";
 import { useLeaderboardDates } from "@/hooks/useLeaderboardDates";
-import { LeaderboardFilter } from "@/components/leaderboard/LeaderboardFilter";
+import { DateFilterSection } from "@/components/overview/DateFilterSection";
+import { StatsSection } from "@/components/overview/StatsSection";
 
 export default function Overview() {
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: parseISO("2024-01-01"),
-    to: new Date(),
-  });
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("day");
   const [selectedDate, setSelectedDate] = useState<string>("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   // Fetch available sales dates
   const { data: salesDates } = useLeaderboardDates();
 
-  // Fetch stats based on selected date or date range
+  // Calculate date range based on selected period
+  const getDateRange = () => {
+    if (selectedPeriod === "day" && selectedDate) {
+      const start = startOfDay(new Date(selectedDate));
+      const end = endOfDay(new Date(selectedDate));
+      return { start, end };
+    }
+
+    if (selectedPeriod === "week" && selectedDate) {
+      const start = startOfWeek(new Date(selectedDate));
+      const end = endOfWeek(start);
+      return { start, end };
+    }
+
+    if (selectedPeriod === "month" && selectedDate) {
+      const [year, month] = selectedDate.split('-').map(Number);
+      const start = startOfMonth(new Date(year, month - 1));
+      const end = endOfMonth(start);
+      return { start, end };
+    }
+
+    if (selectedPeriod === "all") {
+      const end = new Date();
+      const start = new Date(2000, 0, 1); // Start from year 2000
+      return { start, end };
+    }
+
+    if (selectedPeriod === "custom" && dateRange?.from) {
+      const start = startOfDay(dateRange.from);
+      const end = endOfDay(dateRange.to || dateRange.from);
+      return { start, end };
+    }
+
+    return null;
+  };
+
+  // Fetch stats based on selected period
   const { data: stats, isLoading } = useQuery({
-    queryKey: ["overview-stats", selectedDate || date?.from, date?.to],
+    queryKey: ["overview-stats", selectedPeriod, selectedDate, dateRange],
     queryFn: async () => {
-      let start, end;
+      const range = getDateRange();
+      if (!range) return null;
 
-      if (selectedDate) {
-        // If a specific date is selected
-        start = startOfDay(new Date(selectedDate));
-        end = endOfDay(new Date(selectedDate));
-      } else if (date?.from) {
-        // If using date range
-        start = startOfDay(date.from);
-        end = endOfDay(date.to || date.from);
-      } else {
-        return null;
-      }
-
-      console.log("Fetching overview stats for period:", { start, end });
+      console.log("Fetching overview stats for period:", range);
 
       const { data: sales, error } = await supabase
         .from("purchases")
         .select("*")
-        .gte("Timestamp", start.toISOString())
-        .lte("Timestamp", end.toISOString());
+        .gte("Timestamp", range.start.toISOString())
+        .lte("Timestamp", range.end.toISOString());
 
       if (error) throw error;
 
@@ -70,7 +83,7 @@ export default function Overview() {
       // Calculate payment method statistics with amounts
       const paymentMethodStats = sales.reduce((acc, sale) => {
         const method = sale["Payment Type"] || "Okänd";
-        const amount = Number(sale.Amount) || 0; // Ensure amount is a number
+        const amount = Number(sale.Amount) || 0;
         
         if (!acc[method]) {
           acc[method] = { count: 0, amount: 0 };
@@ -84,7 +97,7 @@ export default function Overview() {
       const paymentMethodStatsArray = Object.entries(paymentMethodStats).map(([method, { count, amount }]) => ({
         method,
         count,
-        amount: Number(amount), // Ensure amount is a number
+        amount: Number(amount),
         percentage: ((count / totalSales) * 100).toFixed(1)
       }));
 
@@ -108,15 +121,6 @@ export default function Overview() {
     },
   });
 
-  // Create date filter options with a clear option
-  const dateFilterOptions = [
-    { value: "none", label: "Välj period" },
-    ...(salesDates?.map(date => ({
-      value: date,
-      label: format(new Date(date), 'd MMMM yyyy', { locale: sv })
-    })) || [])
-  ];
-
   return (
     <PageLayout>
       <div className="space-y-4">
@@ -126,84 +130,18 @@ export default function Overview() {
             <h1 className="text-2xl font-bold">Översikt</h1>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-4">
-            <LeaderboardFilter
-              options={dateFilterOptions}
-              value={selectedDate || "none"}
-              onValueChange={(value) => {
-                setSelectedDate(value === "none" ? "" : value);
-                // Reset date range when specific date is selected
-                if (value !== "none") setDate(undefined);
-              }}
-              placeholder="Välj säljdag"
-            />
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={`w-full sm:w-auto justify-start text-left font-normal ${selectedDate ? 'opacity-50' : ''}`}
-                  disabled={!!selectedDate}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date?.from ? (
-                    date.to ? (
-                      <>
-                        {format(date.from, "d MMM y", { locale: sv })} -{" "}
-                        {format(date.to, "d MMM y", { locale: sv })}
-                      </>
-                    ) : (
-                      format(date.from, "d MMM y", { locale: sv })
-                    )
-                  ) : (
-                    <span>Välj period</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-card border-gray-800" align="start">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={date?.from}
-                  selected={date}
-                  onSelect={(newDate) => {
-                    setDate(newDate);
-                    // Reset selected specific date when date range is selected
-                    if (newDate) setSelectedDate("");
-                  }}
-                  numberOfMonths={2}
-                  locale={sv}
-                  className="bg-card rounded-md"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          <DateFilterSection
+            salesDates={salesDates}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            selectedPeriod={selectedPeriod}
+            setSelectedPeriod={setSelectedPeriod}
+          />
         </div>
 
-        {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                className="h-24 animate-pulse rounded-xl bg-card"
-              ></div>
-            ))}
-          </div>
-        ) : stats ? (
-          <>
-            <OverviewStatsGrid stats={stats} />
-            <PaymentMethodStats stats={stats.paymentMethodStats} />
-
-            <div className="mt-8">
-              <h2 className="mb-4 text-xl font-bold">Försäljningsutveckling</h2>
-              <SalesChart transactions={stats.transactions} groupByWeek={true} />
-            </div>
-          </>
-        ) : (
-          <div className="text-center text-gray-400">
-            Välj en period för att se statistik
-          </div>
-        )}
+        <StatsSection stats={stats} isLoading={isLoading} />
       </div>
     </PageLayout>
   );
