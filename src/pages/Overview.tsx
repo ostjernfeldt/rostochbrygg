@@ -143,7 +143,7 @@ export default function Overview() {
 
             <div className="mt-8">
               <h2 className="mb-4 text-xl font-bold">Försäljningsutveckling</h2>
-              <SalesChart transactions={stats.transactions} />
+              <SalesChart transactions={stats.transactions} groupByWeek={true} />
             </div>
           </>
         ) : (

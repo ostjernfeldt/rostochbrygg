@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { format } from "date-fns";
+import { format, startOfWeek } from "date-fns";
 import { sv } from "date-fns/locale";
 
 interface SalesChartProps {
@@ -8,9 +8,10 @@ interface SalesChartProps {
     Timestamp: string;
     Amount: number | null;
   }>;
+  groupByWeek?: boolean;
 }
 
-export const SalesChart = ({ transactions }: SalesChartProps) => {
+export const SalesChart = ({ transactions, groupByWeek = false }: SalesChartProps) => {
   const chartData = useMemo(() => {
     if (transactions.length === 0) return [];
 
@@ -23,21 +24,47 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
     
     console.log("Sorted transactions:", sortedTransactions);
 
-    // Calculate cumulative amount for each transaction
-    let cumulativeAmount = 0;
-    const result = sortedTransactions.map(transaction => {
-      if (transaction.Amount) {
-        cumulativeAmount += transaction.Amount;
-      }
-      return {
-        timestamp: transaction.Timestamp,
-        amount: cumulativeAmount
-      };
-    });
-    
-    console.log("Cumulative chart data:", result);
-    return result;
-  }, [transactions]);
+    if (groupByWeek) {
+      // Group transactions by week and calculate total amount for each week
+      const weeklyData = sortedTransactions.reduce((acc, transaction) => {
+        const date = new Date(transaction.Timestamp);
+        const weekStart = startOfWeek(date, { locale: sv });
+        const weekKey = format(weekStart, "yyyy-MM-dd");
+        
+        if (!acc[weekKey]) {
+          acc[weekKey] = {
+            timestamp: weekStart.toISOString(),
+            amount: 0
+          };
+        }
+        
+        if (transaction.Amount) {
+          acc[weekKey].amount += transaction.Amount;
+        }
+        
+        return acc;
+      }, {} as Record<string, { timestamp: string; amount: number }>);
+
+      const result = Object.values(weeklyData);
+      console.log("Weekly chart data:", result);
+      return result;
+    } else {
+      // Calculate cumulative amount for each transaction
+      let cumulativeAmount = 0;
+      const result = sortedTransactions.map(transaction => {
+        if (transaction.Amount) {
+          cumulativeAmount += transaction.Amount;
+        }
+        return {
+          timestamp: transaction.Timestamp,
+          amount: cumulativeAmount
+        };
+      });
+      
+      console.log("Cumulative chart data:", result);
+      return result;
+    }
+  }, [transactions, groupByWeek]);
 
   if (chartData.length === 0) return null;
 
@@ -54,7 +81,12 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
           <XAxis 
             dataKey="timestamp" 
             stroke="#666"
-            tickFormatter={(value) => format(new Date(value), 'HH:mm', { locale: sv })}
+            tickFormatter={(value) => {
+              const date = new Date(value);
+              return groupByWeek 
+                ? `v.${format(date, 'w', { locale: sv })}`
+                : format(date, 'HH:mm', { locale: sv });
+            }}
           />
           <YAxis 
             stroke="#666"
@@ -67,8 +99,16 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
               border: '1px solid rgba(51, 195, 240, 0.2)',
               borderRadius: '8px'
             }}
-            formatter={(value: number) => [`${value.toLocaleString()} kr`, 'Total försäljning']}
-            labelFormatter={(label) => format(new Date(label), 'HH:mm', { locale: sv })}
+            formatter={(value: number) => [
+              `${value.toLocaleString()} kr`, 
+              groupByWeek ? 'Försäljning denna vecka' : 'Total försäljning'
+            ]}
+            labelFormatter={(label) => {
+              const date = new Date(label);
+              return groupByWeek 
+                ? `Vecka ${format(date, 'w', { locale: sv })}`
+                : format(date, 'HH:mm', { locale: sv });
+            }}
           />
           <Area 
             type="monotone" 
