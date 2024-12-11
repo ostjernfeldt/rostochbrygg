@@ -1,6 +1,6 @@
 import { Trophy, Gift, Laptop } from "lucide-react";
 import { ChallengeCard } from "./ChallengeCard";
-import { format, startOfWeek, endOfWeek, subMonths, parseISO } from "date-fns";
+import { format, startOfWeek, endOfWeek, subMonths, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,7 +51,10 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
         .limit(1)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching challenges:", error);
+        throw error;
+      }
       return data;
     }
   });
@@ -61,86 +64,102 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
     queryFn: async () => {
       console.log("Fetching challenge leaders...");
       
-      const { data: latestSale } = await supabase
-        .from("purchases")
-        .select("Timestamp")
-        .order("Timestamp", { ascending: false })
-        .limit(1)
-        .single();
+      try {
+        const { data: latestSale, error: saleError } = await supabase
+          .from("purchases")
+          .select("Timestamp")
+          .order("Timestamp", { ascending: false })
+          .limit(1)
+          .single();
 
-      if (!latestSale) {
-        console.log("No sales found");
-        return {
-          dailyLeader: null,
-          weeklyLeader: null,
-          monthlyLeader: null
+        if (saleError) {
+          console.error("Error fetching latest sale:", saleError);
+          throw saleError;
+        }
+
+        if (!latestSale) {
+          console.log("No sales found");
+          return {
+            dailyLeader: null,
+            weeklyLeader: null,
+            monthlyLeader: null
+          };
+        }
+
+        // Parse the selected dates
+        const dayStart = parseISO(selectedDay);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = parseISO(selectedDay);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        const weekStart = parseISO(selectedWeek);
+        const weekEnd = endOfWeek(weekStart);
+
+        const [year, month] = selectedMonth.split('-').map(Number);
+        const monthStart = startOfMonth(new Date(year, month - 1));
+        const monthEnd = endOfMonth(monthStart);
+
+        // Fetch sales for each period
+        const { data: dailySales, error: dailyError } = await supabase
+          .from("purchases")
+          .select('"User Display Name", Amount, Timestamp')
+          .gte("Timestamp", dayStart.toISOString())
+          .lte("Timestamp", dayEnd.toISOString());
+
+        if (dailyError) throw dailyError;
+
+        const { data: weeklySales, error: weeklyError } = await supabase
+          .from("purchases")
+          .select('"User Display Name", Amount, Timestamp')
+          .gte("Timestamp", weekStart.toISOString())
+          .lte("Timestamp", weekEnd.toISOString());
+
+        if (weeklyError) throw weeklyError;
+
+        const { data: monthlySales, error: monthlyError } = await supabase
+          .from("purchases")
+          .select('"User Display Name", Amount, Timestamp')
+          .gte("Timestamp", monthStart.toISOString())
+          .lte("Timestamp", monthEnd.toISOString());
+
+        if (monthlyError) throw monthlyError;
+
+        // Calculate totals for each period
+        const calculateLeader = (sales: any[] | null) => {
+          if (!sales || sales.length === 0) return null;
+          
+          const totals = sales.reduce((acc: { [key: string]: number }, sale) => {
+            const name = sale["User Display Name"];
+            const amount = Number(sale.Amount || 0);
+            acc[name] = (acc[name] || 0) + amount;
+            return acc;
+          }, {});
+
+          const sortedTotals = Object.entries(totals)
+            .sort(([, a], [, b]) => Number(b) - Number(a));
+
+          return sortedTotals.length > 0 
+            ? { name: sortedTotals[0][0], amount: sortedTotals[0][1] }
+            : null;
         };
+
+        const dailyLeader = calculateLeader(dailySales || []);
+        const weeklyLeader = calculateLeader(weeklySales || []);
+        const monthlyLeader = calculateLeader(monthlySales || []);
+        const currentMonthName = format(monthStart, 'MMMM yyyy');
+
+        console.log("Leaders calculated:", { dailyLeader, weeklyLeader, monthlyLeader });
+
+        return {
+          dailyLeader,
+          weeklyLeader,
+          monthlyLeader,
+          currentMonth: currentMonthName
+        };
+      } catch (error) {
+        console.error("Error in challenge leaders query:", error);
+        throw error;
       }
-
-      // Parse the selected dates
-      const dayStart = parseISO(selectedDay);
-      dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = parseISO(selectedDay);
-      dayEnd.setHours(23, 59, 59, 999);
-
-      const weekStart = parseISO(selectedWeek);
-      const weekEnd = endOfWeek(weekStart);
-
-      const [year, month] = selectedMonth.split('-');
-      const monthStart = startOfMonth(new Date(Number(year), Number(month) - 1));
-      const monthEnd = endOfMonth(monthStart);
-
-      // Fetch sales for each period
-      const { data: dailySales } = await supabase
-        .from("purchases")
-        .select('"User Display Name", Amount, Timestamp')
-        .gte("Timestamp", dayStart.toISOString())
-        .lte("Timestamp", dayEnd.toISOString());
-
-      const { data: weeklySales } = await supabase
-        .from("purchases")
-        .select('"User Display Name", Amount, Timestamp')
-        .gte("Timestamp", weekStart.toISOString())
-        .lte("Timestamp", weekEnd.toISOString());
-
-      const { data: monthlySales } = await supabase
-        .from("purchases")
-        .select('"User Display Name", Amount, Timestamp')
-        .gte("Timestamp", monthStart.toISOString())
-        .lte("Timestamp", monthEnd.toISOString());
-
-      // Calculate totals for each period
-      const calculateLeader = (sales: any[] | null) => {
-        if (!sales || sales.length === 0) return null;
-        
-        const totals = sales.reduce((acc: { [key: string]: number }, sale) => {
-          const name = sale["User Display Name"];
-          const amount = Number(sale.Amount || 0);
-          acc[name] = (acc[name] || 0) + amount;
-          return acc;
-        }, {});
-
-        const sortedTotals = Object.entries(totals)
-          .sort(([, a], [, b]) => b - a);
-
-        return sortedTotals.length > 0 
-          ? { name: sortedTotals[0][0], amount: sortedTotals[0][1] }
-          : null;
-      };
-
-      const dailyLeader = calculateLeader(dailySales || []);
-      const weeklyLeader = calculateLeader(weeklySales || []);
-      const monthlyLeader = calculateLeader(monthlySales || []);
-      const currentMonthName = format(monthStart, 'MMMM yyyy');
-
-      console.log("Leaders calculated:", { dailyLeader, weeklyLeader, monthlyLeader });
-
-      return {
-        dailyLeader,
-        weeklyLeader,
-        monthlyLeader,
-        currentMonth: currentMonthName
-      };
     }
   });
 
