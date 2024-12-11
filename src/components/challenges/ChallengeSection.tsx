@@ -27,6 +27,15 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
   const challenges = useChallengeQueries(selectedDay, selectedWeek, selectedMonth);
   const { data: leaders } = useLeaderboardData('daily', selectedDay);
 
+  const getTopLeader = (leaderArray: Array<{ "User Display Name": string; totalAmount: number; salesCount: number }> | undefined) => {
+    if (!leaderArray || leaderArray.length === 0) return null;
+    const leader = leaderArray[0];
+    return {
+      name: leader["User Display Name"],
+      amount: leader.totalAmount
+    };
+  };
+
   const dailyFilter = ChallengeDateFilter({
     type: 'day',
     salesDates,
@@ -54,7 +63,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
         title="Dagens Tävling"
         challenge={challenges?.daily_challenge || "Laddar..."}
         reward={challenges?.daily_reward || "Laddar..."}
-        leader={leaders?.dailyLeader}
+        leader={getTopLeader(leaders?.dailyLeaders)}
         filter={dailyFilter}
       />
 
@@ -64,7 +73,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
         title="Veckans Tävling"
         challenge={challenges?.weekly_challenge || "Laddar..."}
         reward={challenges?.weekly_reward || "Laddar..."}
-        leader={leaders?.weeklyLeader}
+        leader={getTopLeader(leaders?.weeklyLeaders)}
         filter={weeklyFilter}
       />
 
@@ -74,7 +83,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
         title="Månadens Tävling"
         challenge={challenges?.monthly_challenge || "Laddar..."}
         reward={challenges?.monthly_reward || "Laddar..."}
-        leader={leaders?.monthlyLeader}
+        leader={getTopLeader(leaders?.monthlyLeaders)}
         filter={monthlyFilter}
       />
     </>
