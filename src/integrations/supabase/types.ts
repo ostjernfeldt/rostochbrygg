@@ -12,36 +12,30 @@ export type Database = {
       challenges: {
         Row: {
           created_at: string | null
-          daily_challenge: string
-          daily_reward: string
+          end_date: string
           id: string
-          monthly_challenge: string
-          monthly_reward: string
+          reward: number
+          start_date: string
+          type: string
           updated_at: string | null
-          weekly_challenge: string
-          weekly_reward: string
         }
         Insert: {
           created_at?: string | null
-          daily_challenge?: string
-          daily_reward?: string
+          end_date: string
           id?: string
-          monthly_challenge?: string
-          monthly_reward?: string
+          reward: number
+          start_date: string
+          type: string
           updated_at?: string | null
-          weekly_challenge?: string
-          weekly_reward?: string
         }
         Update: {
           created_at?: string | null
-          daily_challenge?: string
-          daily_reward?: string
+          end_date?: string
           id?: string
-          monthly_challenge?: string
-          monthly_reward?: string
+          reward?: number
+          start_date?: string
+          type?: string
           updated_at?: string | null
-          weekly_challenge?: string
-          weekly_reward?: string
         }
         Relationships: []
       }

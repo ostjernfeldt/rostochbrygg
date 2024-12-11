@@ -20,25 +20,58 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
     return `${format(startOfWeek(now), 'yyyy-MM-dd')}`;
   });
 
-  // Update selectedDay when defaultDate changes
   useEffect(() => {
     setSelectedDay(defaultDate);
   }, [defaultDate]);
 
   const { data: challenges } = useQuery({
-    queryKey: ["challenges"],
+    queryKey: ["active-challenges", selectedDay, selectedWeek, selectedMonth],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('challenges')
-        .select('*')
-        .limit(1)
+      console.log("Fetching active challenges...");
+      const dayStart = parseISO(selectedDay);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const weekStart = parseISO(selectedWeek);
+      const weekEnd = endOfWeek(weekStart);
+
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const monthStart = startOfMonth(new Date(year, month - 1));
+      const monthEnd = endOfMonth(monthStart);
+
+      const { data: dailyChallenge } = await supabase
+        .from("challenges")
+        .select("*")
+        .eq("type", "daily")
+        .gte("start_date", dayStart.toISOString())
+        .lte("end_date", dayEnd.toISOString())
         .single();
 
-      if (error) {
-        console.error("Error fetching challenges:", error);
-        throw error;
-      }
-      return data;
+      const { data: weeklyChallenge } = await supabase
+        .from("challenges")
+        .select("*")
+        .eq("type", "weekly")
+        .gte("start_date", weekStart.toISOString())
+        .lte("end_date", weekEnd.toISOString())
+        .single();
+
+      const { data: monthlyChallenge } = await supabase
+        .from("challenges")
+        .select("*")
+        .eq("type", "monthly")
+        .gte("start_date", monthStart.toISOString())
+        .lte("end_date", monthEnd.toISOString())
+        .single();
+
+      return {
+        daily_challenge: "Sälj för störst belopp under dagen",
+        daily_reward: dailyChallenge ? `${dailyChallenge.reward} SEK bonus` : "Ingen utmaning idag",
+        weekly_challenge: "Sälj för störst belopp under veckan",
+        weekly_reward: weeklyChallenge ? `${weeklyChallenge.reward} SEK bonus` : "Ingen utmaning denna vecka",
+        monthly_challenge: "Sälj för störst belopp under månaden",
+        monthly_reward: monthlyChallenge ? `${monthlyChallenge.reward} SEK bonus` : "Ingen utmaning denna månad"
+      };
     }
   });
 
@@ -66,7 +99,6 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
           };
         }
 
-        // Parse the selected dates
         const dayStart = parseISO(selectedDay);
         dayStart.setHours(0, 0, 0, 0);
         const dayEnd = parseISO(selectedDay);
@@ -79,7 +111,6 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
         const monthStart = startOfMonth(new Date(year, month - 1));
         const monthEnd = endOfMonth(monthStart);
 
-        // Fetch sales for each period
         const { data: dailySales, error: dailyError } = await supabase
           .from("purchases")
           .select('"User Display Name", Amount, Timestamp')
@@ -104,7 +135,6 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
 
         if (monthlyError) throw monthlyError;
 
-        // Calculate totals for each period
         const calculateLeader = (sales: any[] | null) => {
           if (!sales || sales.length === 0) return null;
           
@@ -144,7 +174,6 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
     }
   });
 
-  // Generate filters using the ChallengeDateFilter component
   const dailyFilter = ChallengeDateFilter({
     type: 'day',
     salesDates,
