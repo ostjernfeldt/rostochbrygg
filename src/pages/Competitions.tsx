@@ -3,9 +3,9 @@ import { AllTimeStats } from "@/components/stats/AllTimeStats";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
-import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, format } from "date-fns";
+import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, format, subDays } from "date-fns";
 import { useState } from "react";
-import { LeaderboardFilter } from "@/components/leaderboard/LeaderboardFilter";
+import { ChallengeCard } from "@/components/challenges/ChallengeCard";
 
 interface ChallengeLeaders {
   dailyLeader: { name: string; amount: number } | null;
@@ -15,10 +15,20 @@ interface ChallengeLeaders {
 }
 
 const Competitions = () => {
+  const [selectedDay, setSelectedDay] = useState(() => format(new Date(), 'yyyy-MM-dd'));
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [selectedWeek, setSelectedWeek] = useState(() => {
     const now = new Date();
     return `${format(startOfWeek(now), 'yyyy-MM-dd')}`;
+  });
+
+  // Generate last 7 days for the dropdown
+  const dayOptions = Array.from({ length: 7 }, (_, i) => {
+    const date = subDays(new Date(), i);
+    return {
+      value: format(date, 'yyyy-MM-dd'),
+      label: format(date, 'd MMMM yyyy')
+    };
   });
 
   // Generate last 12 months for the dropdown
@@ -55,11 +65,10 @@ const Competitions = () => {
   });
 
   const { data: leaders } = useQuery({
-    queryKey: ["challengeLeaders", selectedWeek, selectedMonth],
+    queryKey: ["challengeLeaders", selectedDay, selectedWeek, selectedMonth],
     queryFn: async (): Promise<ChallengeLeaders> => {
       console.log("Fetching challenge leaders...");
       
-      // First get the latest date with sales
       const { data: latestSale } = await supabase
         .from("purchases")
         .select("Timestamp")
@@ -76,39 +85,32 @@ const Competitions = () => {
         };
       }
 
-      const latestDate = new Date(latestSale.Timestamp);
-      console.log("Latest sale date:", latestDate);
+      // Parse the selected dates
+      const dayStart = new Date(selectedDay);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(selectedDay);
+      dayEnd.setHours(23, 59, 59, 999);
 
-      // Get start and end dates for different periods
-      const startOfDay = new Date(latestDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(latestDate);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      // Use selected week
       const weekStart = new Date(selectedWeek);
       const weekEnd = endOfWeek(weekStart);
 
-      // Use selected month
       const [year, month] = selectedMonth.split('-');
       const monthStart = startOfMonth(new Date(Number(year), Number(month) - 1));
       const monthEnd = endOfMonth(monthStart);
 
-      // Fetch daily leader
+      // Fetch sales for each period
       const { data: dailySales } = await supabase
         .from("purchases")
         .select('"User Display Name", Amount')
-        .gte("Timestamp", startOfDay.toISOString())
-        .lte("Timestamp", endOfDay.toISOString());
+        .gte("Timestamp", dayStart.toISOString())
+        .lte("Timestamp", dayEnd.toISOString());
 
-      // Fetch weekly leader
       const { data: weeklySales } = await supabase
         .from("purchases")
         .select('"User Display Name", Amount')
         .gte("Timestamp", weekStart.toISOString())
         .lte("Timestamp", weekEnd.toISOString());
 
-      // Fetch monthly leader
       const { data: monthlySales } = await supabase
         .from("purchases")
         .select('"User Display Name", Amount')
@@ -154,75 +156,50 @@ const Competitions = () => {
     <PageLayout>
       <h1 className="text-2xl font-bold mb-6 animate-fade-in">Tävlingar & Bonusar</h1>
 
-      <div className="stat-card animate-fade-in hover:scale-[1.02] transition-transform duration-200">
-        <div className="flex items-center gap-3">
-          <Trophy className="text-yellow-500" size={24} />
-          <div>
-            <h3 className="font-bold">Dagens Utmaning</h3>
-            <p className="text-gray-400">{challenges?.daily_challenge || "Laddar..."}</p>
-          </div>
-        </div>
-        <p className="text-green-500 mt-2">{challenges?.daily_reward || "Laddar..."}</p>
-        {leaders?.dailyLeader && (
-          <div className="mt-4 p-3 bg-card/50 rounded-lg">
-            <p className="text-sm text-gray-400">Leder just nu:</p>
-            <p className="font-bold">{leaders.dailyLeader.name}</p>
-            <p style={{ color: "#D3E4FD" }}>SEK {leaders.dailyLeader.amount.toLocaleString()}</p>
-          </div>
-        )}
-      </div>
+      <ChallengeCard
+        icon={<Trophy size={24} />}
+        iconColor="text-yellow-500"
+        title="Dagens Utmaning"
+        challenge={challenges?.daily_challenge || "Laddar..."}
+        reward={challenges?.daily_reward || "Laddar..."}
+        leader={leaders?.dailyLeader}
+        filter={{
+          options: dayOptions,
+          value: selectedDay,
+          onValueChange: setSelectedDay,
+          placeholder: "Välj datum"
+        }}
+      />
 
-      <div className="stat-card animate-fade-in [animation-delay:200ms] hover:scale-[1.02] transition-transform duration-200">
-        <div className="flex justify-between items-start">
-          <div className="flex items-center gap-3">
-            <Gift className="text-purple-500" size={24} />
-            <div>
-              <h3 className="font-bold">Veckans Utmaning</h3>
-              <p className="text-gray-400">{challenges?.weekly_challenge || "Laddar..."}</p>
-            </div>
-          </div>
-          <LeaderboardFilter
-            options={weekOptions}
-            value={selectedWeek}
-            onValueChange={setSelectedWeek}
-            placeholder="Välj vecka"
-          />
-        </div>
-        <p className="text-green-500 mt-2">{challenges?.weekly_reward || "Laddar..."}</p>
-        {leaders?.weeklyLeader && (
-          <div className="mt-4 p-3 bg-card/50 rounded-lg">
-            <p className="text-sm text-gray-400">Leder just nu:</p>
-            <p className="font-bold">{leaders.weeklyLeader.name}</p>
-            <p style={{ color: "#D3E4FD" }}>SEK {leaders.weeklyLeader.amount.toLocaleString()}</p>
-          </div>
-        )}
-      </div>
+      <ChallengeCard
+        icon={<Gift size={24} />}
+        iconColor="text-purple-500"
+        title="Veckans Utmaning"
+        challenge={challenges?.weekly_challenge || "Laddar..."}
+        reward={challenges?.weekly_reward || "Laddar..."}
+        leader={leaders?.weeklyLeader}
+        filter={{
+          options: weekOptions,
+          value: selectedWeek,
+          onValueChange: setSelectedWeek,
+          placeholder: "Välj vecka"
+        }}
+      />
 
-      <div className="stat-card animate-fade-in [animation-delay:400ms] hover:scale-[1.02] transition-transform duration-200">
-        <div className="flex justify-between items-start">
-          <div className="flex items-center gap-3">
-            <Laptop className="text-blue-500" size={24} />
-            <div>
-              <h3 className="font-bold">Månadens Utmaning</h3>
-              <p className="text-gray-400">{challenges?.monthly_challenge || "Laddar..."}</p>
-            </div>
-          </div>
-          <LeaderboardFilter
-            options={monthOptions}
-            value={selectedMonth}
-            onValueChange={setSelectedMonth}
-            placeholder="Välj månad"
-          />
-        </div>
-        <p className="text-green-500 mt-2">{challenges?.monthly_reward || "Laddar..."}</p>
-        {leaders?.monthlyLeader && (
-          <div className="mt-4 p-3 bg-card/50 rounded-lg">
-            <p className="text-sm text-gray-400">Leder just nu:</p>
-            <p className="font-bold">{leaders.monthlyLeader.name}</p>
-            <p style={{ color: "#D3E4FD" }}>SEK {leaders.monthlyLeader.amount.toLocaleString()}</p>
-          </div>
-        )}
-      </div>
+      <ChallengeCard
+        icon={<Laptop size={24} />}
+        iconColor="text-blue-500"
+        title="Månadens Utmaning"
+        challenge={challenges?.monthly_challenge || "Laddar..."}
+        reward={challenges?.monthly_reward || "Laddar..."}
+        leader={leaders?.monthlyLeader}
+        filter={{
+          options: monthOptions,
+          value: selectedMonth,
+          onValueChange: setSelectedMonth,
+          placeholder: "Välj månad"
+        }}
+      />
 
       <AllTimeStats />
     </PageLayout>
