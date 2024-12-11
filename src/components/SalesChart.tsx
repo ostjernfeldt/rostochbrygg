@@ -23,20 +23,30 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
     
     console.log("Sorted transactions:", sortedTransactions);
 
-    // Calculate cumulative amounts for each transaction
-    let cumulativeAmount = 0;
-    const result = sortedTransactions.map(transaction => {
-      if (transaction.Amount) {
-        cumulativeAmount += transaction.Amount;
+    // Group transactions by hour and calculate total amount for each hour
+    const hourlyData = sortedTransactions.reduce((acc, transaction) => {
+      const date = new Date(transaction.Timestamp);
+      // Format the hour as YYYY-MM-DD HH:00 to group by hour
+      const hourKey = format(date, "yyyy-MM-dd HH:00");
+      
+      if (!acc[hourKey]) {
+        acc[hourKey] = {
+          timestamp: date.toISOString(),
+          amount: 0
+        };
       }
-      console.log(`Transaction at ${format(new Date(transaction.Timestamp), 'yyyy-MM-dd')}: ${transaction.Amount}, Cumulative: ${cumulativeAmount}`);
-      return {
-        timestamp: transaction.Timestamp,
-        amount: cumulativeAmount
-      };
-    });
+      
+      if (transaction.Amount) {
+        acc[hourKey].amount += transaction.Amount;
+      }
+      
+      return acc;
+    }, {} as Record<string, { timestamp: string; amount: number }>);
 
-    console.log("Final chart data:", result);
+    // Convert the grouped data to an array
+    const result = Object.values(hourlyData);
+    
+    console.log("Hourly chart data:", result);
     return result;
   }, [transactions]);
 
@@ -55,7 +65,7 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
           <XAxis 
             dataKey="timestamp" 
             stroke="#666"
-            tickFormatter={(value) => format(new Date(value), 'yyyy-MM-dd', { locale: sv })}
+            tickFormatter={(value) => format(new Date(value), 'HH:mm', { locale: sv })}
           />
           <YAxis 
             stroke="#666"
@@ -68,8 +78,8 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
               border: '1px solid rgba(51, 195, 240, 0.2)',
               borderRadius: '8px'
             }}
-            formatter={(value: number) => [`${value.toLocaleString()} kr`, 'Total försäljning']}
-            labelFormatter={(label) => format(new Date(label), 'yyyy-MM-dd HH:mm', { locale: sv })}
+            formatter={(value: number) => [`${value.toLocaleString()} kr`, 'Försäljning denna timme']}
+            labelFormatter={(label) => format(new Date(label), 'HH:mm', { locale: sv })}
           />
           <Area 
             type="monotone" 
