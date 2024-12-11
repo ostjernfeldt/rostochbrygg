@@ -15,6 +15,8 @@ import Learn from "./pages/Learn";
 import Article from "./pages/Article";
 import Login from "./pages/Login";
 import TransactionList from "./pages/TransactionList";
+import Staff from "./pages/Staff";
+import StaffMember from "./pages/StaffMember";
 
 const queryClient = new QueryClient();
 
@@ -55,7 +57,7 @@ const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const routes = ['/', '/competitions', '/leaderboard', '/learn', '/settings'];
+  const routes = ['/', '/competitions', '/leaderboard', '/learn', '/settings', '/staff'];
 
   const handlers = useSwipeable({
     onSwipedLeft: () => {
@@ -113,6 +115,16 @@ const AppContent = () => {
         <Route path="/transactions" element={
           <PrivateRoute>
             <TransactionList />
+          </PrivateRoute>
+        } />
+        <Route path="/staff" element={
+          <PrivateRoute>
+            <Staff />
+          </PrivateRoute>
+        } />
+        <Route path="/staff/:name" element={
+          <PrivateRoute>
+            <StaffMember />
           </PrivateRoute>
         } />
       </Routes>

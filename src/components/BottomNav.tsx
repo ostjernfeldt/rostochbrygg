@@ -11,9 +11,10 @@ export const BottomNav = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { path: "/", label: "Hem" },
+    { path: "/", label: "Idag" },
     { path: "/competitions", label: "Tävlingar" },
     { path: "/leaderboard", label: "Topplista" },
+    { path: "/staff", label: "Personal" },
     { path: "/learn", label: "Lär dig" },
     { path: "/settings", label: "Inställningar" },
   ];
