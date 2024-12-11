@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { PageLayout } from "@/components/PageLayout";
 import {
   Select,
   SelectContent,
@@ -105,7 +106,7 @@ const Staff = () => {
 
   if (isLoading) {
     return (
-      <div className="p-4 pb-24">
+      <PageLayout>
         <h1 className="text-2xl font-bold mb-6">Personal</h1>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -114,12 +115,12 @@ const Staff = () => {
             </div>
           ))}
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="p-4 pb-24">
+    <PageLayout>
       <h1 className="text-2xl font-bold mb-6">Personal</h1>
       
       <div className="space-y-4 mb-6">
@@ -187,7 +188,7 @@ const Staff = () => {
           </div>
         ))}
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

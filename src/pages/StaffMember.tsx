@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { ArrowLeft } from "lucide-react";
 import { SalesChart } from "@/components/SalesChart";
+import { PageLayout } from "@/components/PageLayout";
 
 const StaffMember = () => {
   const navigate = useNavigate();
@@ -46,19 +47,19 @@ const StaffMember = () => {
 
   if (isLoading) {
     return (
-      <div className="p-4 pb-24">
+      <PageLayout>
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-card rounded w-1/3"></div>
           <div className="h-24 bg-card rounded"></div>
           <div className="h-24 bg-card rounded"></div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   if (!memberData) {
     return (
-      <div className="p-4 pb-24">
+      <PageLayout>
         <button 
           onClick={() => navigate("/staff")}
           className="text-gray-400 hover:text-primary transition-colors mb-6"
@@ -68,12 +69,12 @@ const StaffMember = () => {
         <div className="text-center text-gray-400">
           Ingen data hittades för denna säljare
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="p-4 pb-24">
+    <PageLayout>
       <div className="flex items-center gap-2 mb-6">
         <button 
           onClick={() => navigate("/staff")}
@@ -123,7 +124,7 @@ const StaffMember = () => {
           <SalesChart transactions={memberData.sales} />
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

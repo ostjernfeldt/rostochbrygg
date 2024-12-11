@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { TimeLeftCard } from "@/components/stats/TimeLeftCard";
 import { SalesStats } from "@/components/stats/SalesStats";
+import { PageLayout } from "@/components/PageLayout";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -75,63 +76,59 @@ const Home = () => {
   };
 
   return (
-    <div 
-      className="p-4 pb-24 relative"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      {pullDistance > 0 && (
-        <div 
-          className="fixed top-0 left-0 right-0 flex justify-center items-center"
-          style={{ 
-            height: `${pullDistance}px`,
-            transition: isRefreshing ? 'none' : 'height 0.2s ease-out'
-          }}
-        >
-          <div className={`
-            w-8 h-8 border-2 border-t-primary border-r-primary border-b-transparent border-l-transparent 
-            rounded-full 
-            ${isRefreshing ? 'animate-spin' : 'transform'} 
-            ${!isRefreshing && `rotate-[${Math.min(pullDistance * 2, 360)}deg]`}
-          `} />
-        </div>
-      )}
-
-      <img 
-        src="/lovable-uploads/f3b5392a-fb40-467e-b32d-aa71eb2156af.png" 
-        alt="R&B Logo" 
-        className="h-16 w-auto mb-4 mx-auto object-contain"
-      />
-      <div className="flex justify-between items-start mb-6 animate-fade-in">
-        <div>
-          <h1 className="text-3xl font-bold mb-1 text-left">Välkommen Oscar</h1>
-          <p className="text-gray-400 text-lg text-left">Här kan du se statistiken från idag.</p>
-          <button 
-            onClick={() => navigate('/settings')}
-            className="flex items-center gap-2 mt-2 text-gray-400 hover:text-primary transition-colors"
+    <PageLayout>
+      <div 
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {pullDistance > 0 && (
+          <div 
+            className="fixed top-0 left-0 right-0 flex justify-center items-center"
+            style={{ 
+              height: `${pullDistance}px`,
+              transition: isRefreshing ? 'none' : 'height 0.2s ease-out'
+            }}
           >
-            <Settings size={24} />
-            <span>Inställningar för dagen</span>
-          </button>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="mt-2">
-              <UserRound size={24} className="text-white hover:text-primary transition-colors" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-black text-white border-none">
-            <DropdownMenuItem onClick={handleSignOut} className="hover:bg-gray-900 focus:bg-gray-900">
-              Logga ut
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+            <div className={`
+              w-8 h-8 border-2 border-t-primary border-r-primary border-b-transparent border-l-transparent 
+              rounded-full 
+              ${isRefreshing ? 'animate-spin' : 'transform'} 
+              ${!isRefreshing && `rotate-[${Math.min(pullDistance * 2, 360)}deg]`}
+            `} />
+          </div>
+        )}
 
-      <TimeLeftCard />
-      <SalesStats shouldAnimate={shouldAnimate} />
-    </div>
+        <div className="flex justify-between items-start mb-6 animate-fade-in">
+          <div>
+            <h1 className="text-3xl font-bold mb-1 text-left">Välkommen Oscar</h1>
+            <p className="text-gray-400 text-lg text-left">Här kan du se statistiken från idag.</p>
+            <button 
+              onClick={() => navigate('/settings')}
+              className="flex items-center gap-2 mt-2 text-gray-400 hover:text-primary transition-colors"
+            >
+              <Settings size={24} />
+              <span>Inställningar för dagen</span>
+            </button>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="mt-2">
+                <UserRound size={24} className="text-white hover:text-primary transition-colors" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-black text-white border-none">
+              <DropdownMenuItem onClick={handleSignOut} className="hover:bg-gray-900 focus:bg-gray-900">
+                Logga ut
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <TimeLeftCard />
+        <SalesStats shouldAnimate={shouldAnimate} />
+      </div>
+    </PageLayout>
   );
 };
 
