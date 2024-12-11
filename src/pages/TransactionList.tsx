@@ -111,6 +111,11 @@ const TransactionList = () => {
       : transactions.transactions.filter(t => t["User Display Name"] === selectedUser)
     : [];
 
+  // Calculate total amount for selected user
+  const selectedUserTotal = filteredTransactions.reduce((sum, transaction) => 
+    sum + (transaction.Amount || 0), 0
+  );
+
   return (
     <div className="p-4 pb-24">
       <div className="flex items-center gap-2 mb-6">
@@ -126,15 +131,15 @@ const TransactionList = () => {
       </div>
 
       {/* User filter dropdown */}
-      <div className="mb-4">
+      <div className="mb-4 space-y-2">
         <Select
           value={selectedUser}
           onValueChange={(value) => setSelectedUser(value)}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full bg-card border-primary/20">
             <SelectValue placeholder="Filtrera på säljare" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-card border-primary/20">
             <SelectItem value="all">Alla säljare</SelectItem>
             {uniqueUsers.map((user) => (
               <SelectItem key={user} value={user || ''}>
@@ -143,6 +148,13 @@ const TransactionList = () => {
             ))}
           </SelectContent>
         </Select>
+        
+        {selectedUser !== 'all' && (
+          <div className="p-4 bg-card rounded-xl border border-primary/20">
+            <span className="text-gray-400">Total försäljning:</span>
+            <span className="ml-2 text-xl font-bold">SEK {selectedUserTotal.toLocaleString()}</span>
+          </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -166,9 +178,14 @@ const TransactionList = () => {
                   SEK {transaction.Amount?.toLocaleString()}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-primary">{transaction["User Display Name"]}</span>
-                <span className="text-gray-400">{transaction["Payment Type"] || "Okänd betalningsmetod"}</span>
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-primary">{transaction["User Display Name"]}</span>
+                  <span className="text-gray-400">{transaction["Payment Type"] || "Okänd betalningsmetod"}</span>
+                </div>
+                <div className="text-sm text-gray-400">
+                  Produkt: {transaction["Product Name"] || "Okänd produkt"}
+                </div>
               </div>
             </div>
           ))}
