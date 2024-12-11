@@ -11,7 +11,7 @@ export const StatCard = ({
   animationDelay = "0ms" 
 }: StatCardProps) => {
   return (
-    <div className={`stat-card animate-fade-in [animation-delay:${animationDelay}]`}>
+    <div className={`overview-stat-card animate-fade-in [animation-delay:${animationDelay}]`}>
       <span className="text-gray-400 text-lg">{title}</span>
       <div className="text-4xl font-bold mt-1 text-white">
         {value}

@@ -36,3 +36,38 @@
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+.overview-stat-card {
+  @apply p-6 rounded-xl mb-4;
+  background: linear-gradient(145deg, rgba(26,31,44,0.95) 0%, rgba(26,31,44,0.85) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.leaderboard-item {
+  @apply p-4 rounded-xl bg-card flex justify-between items-center;
+}
+
+.leaderboard-rank {
+  @apply text-xl font-bold;
+}
+
+.leaderboard-rank.gold {
+  color: #FFD700;
+}
+
+.leaderboard-rank.silver {
+  color: #C0C0C0;
+}
+
+.leaderboard-rank.bronze {
+  color: #CD7F32;
+}
+
+.leaderboard-sales {
+  @apply text-gray-400;
+}
+
+.leaderboard-amount {
+  @apply text-primary font-bold;
+}
