@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
+import { SalesChart } from "@/components/SalesChart";
 
 const TransactionList = () => {
   const navigate = useNavigate();
@@ -88,17 +89,6 @@ const TransactionList = () => {
     }
   });
 
-  const formatDate = (date: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (date.getTime() === today.getTime()) {
-      return "Dagens";
-    }
-    
-    return format(date, "d MMMM yyyy");
-  };
-
   // Get unique user display names from transactions
   const uniqueUsers = transactions?.transactions 
     ? Array.from(new Set(transactions.transactions.map(t => t["User Display Name"])))
@@ -126,9 +116,16 @@ const TransactionList = () => {
           <ArrowLeft size={24} />
         </button>
         <h1 className="text-2xl font-bold">
-          {transactions?.date ? `${formatDate(transactions.date)} transaktioner` : 'Transaktioner'}
+          {transactions?.date ? `${format(transactions.date, 'd MMMM yyyy')} transaktioner` : 'Transaktioner'}
         </h1>
       </div>
+
+      {/* Sales Chart */}
+      {transactions?.transactions && (
+        <div className="mb-6">
+          <SalesChart transactions={transactions.transactions} />
+        </div>
+      )}
 
       {/* User filter dropdown */}
       <div className="mb-4 space-y-2">
