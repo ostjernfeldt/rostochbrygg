@@ -2,8 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, parseISO } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection";
+import { useNavigate } from "react-router-dom";
 
 interface UserSales {
   "User Display Name": string;
@@ -18,12 +19,10 @@ interface PurchaseData {
 }
 
 const Leaderboard = () => {
-  const [selectedDay, setSelectedDay] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+  const navigate = useNavigate();
+  const [selectedDay, setSelectedDay] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
-  const [selectedWeek, setSelectedWeek] = useState(() => {
-    const now = new Date();
-    return `${format(startOfWeek(now), 'yyyy-MM-dd')}`;
-  });
+  const [selectedWeek, setSelectedWeek] = useState("");
 
   // Fetch dates with sales activity for the daily filter
   const { data: salesDates } = useQuery({
@@ -44,6 +43,17 @@ const Leaderboard = () => {
 
       console.log("Found sales dates:", uniqueDates);
       return uniqueDates;
+    },
+    onSuccess: (dates) => {
+      if (dates && dates.length > 0 && !selectedDay) {
+        // Set the most recent date as default
+        const latestDate = dates[0];
+        setSelectedDay(latestDate);
+        
+        // Set the week containing the latest date as default
+        const latestWeekStart = format(startOfWeek(parseISO(latestDate)), 'yyyy-MM-dd');
+        setSelectedWeek(latestWeekStart);
+      }
     }
   });
 
@@ -97,6 +107,8 @@ const Leaderboard = () => {
   const { data: dailyLeaderboard, isLoading: isDailyLoading } = useQuery({
     queryKey: ["dailyLeaderboard", selectedDay],
     queryFn: async () => {
+      if (!selectedDay) return [];
+      
       console.log("Fetching daily leaderboard data...");
       const dayStart = parseISO(selectedDay);
       dayStart.setHours(0, 0, 0, 0);
@@ -112,14 +124,17 @@ const Leaderboard = () => {
 
       if (salesError) throw salesError;
       return processLeaderboardData(salesData || []);
-    }
+    },
+    enabled: !!selectedDay
   });
 
   const { data: weeklyLeaderboard, isLoading: isWeeklyLoading } = useQuery({
     queryKey: ["weeklyLeaderboard", selectedWeek],
     queryFn: async () => {
+      if (!selectedWeek) return [];
+
       console.log("Fetching weekly leaderboard data...");
-      const weekStart = new Date(selectedWeek);
+      const weekStart = parseISO(selectedWeek);
       const weekEnd = endOfWeek(weekStart);
 
       const { data: salesData, error: salesError } = await supabase
@@ -131,7 +146,8 @@ const Leaderboard = () => {
 
       if (salesError) throw salesError;
       return processLeaderboardData(salesData || []);
-    }
+    },
+    enabled: !!selectedWeek
   });
 
   const { data: monthlyLeaderboard, isLoading: isMonthlyLoading } = useQuery({
@@ -154,6 +170,10 @@ const Leaderboard = () => {
     }
   });
 
+  const handleUserClick = (userName: string) => {
+    navigate(`/staff/${encodeURIComponent(userName)}`);
+  };
+
   return (
     <PageLayout>
       <div className="space-y-8">
@@ -167,6 +187,7 @@ const Leaderboard = () => {
             onValueChange: setSelectedDay,
             placeholder: "Välj datum"
           }}
+          onUserClick={handleUserClick}
         />
 
         <LeaderboardSection
@@ -179,6 +200,7 @@ const Leaderboard = () => {
             onValueChange: setSelectedWeek,
             placeholder: "Välj vecka"
           }}
+          onUserClick={handleUserClick}
         />
 
         <LeaderboardSection
@@ -191,6 +213,7 @@ const Leaderboard = () => {
             onValueChange: setSelectedMonth,
             placeholder: "Välj månad"
           }}
+          onUserClick={handleUserClick}
         />
       </div>
     </PageLayout>

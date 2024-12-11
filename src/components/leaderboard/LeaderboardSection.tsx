@@ -15,6 +15,7 @@ interface LeaderboardSectionProps {
   title: string;
   data: UserSales[] | undefined;
   isLoading: boolean;
+  onUserClick?: (userName: string) => void;
   filter?: {
     options: { value: string; label: string }[];
     value: string;
@@ -23,7 +24,13 @@ interface LeaderboardSectionProps {
   };
 }
 
-export const LeaderboardSection = ({ title, data, isLoading, filter }: LeaderboardSectionProps) => {
+export const LeaderboardSection = ({ 
+  title, 
+  data, 
+  isLoading, 
+  filter,
+  onUserClick 
+}: LeaderboardSectionProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -79,6 +86,7 @@ export const LeaderboardSection = ({ title, data, isLoading, filter }: Leaderboa
               displayName={user["User Display Name"]}
               salesCount={user.salesCount}
               totalAmount={user.totalAmount}
+              onClick={() => onUserClick?.(user["User Display Name"])}
             />
           ))
         )}
