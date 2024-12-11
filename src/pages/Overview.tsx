@@ -101,7 +101,7 @@ export default function Overview() {
 
   // Create date filter options with a clear option
   const dateFilterOptions = [
-    { value: "", label: "Välj period" },
+    { value: "none", label: "Välj period" },
     ...(salesDates?.map(date => ({
       value: date,
       label: format(new Date(date), 'd MMMM yyyy', { locale: sv })
@@ -120,11 +120,11 @@ export default function Overview() {
           <div className="flex flex-col sm:flex-row gap-4">
             <LeaderboardFilter
               options={dateFilterOptions}
-              value={selectedDate}
+              value={selectedDate || "none"}
               onValueChange={(value) => {
-                setSelectedDate(value);
+                setSelectedDate(value === "none" ? "" : value);
                 // Reset date range when specific date is selected
-                if (value) setDate(undefined);
+                if (value !== "none") setDate(undefined);
               }}
               placeholder="Välj säljdag"
             />
