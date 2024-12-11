@@ -51,7 +51,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
       <ChallengeCard
         icon={<Trophy size={24} />}
         iconColor="text-yellow-500"
-        title="Dagens Utmaning"
+        title="Dagens Tävling"
         challenge={challenges?.daily_challenge || "Laddar..."}
         reward={challenges?.daily_reward || "Laddar..."}
         leader={leaders?.dailyLeader}
@@ -61,7 +61,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
       <ChallengeCard
         icon={<Gift size={24} />}
         iconColor="text-purple-500"
-        title="Veckans Utmaning"
+        title="Veckans Tävling"
         challenge={challenges?.weekly_challenge || "Laddar..."}
         reward={challenges?.weekly_reward || "Laddar..."}
         leader={leaders?.weeklyLeader}
@@ -71,7 +71,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
       <ChallengeCard
         icon={<Laptop size={24} />}
         iconColor="text-blue-500"
-        title="Månadens Utmaning"
+        title="Månadens Tävling"
         challenge={challenges?.monthly_challenge || "Laddar..."}
         reward={challenges?.monthly_reward || "Laddar..."}
         leader={leaders?.monthlyLeader}

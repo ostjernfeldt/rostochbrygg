@@ -75,13 +75,13 @@ export const ChallengeManager = () => {
   if (!showForm) {
     return (
       <div className="stat-card">
-        <h2 className="text-xl font-bold mb-4">Skapa ny utmaning</h2>
+        <h2 className="text-xl font-bold mb-4">Skapa ny tävling</h2>
         <Button 
           onClick={() => setShowForm(true)}
           className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-6 text-lg"
         >
           <Calendar className="mr-2" />
-          Skapa utmaning
+          Skapa tävling
         </Button>
       </div>
     );
@@ -92,15 +92,15 @@ export const ChallengeManager = () => {
       <h2 className="text-xl font-bold mb-4">Skapa ny utmaning</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-white text-lg mb-2">Typ av utmaning</label>
+          <label className="block text-white text-lg mb-2">Typ av tävling</label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value as ChallengeType)}
             className="w-full bg-[#1A1F2C] border-none text-white h-12 text-lg rounded-md px-3"
           >
-            <option value="daily">Dagens utmaning</option>
-            <option value="weekly">Veckans utmaning</option>
-            <option value="monthly">Månadens utmaning</option>
+            <option value="daily">Dagens tävling</option>
+            <option value="weekly">Veckans tävling</option>
+            <option value="monthly">Månadens tävling</option>
           </select>
         </div>
 
@@ -156,7 +156,7 @@ export const ChallengeManager = () => {
             type="submit"
             className="flex-1 bg-primary hover:bg-primary/90 text-white font-medium py-6 text-lg"
           >
-            Skapa utmaning
+            Skapa tävling
           </Button>
           <Button 
             type="button"

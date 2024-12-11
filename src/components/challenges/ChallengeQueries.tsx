@@ -39,10 +39,10 @@ export const useChallengeQueries = (selectedDay: string, selectedWeek: string, s
 
   return {
     daily_challenge: "Sälj för störst belopp under dagen",
-    daily_reward: dailyChallenge ? `${dailyChallenge.reward} SEK bonus` : "Ingen utmaning idag",
+    daily_reward: dailyChallenge ? `${dailyChallenge.reward} SEK bonus` : "Ingen tävling idag",
     weekly_challenge: "Sälj för störst belopp under veckan",
-    weekly_reward: weeklyChallenge ? `${weeklyChallenge.reward} SEK bonus` : "Ingen utmaning denna vecka",
+    weekly_reward: weeklyChallenge ? `${weeklyChallenge.reward} SEK bonus` : "Ingen tävling denna vecka",
     monthly_challenge: "Sälj för störst belopp under månaden",
-    monthly_reward: monthlyChallenge ? `${monthlyChallenge.reward} SEK bonus` : "Ingen utmaning denna månad"
+    monthly_reward: monthlyChallenge ? `${monthlyChallenge.reward} SEK bonus` : "Ingen tävling denna månad"
   };
 };

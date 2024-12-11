@@ -111,15 +111,15 @@ export const ActiveChallenges = () => {
   if (!challenges?.length) {
     return (
       <div className="stat-card">
-        <h2 className="text-xl font-bold mb-4">Aktiva utmaningar</h2>
-        <p className="text-gray-400">Inga aktiva utmaningar</p>
+        <h2 className="text-xl font-bold mb-4">Aktiva tävlingar</h2>
+        <p className="text-gray-400">Inga aktiva tävlingar</p>
       </div>
     );
   }
 
   return (
     <div className="stat-card">
-      <h2 className="text-xl font-bold mb-4">Aktiva utmaningar</h2>
+      <h2 className="text-xl font-bold mb-4">Aktiva tävlingar</h2>
       <div className="space-y-4">
         {challenges.map((challenge) => (
           <div
