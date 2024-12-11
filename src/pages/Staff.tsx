@@ -2,6 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState } from "react";
 
 interface StaffMember {
   displayName: string;
@@ -13,8 +23,13 @@ interface StaffMember {
   salesCount: number;
 }
 
+type SortField = 'totalAmount' | 'salesCount' | 'averageAmount' | 'daysActive' | 'firstSale';
+
 const Staff = () => {
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState<SortField>('totalAmount');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   
   const { data: staffMembers, isLoading } = useQuery({
     queryKey: ["staffMembers"],
@@ -66,6 +81,28 @@ const Staff = () => {
     }
   });
 
+  const sortOptions: { value: SortField; label: string }[] = [
+    { value: 'totalAmount', label: 'Total försäljning' },
+    { value: 'salesCount', label: 'Antal sälj' },
+    { value: 'averageAmount', label: 'Snittförsäljning' },
+    { value: 'daysActive', label: 'Aktiva dagar' },
+    { value: 'firstSale', label: 'Första sälj' }
+  ];
+
+  const filteredAndSortedStaff = staffMembers
+    ?.filter(member => 
+      member.displayName.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      const multiplier = sortDirection === 'asc' ? 1 : -1;
+      
+      if (sortField === 'firstSale') {
+        return multiplier * (new Date(a.firstSale).getTime() - new Date(b.firstSale).getTime());
+      }
+      
+      return multiplier * (a[sortField] - b[sortField]);
+    });
+
   if (isLoading) {
     return (
       <div className="p-4 pb-24">
@@ -84,8 +121,52 @@ const Staff = () => {
   return (
     <div className="p-4 pb-24">
       <h1 className="text-2xl font-bold mb-6">Personal</h1>
+      
+      <div className="space-y-4 mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Sök säljare..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        
+        <div className="flex gap-2">
+          <Select
+            value={sortField}
+            onValueChange={(value) => setSortField(value as SortField)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sortera efter" />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select
+            value={sortDirection}
+            onValueChange={(value) => setSortDirection(value as 'asc' | 'desc')}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sorteringsordning" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="desc">Högst först</SelectItem>
+              <SelectItem value="asc">Lägst först</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <div className="space-y-4">
-        {staffMembers?.map((member) => (
+        {filteredAndSortedStaff?.map((member) => (
           <div
             key={member.displayName}
             onClick={() => navigate(`/staff/${encodeURIComponent(member.displayName)}`)}
