@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { format, addHours } from "date-fns";
+import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 
 interface SalesChartProps {
@@ -23,51 +23,18 @@ export const SalesChart = ({ transactions }: SalesChartProps) => {
     
     console.log("Sorted transactions:", sortedTransactions);
 
-    const firstTransaction = new Date(sortedTransactions[0].Timestamp);
-    const lastTransaction = new Date(sortedTransactions[sortedTransactions.length - 1].Timestamp);
-    
-    // Set to start of the hour for first transaction
-    firstTransaction.setMinutes(0, 0, 0);
-    
-    // Set to end of the hour for last transaction
-    lastTransaction.setMinutes(59, 59, 999);
-
-    // Create an array of all hours between first and last transaction
-    const hourlyData: Record<string, number> = {};
-    let currentHour = new Date(firstTransaction);
-    
-    while (currentHour <= lastTransaction) {
-      const hourKey = currentHour.toISOString();
-      hourlyData[hourKey] = 0;
-      currentHour = addHours(currentHour, 1);
-    }
-
-    // Group transactions by hour and calculate the sum for each hour
-    sortedTransactions.forEach(transaction => {
-      if (!transaction.Amount) return;
-      
-      const timestamp = new Date(transaction.Timestamp);
-      timestamp.setMinutes(0, 0, 0);
-      const hourKey = timestamp.toISOString();
-      
-      console.log(`Adding amount ${transaction.Amount} to hour ${format(timestamp, 'HH:mm')}`);
-      hourlyData[hourKey] = (hourlyData[hourKey] || 0) + transaction.Amount;
-    });
-
-    console.log("Hourly data before cumulative:", hourlyData);
-
-    // Calculate cumulative amounts
+    // Calculate cumulative amounts for each transaction
     let cumulativeAmount = 0;
-    const result = Object.entries(hourlyData)
-      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-      .map(([timestamp, amount]) => {
-        cumulativeAmount += amount;
-        console.log(`Cumulative amount at ${format(new Date(timestamp), 'HH:mm')}: ${cumulativeAmount}`);
-        return {
-          timestamp,
-          amount: cumulativeAmount
-        };
-      });
+    const result = sortedTransactions.map(transaction => {
+      if (transaction.Amount) {
+        cumulativeAmount += transaction.Amount;
+      }
+      console.log(`Transaction at ${format(new Date(transaction.Timestamp), 'HH:mm')}: ${transaction.Amount}, Cumulative: ${cumulativeAmount}`);
+      return {
+        timestamp: transaction.Timestamp,
+        amount: cumulativeAmount
+      };
+    });
 
     console.log("Final chart data:", result);
     return result;
