@@ -47,7 +47,6 @@ export const ChallengeCard = ({
       <p className="text-green-500 mt-2">{reward}</p>
       {leader && (
         <div className="mt-4 p-3 bg-card/50 rounded-lg">
-          <p className="text-sm text-gray-400">Leder just nu:</p>
           <p className="font-bold">{leader.name}</p>
           <p style={{ color: "#D3E4FD" }}>SEK {leader.amount.toLocaleString()}</p>
         </div>

@@ -3,7 +3,7 @@ import { AllTimeStats } from "@/components/stats/AllTimeStats";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
-import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, format, subDays } from "date-fns";
+import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, format, parseISO } from "date-fns";
 import { useState } from "react";
 import { ChallengeCard } from "@/components/challenges/ChallengeCard";
 
@@ -14,21 +14,17 @@ interface ChallengeLeaders {
   currentMonth?: string;
 }
 
+interface Purchase {
+  "User Display Name": string;
+  Amount: number;
+}
+
 const Competitions = () => {
   const [selectedDay, setSelectedDay] = useState(() => format(new Date(), 'yyyy-MM-dd'));
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [selectedWeek, setSelectedWeek] = useState(() => {
     const now = new Date();
     return `${format(startOfWeek(now), 'yyyy-MM-dd')}`;
-  });
-
-  // Generate last 7 days for the dropdown
-  const dayOptions = Array.from({ length: 7 }, (_, i) => {
-    const date = subDays(new Date(), i);
-    return {
-      value: format(date, 'yyyy-MM-dd'),
-      label: format(date, 'd MMMM yyyy')
-    };
   });
 
   // Generate last 12 months for the dropdown
@@ -47,6 +43,16 @@ const Competitions = () => {
     return {
       value: format(date, 'yyyy-MM-dd'),
       label: `Vecka ${format(date, 'w')} (${format(date, 'd MMM')} - ${format(endOfWeek(date), 'd MMM')})`
+    };
+  });
+
+  // Generate date options for daily challenge
+  const dayOptions = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    return {
+      value: format(date, 'yyyy-MM-dd'),
+      label: format(date, 'd MMMM yyyy')
     };
   });
 
@@ -86,12 +92,12 @@ const Competitions = () => {
       }
 
       // Parse the selected dates
-      const dayStart = new Date(selectedDay);
+      const dayStart = parseISO(selectedDay);
       dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(selectedDay);
+      const dayEnd = parseISO(selectedDay);
       dayEnd.setHours(23, 59, 59, 999);
 
-      const weekStart = new Date(selectedWeek);
+      const weekStart = parseISO(selectedWeek);
       const weekEnd = endOfWeek(weekStart);
 
       const [year, month] = selectedMonth.split('-');
@@ -118,11 +124,11 @@ const Competitions = () => {
         .lte("Timestamp", monthEnd.toISOString());
 
       // Calculate totals for each period
-      const calculateLeader = (sales: any[] | null) => {
+      const calculateLeader = (sales: Purchase[] | null) => {
         if (!sales || sales.length === 0) return null;
         
         const totals = sales.reduce((acc: { [key: string]: number }, sale) => {
-          const name = sale["User Display Name"] as string;
+          const name = sale["User Display Name"];
           const amount = Number(sale.Amount || 0);
           acc[name] = (acc[name] || 0) + amount;
           return acc;
