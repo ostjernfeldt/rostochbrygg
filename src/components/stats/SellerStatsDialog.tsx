@@ -18,11 +18,40 @@ export const SellerStatsDialog = ({ isOpen, onClose, type }: SellerStatsDialogPr
   const { data: stats, isLoading } = useQuery({
     queryKey: ["sellerStats", type],
     queryFn: async () => {
-      console.log("Fetching seller stats...");
+      console.log("Fetching seller stats for latest session...");
       
+      // First, get the latest date with sales
+      const { data: dateData, error: dateError } = await supabase
+        .from("purchases")
+        .select("Timestamp")
+        .order("Timestamp", { ascending: false });
+
+      if (dateError) {
+        console.error("Error fetching dates:", dateError);
+        throw dateError;
+      }
+
+      if (!dateData || dateData.length === 0) {
+        console.log("No sales data found");
+        return [];
+      }
+
+      // Get the latest date
+      const latestDate = new Date(dateData[0].Timestamp as string);
+      console.log("Latest date:", latestDate);
+
+      // Set up time range for the latest date
+      const startOfDay = new Date(latestDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(latestDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      // Get sales for the latest date
       const { data: sales, error } = await supabase
         .from("purchases")
         .select('"User Display Name", Amount')
+        .gte("Timestamp", startOfDay.toISOString())
+        .lte("Timestamp", endOfDay.toISOString())
         .not("User Display Name", "is", null)
         .not("Amount", "is", null);
 
@@ -66,6 +95,9 @@ export const SellerStatsDialog = ({ isOpen, onClose, type }: SellerStatsDialogPr
       <DialogContent className="max-w-md">
         <DialogTitle>
           {type === "sales" ? "Antal sälj per säljare" : "Snittordervärde per säljare"}
+          <div className="text-sm text-gray-400 font-normal mt-1">
+            Statistik från senaste säljpasset
+          </div>
         </DialogTitle>
         <div className="space-y-4 mt-4">
           {isLoading ? (
