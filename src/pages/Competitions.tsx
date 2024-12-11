@@ -3,12 +3,13 @@ import { AllTimeStats } from "@/components/stats/AllTimeStats";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
-import { startOfMonth, endOfMonth, subDays } from "date-fns";
+import { startOfMonth, endOfMonth, subDays, format } from "date-fns";
 
 interface ChallengeLeaders {
   dailyLeader: { name: string; amount: number } | null;
   weeklyLeader: { name: string; amount: number } | null;
   monthlyLeader: { name: string; amount: number } | null;
+  currentMonth?: string;
 }
 
 const Competitions = () => {
@@ -90,7 +91,8 @@ const Competitions = () => {
         
         const totals = sales.reduce((acc: { [key: string]: number }, sale) => {
           const name = sale["User Display Name"] as string;
-          acc[name] = (acc[name] || 0) + Number(sale.Amount || 0);
+          const amount = Number(sale.Amount || 0);
+          acc[name] = (acc[name] || 0) + amount;
           return acc;
         }, {});
 
@@ -105,13 +107,15 @@ const Competitions = () => {
       const dailyLeader = calculateLeader(dailySales || []);
       const weeklyLeader = calculateLeader(weeklySales || []);
       const monthlyLeader = calculateLeader(monthlySales || []);
+      const currentMonthName = format(latestDate, 'MMMM yyyy');
 
       console.log("Leaders calculated:", { dailyLeader, weeklyLeader, monthlyLeader });
 
       return {
         dailyLeader,
         weeklyLeader,
-        monthlyLeader
+        monthlyLeader,
+        currentMonth: currentMonthName
       };
     }
   });
@@ -133,7 +137,7 @@ const Competitions = () => {
           <div className="mt-4 p-3 bg-card/50 rounded-lg">
             <p className="text-sm text-gray-400">Leder just nu:</p>
             <p className="font-bold">{leaders.dailyLeader.name}</p>
-            <p className="text-green-500">SEK {leaders.dailyLeader.amount.toLocaleString()}</p>
+            <p style={{ color: "#D3E4FD" }}>SEK {leaders.dailyLeader.amount.toLocaleString()}</p>
           </div>
         )}
       </div>
@@ -151,7 +155,7 @@ const Competitions = () => {
           <div className="mt-4 p-3 bg-card/50 rounded-lg">
             <p className="text-sm text-gray-400">Leder just nu:</p>
             <p className="font-bold">{leaders.weeklyLeader.name}</p>
-            <p className="text-green-500">SEK {leaders.weeklyLeader.amount.toLocaleString()}</p>
+            <p style={{ color: "#D3E4FD" }}>SEK {leaders.weeklyLeader.amount.toLocaleString()}</p>
           </div>
         )}
       </div>
@@ -160,7 +164,7 @@ const Competitions = () => {
         <div className="flex items-center gap-3">
           <Laptop className="text-blue-500" size={24} />
           <div>
-            <h3 className="font-bold">Månadens Utmaning</h3>
+            <h3 className="font-bold">Månadens Utmaning ({leaders?.currentMonth})</h3>
             <p className="text-gray-400">{challenges?.monthly_challenge || "Laddar..."}</p>
           </div>
         </div>
@@ -169,7 +173,7 @@ const Competitions = () => {
           <div className="mt-4 p-3 bg-card/50 rounded-lg">
             <p className="text-sm text-gray-400">Leder just nu:</p>
             <p className="font-bold">{leaders.monthlyLeader.name}</p>
-            <p className="text-green-500">SEK {leaders.monthlyLeader.amount.toLocaleString()}</p>
+            <p style={{ color: "#D3E4FD" }}>SEK {leaders.monthlyLeader.amount.toLocaleString()}</p>
           </div>
         )}
       </div>
