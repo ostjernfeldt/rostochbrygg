@@ -45,41 +45,10 @@
 }
 
 .leaderboard-item {
-  @apply p-4 rounded-xl flex justify-between items-center mb-3;
-  background: rgba(26,31,44,0.95);
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
-}
-
-.leaderboard-item:first-child {
-  border-color: #FFD700;
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-  animation: goldPulse 2s infinite;
-}
-
-.leaderboard-item:nth-child(2) {
-  border-color: #C0C0C0;
-  box-shadow: 0 0 15px rgba(192, 192, 192, 0.3);
-}
-
-.leaderboard-item:nth-child(3) {
-  border-color: #CD7F32;
-  box-shadow: 0 0 15px rgba(205, 127, 50, 0.3);
-}
-
-@keyframes goldPulse {
-  0% {
-    border-color: #FFD700;
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-  }
-  50% {
-    border-color: #FFC800;
-    box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
-  }
-  100% {
-    border-color: #FFD700;
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-  }
+  @apply p-4 rounded-xl bg-card flex justify-between items-center mb-3;
+  background: linear-gradient(145deg, rgba(26,31,44,0.95) 0%, rgba(26,31,44,0.85) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .leaderboard-rank {
