@@ -11,6 +11,11 @@ interface UserSales {
   salesCount: number;
 }
 
+interface PurchaseData {
+  "User Display Name": string;
+  Amount: number;
+}
+
 const Leaderboard = () => {
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [selectedWeek, setSelectedWeek] = useState(() => {
@@ -37,9 +42,9 @@ const Leaderboard = () => {
     };
   });
 
-  const processLeaderboardData = (salesData: any[]): UserSales[] => {
+  const processLeaderboardData = (salesData: PurchaseData[]): UserSales[] => {
     const userSales = salesData.reduce((acc: { [key: string]: UserSales }, sale) => {
-      const userName = sale["User Display Name"] as string;
+      const userName = sale["User Display Name"];
       const amount = Number(sale.Amount || 0);
 
       if (!acc[userName]) {
