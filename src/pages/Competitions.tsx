@@ -17,6 +17,7 @@ interface ChallengeLeaders {
 interface Purchase {
   "User Display Name": string;
   Amount: number;
+  Timestamp: string;
 }
 
 const Competitions = () => {
@@ -26,6 +27,34 @@ const Competitions = () => {
     const now = new Date();
     return `${format(startOfWeek(now), 'yyyy-MM-dd')}`;
   });
+
+  // Fetch dates with sales activity
+  const { data: salesDates } = useQuery({
+    queryKey: ["salesDates"],
+    queryFn: async () => {
+      console.log("Fetching dates with sales activity...");
+      const { data, error } = await supabase
+        .from("purchases")
+        .select("Timestamp")
+        .order("Timestamp", { ascending: false });
+
+      if (error) throw error;
+
+      // Get unique dates and format them
+      const uniqueDates = Array.from(new Set(
+        data.map(purchase => format(new Date(purchase.Timestamp), 'yyyy-MM-dd'))
+      ));
+
+      console.log("Found sales dates:", uniqueDates);
+      return uniqueDates;
+    }
+  });
+
+  // Generate date options from sales dates
+  const dayOptions = (salesDates || []).map(date => ({
+    value: date,
+    label: format(parseISO(date), 'd MMMM yyyy')
+  }));
 
   // Generate last 12 months for the dropdown
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
@@ -43,16 +72,6 @@ const Competitions = () => {
     return {
       value: format(date, 'yyyy-MM-dd'),
       label: `Vecka ${format(date, 'w')} (${format(date, 'd MMM')} - ${format(endOfWeek(date), 'd MMM')})`
-    };
-  });
-
-  // Generate date options for daily challenge
-  const dayOptions = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    return {
-      value: format(date, 'yyyy-MM-dd'),
-      label: format(date, 'd MMMM yyyy')
     };
   });
 
