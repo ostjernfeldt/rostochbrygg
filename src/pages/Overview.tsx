@@ -70,11 +70,13 @@ export default function Overview() {
       // Calculate payment method statistics with amounts
       const paymentMethodStats = sales.reduce((acc, sale) => {
         const method = sale["Payment Type"] || "Okänd";
+        const amount = Number(sale.Amount) || 0; // Ensure amount is a number
+        
         if (!acc[method]) {
           acc[method] = { count: 0, amount: 0 };
         }
         acc[method].count += 1;
-        acc[method].amount += sale.Amount || 0;
+        acc[method].amount += amount;
         return acc;
       }, {} as Record<string, { count: number; amount: number }>);
 
@@ -82,12 +84,14 @@ export default function Overview() {
       const paymentMethodStatsArray = Object.entries(paymentMethodStats).map(([method, { count, amount }]) => ({
         method,
         count,
-        amount,
+        amount: Number(amount), // Ensure amount is a number
         percentage: ((count / totalSales) * 100).toFixed(1)
       }));
 
+      console.log("Payment method stats:", paymentMethodStatsArray);
+
       const totalAmount = sales.reduce(
-        (sum, sale) => sum + (sale.Amount || 0),
+        (sum, sale) => sum + (Number(sale.Amount) || 0),
         0
       );
 
@@ -204,4 +208,3 @@ export default function Overview() {
     </PageLayout>
   );
 }
-};
