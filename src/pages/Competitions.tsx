@@ -3,7 +3,9 @@ import { AllTimeStats } from "@/components/stats/AllTimeStats";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
-import { startOfMonth, endOfMonth, subDays, format } from "date-fns";
+import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, format } from "date-fns";
+import { useState } from "react";
+import { LeaderboardFilter } from "@/components/leaderboard/LeaderboardFilter";
 
 interface ChallengeLeaders {
   dailyLeader: { name: string; amount: number } | null;
@@ -13,6 +15,31 @@ interface ChallengeLeaders {
 }
 
 const Competitions = () => {
+  const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
+  const [selectedWeek, setSelectedWeek] = useState(() => {
+    const now = new Date();
+    return `${format(startOfWeek(now), 'yyyy-MM-dd')}`;
+  });
+
+  // Generate last 12 months for the dropdown
+  const monthOptions = Array.from({ length: 12 }, (_, i) => {
+    const date = subMonths(new Date(), i);
+    return {
+      value: format(date, 'yyyy-MM'),
+      label: format(date, 'MMMM yyyy')
+    };
+  });
+
+  // Generate weeks for the current month
+  const weekOptions = Array.from({ length: 5 }, (_, i) => {
+    const date = startOfWeek(new Date());
+    date.setDate(date.getDate() - (i * 7));
+    return {
+      value: format(date, 'yyyy-MM-dd'),
+      label: `Vecka ${format(date, 'w')} (${format(date, 'd MMM')} - ${format(endOfWeek(date), 'd MMM')})`
+    };
+  });
+
   const { data: challenges } = useQuery({
     queryKey: ["challenges"],
     queryFn: async () => {
@@ -28,7 +55,7 @@ const Competitions = () => {
   });
 
   const { data: leaders } = useQuery({
-    queryKey: ["challengeLeaders"],
+    queryKey: ["challengeLeaders", selectedWeek, selectedMonth],
     queryFn: async (): Promise<ChallengeLeaders> => {
       console.log("Fetching challenge leaders...");
       
@@ -58,11 +85,14 @@ const Competitions = () => {
       const endOfDay = new Date(latestDate);
       endOfDay.setHours(23, 59, 59, 999);
 
-      const weekStart = subDays(endOfDay, 6);
-      weekStart.setHours(0, 0, 0, 0);
+      // Use selected week
+      const weekStart = new Date(selectedWeek);
+      const weekEnd = endOfWeek(weekStart);
 
-      const currentMonth = startOfMonth(latestDate);
-      const monthEnd = endOfMonth(latestDate);
+      // Use selected month
+      const [year, month] = selectedMonth.split('-');
+      const monthStart = startOfMonth(new Date(Number(year), Number(month) - 1));
+      const monthEnd = endOfMonth(monthStart);
 
       // Fetch daily leader
       const { data: dailySales } = await supabase
@@ -76,17 +106,17 @@ const Competitions = () => {
         .from("purchases")
         .select('"User Display Name", Amount')
         .gte("Timestamp", weekStart.toISOString())
-        .lte("Timestamp", endOfDay.toISOString());
+        .lte("Timestamp", weekEnd.toISOString());
 
       // Fetch monthly leader
       const { data: monthlySales } = await supabase
         .from("purchases")
         .select('"User Display Name", Amount')
-        .gte("Timestamp", currentMonth.toISOString())
+        .gte("Timestamp", monthStart.toISOString())
         .lte("Timestamp", monthEnd.toISOString());
 
       // Calculate totals for each period
-      const calculateLeader = (sales: any[]) => {
+      const calculateLeader = (sales: any[] | null) => {
         if (!sales || sales.length === 0) return null;
         
         const totals = sales.reduce((acc: { [key: string]: number }, sale) => {
@@ -107,7 +137,7 @@ const Competitions = () => {
       const dailyLeader = calculateLeader(dailySales || []);
       const weeklyLeader = calculateLeader(weeklySales || []);
       const monthlyLeader = calculateLeader(monthlySales || []);
-      const currentMonthName = format(latestDate, 'MMMM yyyy');
+      const currentMonthName = format(monthStart, 'MMMM yyyy');
 
       console.log("Leaders calculated:", { dailyLeader, weeklyLeader, monthlyLeader });
 
@@ -143,12 +173,20 @@ const Competitions = () => {
       </div>
 
       <div className="stat-card animate-fade-in [animation-delay:200ms] hover:scale-[1.02] transition-transform duration-200">
-        <div className="flex items-center gap-3">
-          <Gift className="text-purple-500" size={24} />
-          <div>
-            <h3 className="font-bold">Veckans Utmaning</h3>
-            <p className="text-gray-400">{challenges?.weekly_challenge || "Laddar..."}</p>
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-3">
+            <Gift className="text-purple-500" size={24} />
+            <div>
+              <h3 className="font-bold">Veckans Utmaning</h3>
+              <p className="text-gray-400">{challenges?.weekly_challenge || "Laddar..."}</p>
+            </div>
           </div>
+          <LeaderboardFilter
+            options={weekOptions}
+            value={selectedWeek}
+            onValueChange={setSelectedWeek}
+            placeholder="Välj vecka"
+          />
         </div>
         <p className="text-green-500 mt-2">{challenges?.weekly_reward || "Laddar..."}</p>
         {leaders?.weeklyLeader && (
@@ -161,12 +199,20 @@ const Competitions = () => {
       </div>
 
       <div className="stat-card animate-fade-in [animation-delay:400ms] hover:scale-[1.02] transition-transform duration-200">
-        <div className="flex items-center gap-3">
-          <Laptop className="text-blue-500" size={24} />
-          <div>
-            <h3 className="font-bold">Månadens Utmaning ({leaders?.currentMonth})</h3>
-            <p className="text-gray-400">{challenges?.monthly_challenge || "Laddar..."}</p>
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-3">
+            <Laptop className="text-blue-500" size={24} />
+            <div>
+              <h3 className="font-bold">Månadens Utmaning</h3>
+              <p className="text-gray-400">{challenges?.monthly_challenge || "Laddar..."}</p>
+            </div>
           </div>
+          <LeaderboardFilter
+            options={monthOptions}
+            value={selectedMonth}
+            onValueChange={setSelectedMonth}
+            placeholder="Välj månad"
+          />
         </div>
         <p className="text-green-500 mt-2">{challenges?.monthly_reward || "Laddar..."}</p>
         {leaders?.monthlyLeader && (
