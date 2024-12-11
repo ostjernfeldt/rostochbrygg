@@ -7,7 +7,8 @@ interface StatCardProps {
 
 export const StatCard = ({ 
   title, 
-  value, 
+  value,
+  userName,
   animationDelay = "0ms" 
 }: StatCardProps) => {
   return (
@@ -16,6 +17,11 @@ export const StatCard = ({
       <div className="text-4xl font-bold mt-1 text-white">
         {value}
       </div>
+      {userName && (
+        <div className="mt-2 text-sm text-gray-400">
+          {userName}
+        </div>
+      )}
     </div>
   );
 };
