@@ -7,10 +7,12 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useState } from "react";
 
 export const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
 
   const menuItems = [
     { path: "/", label: "Idag" },
@@ -43,7 +45,7 @@ export const BottomNav = () => {
 
   return (
     <div className="fixed top-4 left-4 z-50">
-      <Sheet>
+      <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <button className="p-2 rounded-lg bg-card hover:bg-card/80 transition-colors">
             <Menu className="h-6 w-6 text-white" />
@@ -56,6 +58,7 @@ export const BottomNav = () => {
                 key={item.path}
                 onClick={() => {
                   navigate(item.path);
+                  setOpen(false); // Close menu after navigation
                 }}
                 className={`p-3 text-left rounded-lg transition-colors ${
                   location.pathname === item.path
@@ -67,7 +70,10 @@ export const BottomNav = () => {
               </button>
             ))}
             <button
-              onClick={handleSignOut}
+              onClick={() => {
+                handleSignOut();
+                setOpen(false); // Close menu after sign out
+              }}
               className="p-3 text-left rounded-lg transition-colors text-gray-400 hover:bg-card/80 mt-4 flex items-center gap-2"
             >
               <LogOut className="h-4 w-4" />

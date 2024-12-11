@@ -151,7 +151,7 @@ export default function Overview() {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 bg-card border-gray-800" align="start">
                 <Calendar
                   initialFocus
                   mode="range"
@@ -164,6 +164,7 @@ export default function Overview() {
                   }}
                   numberOfMonths={2}
                   locale={sv}
+                  className="bg-card rounded-md"
                 />
               </PopoverContent>
             </Popover>
