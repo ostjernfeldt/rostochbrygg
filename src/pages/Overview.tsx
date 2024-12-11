@@ -4,7 +4,7 @@ import { PageLayout } from "@/components/PageLayout";
 import { format, parseISO, startOfDay, endOfDay } from "date-fns";
 import { sv } from "date-fns/locale";
 import { SalesChart } from "@/components/SalesChart";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/popover";
 import { useState } from "react";
 import { DateRange } from "react-day-picker";
+import { OverviewStatsGrid } from "@/components/stats/OverviewStatsGrid";
+import { PaymentMethodStats } from "@/components/stats/PaymentMethodStats";
 
 export default function Overview() {
   const [date, setDate] = useState<DateRange | undefined>({
@@ -84,13 +86,17 @@ export default function Overview() {
   return (
     <PageLayout>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Översikt</h1>
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-6 w-6" />
+            <h1 className="text-2xl font-bold">Översikt</h1>
+          </div>
+          
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="justify-start text-left font-normal"
+                className="w-full sm:w-auto justify-start text-left font-normal"
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {date?.from ? (
@@ -107,7 +113,7 @@ export default function Overview() {
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
+            <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 initialFocus
                 mode="range"
@@ -132,65 +138,8 @@ export default function Overview() {
           </div>
         ) : stats ? (
           <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <div className="stat-card">
-                <h3 className="text-gray-400">Total försäljning</h3>
-                <div className="mt-2 text-2xl font-bold">
-                  SEK {Math.round(stats.totalAmount).toLocaleString()}
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <h3 className="text-gray-400">Antal sälj</h3>
-                <div className="mt-2 text-2xl font-bold">
-                  {stats.salesCount.toLocaleString()}
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <h3 className="text-gray-400">Snittordervärde</h3>
-                <div className="mt-2 text-2xl font-bold">
-                  SEK {Math.round(stats.averageValue).toLocaleString()}
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <h3 className="text-gray-400">Antal säljdagar</h3>
-                <div className="mt-2 text-2xl font-bold">
-                  {stats.sellingDays.toLocaleString()}
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <h3 className="text-gray-400">Antal säljare</h3>
-                <div className="mt-2 text-2xl font-bold">
-                  {stats.uniqueSellers.toLocaleString()}
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <h3 className="text-gray-400">Snitt per dag</h3>
-                <div className="mt-2 text-2xl font-bold">
-                  SEK {Math.round(stats.dailyAverage).toLocaleString()}
-                </div>
-              </div>
-            </div>
-
-            {/* Payment Methods Statistics */}
-            <div className="mt-8">
-              <h2 className="mb-4 text-xl font-bold">Betalningsmetoder</h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {stats.paymentMethodStats.map(({ method, count, percentage }) => (
-                  <div key={method} className="stat-card">
-                    <h3 className="text-gray-400">{method}</h3>
-                    <div className="mt-2">
-                      <div className="text-2xl font-bold">{percentage}%</div>
-                      <div className="text-sm text-gray-400">{count} transaktioner</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <OverviewStatsGrid stats={stats} />
+            <PaymentMethodStats stats={stats.paymentMethodStats} />
 
             <div className="mt-8">
               <h2 className="mb-4 text-xl font-bold">Försäljningsutveckling</h2>
