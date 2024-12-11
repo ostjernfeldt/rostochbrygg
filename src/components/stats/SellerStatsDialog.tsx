@@ -22,7 +22,7 @@ export const SellerStatsDialog = ({ isOpen, onClose, type }: SellerStatsDialogPr
       
       const { data: sales, error } = await supabase
         .from("purchases")
-        .select("User Display Name, Amount")
+        .select('"User Display Name", Amount')
         .not("User Display Name", "is", null)
         .not("Amount", "is", null);
 
