@@ -126,19 +126,19 @@ const Competitions = () => {
       // Fetch sales for each period
       const { data: dailySales } = await supabase
         .from("purchases")
-        .select('"User Display Name", Amount')
+        .select('"User Display Name", Amount, Timestamp')
         .gte("Timestamp", dayStart.toISOString())
         .lte("Timestamp", dayEnd.toISOString());
 
       const { data: weeklySales } = await supabase
         .from("purchases")
-        .select('"User Display Name", Amount')
+        .select('"User Display Name", Amount, Timestamp')
         .gte("Timestamp", weekStart.toISOString())
         .lte("Timestamp", weekEnd.toISOString());
 
       const { data: monthlySales } = await supabase
         .from("purchases")
-        .select('"User Display Name", Amount')
+        .select('"User Display Name", Amount, Timestamp')
         .gte("Timestamp", monthStart.toISOString())
         .lte("Timestamp", monthEnd.toISOString());
 
