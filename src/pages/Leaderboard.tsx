@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format, startOfWeek, parseISO, subMonths } from "date-fns";
+import { format, startOfWeek, endOfWeek, parseISO, subMonths } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { PageLayout } from "@/components/PageLayout";
 import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection";
