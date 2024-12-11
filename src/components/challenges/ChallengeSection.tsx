@@ -111,7 +111,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
           }, {});
 
           const sortedTotals = Object.entries(totals)
-            .sort(([, a], [, b]) => b - a);
+            .sort(([, a], [, b]) => Number(b) - Number(a));
 
           return sortedTotals.length > 0 
             ? { 
