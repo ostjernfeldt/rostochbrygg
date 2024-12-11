@@ -14,14 +14,14 @@ export const StatCard = ({
   return (
     <div className={`overview-stat-card animate-fade-in [animation-delay:${animationDelay}]`}>
       <span className="text-gray-400 text-lg">{title}</span>
-      <div className="text-4xl font-bold mt-1 text-white">
-        {value}
-      </div>
       {userName && (
-        <div className="mt-2 text-sm text-gray-400">
+        <div className="text-2xl font-bold mt-2 text-white">
           {userName}
         </div>
       )}
+      <div className="text-xl mt-1 text-primary">
+        {value}
+      </div>
     </div>
   );
 };
