@@ -53,8 +53,8 @@ export const ChallengeManager = () => {
       if (error) throw error;
 
       toast({
-        title: "Utmaning skapad!",
-        description: "Din nya utmaning har sparats",
+        title: "Tävling skapad!",
+        description: "Din nya tävling har sparats",
         className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
       });
 
@@ -66,7 +66,7 @@ export const ChallengeManager = () => {
       console.error("Error creating challenge:", error);
       toast({
         title: "Ett fel uppstod",
-        description: "Kunde inte skapa utmaningen",
+        description: "Kunde inte skapa tävlingen",
         variant: "destructive",
       });
     }
@@ -89,7 +89,7 @@ export const ChallengeManager = () => {
 
   return (
     <div className="stat-card">
-      <h2 className="text-xl font-bold mb-4">Skapa ny utmaning</h2>
+      <h2 className="text-xl font-bold mb-4">Skapa ny tävling</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-white text-lg mb-2">Typ av tävling</label>

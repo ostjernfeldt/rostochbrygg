@@ -34,8 +34,8 @@ export const ActiveChallenges = () => {
       if (error) throw error;
 
       toast({
-        title: "Utmaning borttagen",
-        description: "Utmaningen har tagits bort",
+        title: "Tävling borttagen",
+        description: "Tävlingen har tagits bort",
         className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
       });
 
@@ -44,7 +44,7 @@ export const ActiveChallenges = () => {
       console.error("Error deleting challenge:", error);
       toast({
         title: "Ett fel uppstod",
-        description: "Kunde inte ta bort utmaningen",
+        description: "Kunde inte ta bort tävlingen",
         variant: "destructive",
       });
     }
@@ -65,7 +65,7 @@ export const ActiveChallenges = () => {
       if (error) throw error;
 
       toast({
-        title: "Utmaning uppdaterad",
+        title: "Tävling uppdaterad",
         description: "Beloppet har uppdaterats",
         className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
       });
@@ -76,7 +76,7 @@ export const ActiveChallenges = () => {
       console.error("Error updating challenge:", error);
       toast({
         title: "Ett fel uppstod",
-        description: "Kunde inte uppdatera utmaningen",
+        description: "Kunde inte uppdatera tävlingen",
         variant: "destructive",
       });
     }
@@ -98,11 +98,11 @@ export const ActiveChallenges = () => {
   const getTypeLabel = (type: string) => {
     switch (type) {
       case "daily":
-        return "Dagens utmaning";
+        return "Dagens tävling";
       case "weekly":
-        return "Veckans utmaning";
+        return "Veckans tävling";
       case "monthly":
-        return "Månadens utmaning";
+        return "Månadens tävling";
       default:
         return "";
     }
