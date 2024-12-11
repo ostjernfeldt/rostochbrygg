@@ -3,32 +3,83 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For demo purposes, accept any non-empty credentials
-    if (email && password) {
-      localStorage.setItem("isAuthenticated", "true");
+    setIsLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Inloggad",
         description: "Du är nu inloggad",
         className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
-        duration: 1000, // 1 second
+        duration: 1000,
       });
       navigate("/");
-    } else {
+    } catch (error: any) {
       toast({
         title: "Fel",
-        description: "Vänligen fyll i alla fält",
+        description: error.message || "Ett fel uppstod vid inloggning",
         variant: "destructive",
         className: "bg-red-500 text-white border-none rounded-xl shadow-lg",
-        duration: 1000, // 1 second
+        duration: 2000,
       });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Återställningslänk skickad",
+        description: "Kolla din e-post för instruktioner",
+        className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
+        duration: 3000,
+      });
+      setShowResetDialog(false);
+    } catch (error: any) {
+      toast({
+        title: "Fel",
+        description: error.message || "Ett fel uppstod",
+        variant: "destructive",
+        className: "bg-red-500 text-white border-none rounded-xl shadow-lg",
+        duration: 2000,
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -54,6 +105,7 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full"
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -63,12 +115,52 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full"
+                disabled={isLoading}
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full">
-            Logga in
+          <div className="flex justify-end">
+            <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+              <DialogTrigger asChild>
+                <button
+                  type="button"
+                  className="text-sm text-primary hover:underline"
+                >
+                  Glömt lösenord?
+                </button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Återställ lösenord</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleResetPassword} className="space-y-4 mt-4">
+                  <Input
+                    type="email"
+                    placeholder="Din e-postadress"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="w-full"
+                    disabled={isLoading}
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isLoading}
+                  >
+                    Skicka återställningslänk
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? "Loggar in..." : "Logga in"}
           </Button>
         </form>
       </div>

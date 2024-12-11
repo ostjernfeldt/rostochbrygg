@@ -5,6 +5,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useSwipeable } from "react-swipeable";
 import { BottomNav } from "./components/BottomNav";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import Home from "./pages/Home";
 import Competitions from "./pages/Competitions";
 import Leaderboard from "./pages/Leaderboard";
@@ -17,13 +19,36 @@ import TransactionList from "./pages/TransactionList";
 const queryClient = new QueryClient();
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      
+      if (!session) {
+        navigate('/login');
+      }
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+      if (!session) {
+        navigate('/login');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  if (isAuthenticated === null) {
+    return null; // or a loading spinner
   }
 
-  return <>{children}</>;
+  return isAuthenticated ? <>{children}</> : null;
 };
 
 const AppContent = () => {
