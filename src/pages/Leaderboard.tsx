@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { PageLayout } from "@/components/PageLayout";
 
 interface UserSales {
   "User Display Name": string;
@@ -111,7 +112,7 @@ const Leaderboard = () => {
   }
 
   return (
-    <div className="p-4 pb-24">
+    <PageLayout>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Dagens topplista</h1>
         <Button
@@ -144,7 +145,7 @@ const Leaderboard = () => {
           </div>
         ))}
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

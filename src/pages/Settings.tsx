@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ChallengeCard } from "@/components/settings/ChallengeCard";
+import { PageLayout } from "@/components/PageLayout";
 
 const Settings = () => {
   const [salesGoal, setSalesGoal] = useState("12000");
@@ -97,7 +98,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="p-4 pb-24">
+    <PageLayout>
       <h1 className="text-2xl font-bold mb-8 animate-fade-in">Dagens inställningar</h1>
 
       <div className="space-y-6">
@@ -167,7 +168,7 @@ const Settings = () => {
           Spara inställningar
         </Button>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

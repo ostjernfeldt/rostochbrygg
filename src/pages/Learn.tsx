@@ -1,6 +1,7 @@
 import { Clock, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { PageLayout } from "@/components/PageLayout";
 
 const Learn = () => {
   const navigate = useNavigate();
@@ -46,9 +47,9 @@ const Learn = () => {
   console.log('Filtered articles:', filteredArticles);
 
   return (
-    <div className="p-4 pb-24 animate-fade-in">
+    <PageLayout>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-1">Lär dig mer</h1>
+        <h1 className="text-3xl font-bold mb-1">Kunskap</h1>
         <p className="text-gray-400 text-lg">Utforska våra utbildningar och artiklar</p>
       </div>
 
@@ -105,7 +106,7 @@ const Learn = () => {
           </div>
         ))}
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

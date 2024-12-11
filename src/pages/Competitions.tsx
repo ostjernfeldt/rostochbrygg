@@ -2,6 +2,7 @@ import { Trophy, Gift, Laptop } from "lucide-react";
 import { AllTimeStats } from "@/components/stats/AllTimeStats";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { PageLayout } from "@/components/PageLayout";
 
 const Competitions = () => {
   const { data: challenges } = useQuery({
@@ -19,7 +20,7 @@ const Competitions = () => {
   });
 
   return (
-    <div className="p-4 pb-24">
+    <PageLayout>
       <h1 className="text-2xl font-bold mb-6 animate-fade-in">Tävlingar & Bonusar</h1>
 
       <div className="stat-card animate-fade-in hover:scale-[1.02] transition-transform duration-200">
@@ -56,7 +57,7 @@ const Competitions = () => {
       </div>
 
       <AllTimeStats />
-    </div>
+    </PageLayout>
   );
 };
 

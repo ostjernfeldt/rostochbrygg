@@ -1,5 +1,7 @@
-import { Menu } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 import {
   Sheet,
   SheetContent,
@@ -15,9 +17,28 @@ export const BottomNav = () => {
     { path: "/competitions", label: "Tävlingar" },
     { path: "/leaderboard", label: "Topplista" },
     { path: "/staff", label: "Personal" },
-    { path: "/learn", label: "Lär dig" },
+    { path: "/learn", label: "Kunskap" },
     { path: "/settings", label: "Inställningar" },
   ];
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Fel vid utloggning",
+        description: error.message,
+      });
+    } else {
+      toast({
+        title: "Utloggad",
+        description: "Du har loggats ut",
+        className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
+        duration: 1000,
+      });
+      navigate("/login");
+    }
+  };
 
   return (
     <div className="fixed top-4 left-4 z-50">
@@ -44,6 +65,13 @@ export const BottomNav = () => {
                 {item.label}
               </button>
             ))}
+            <button
+              onClick={handleSignOut}
+              className="p-3 text-left rounded-lg transition-colors text-gray-400 hover:bg-card/80 mt-4 flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Logga ut
+            </button>
           </nav>
         </SheetContent>
       </Sheet>
