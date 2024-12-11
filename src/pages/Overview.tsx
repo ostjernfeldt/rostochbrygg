@@ -49,6 +49,20 @@ export default function Overview() {
         sales.map((sale) => sale["User Display Name"])
       );
 
+      // Calculate payment method statistics
+      const paymentMethods = sales.reduce((acc, sale) => {
+        const method = sale["Payment Type"] || "Okänd";
+        acc[method] = (acc[method] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const totalSales = sales.length;
+      const paymentMethodStats = Object.entries(paymentMethods).map(([method, count]) => ({
+        method,
+        count,
+        percentage: ((count / totalSales) * 100).toFixed(1)
+      }));
+
       const totalAmount = sales.reduce(
         (sum, sale) => sum + (sale.Amount || 0),
         0
@@ -62,6 +76,7 @@ export default function Overview() {
         uniqueSellers: uniqueSellers.size,
         dailyAverage: uniqueDates.size > 0 ? totalAmount / uniqueDates.size : 0,
         transactions: sales,
+        paymentMethodStats
       };
     },
   });
@@ -158,6 +173,22 @@ export default function Overview() {
                 <div className="mt-2 text-2xl font-bold">
                   SEK {Math.round(stats.dailyAverage).toLocaleString()}
                 </div>
+              </div>
+            </div>
+
+            {/* Payment Methods Statistics */}
+            <div className="mt-8">
+              <h2 className="mb-4 text-xl font-bold">Betalningsmetoder</h2>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {stats.paymentMethodStats.map(({ method, count, percentage }) => (
+                  <div key={method} className="stat-card">
+                    <h3 className="text-gray-400">{method}</h3>
+                    <div className="mt-2">
+                      <div className="text-2xl font-bold">{percentage}%</div>
+                      <div className="text-sm text-gray-400">{count} transaktioner</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

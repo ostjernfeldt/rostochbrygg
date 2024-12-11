@@ -14,11 +14,11 @@ export const BottomNav = () => {
 
   const menuItems = [
     { path: "/", label: "Idag" },
+    { path: "/overview", label: "Översikt" },
     { path: "/competitions", label: "Tävlingar" },
     { path: "/leaderboard", label: "Topplista" },
     { path: "/staff", label: "Personal" },
     { path: "/learn", label: "Kunskap" },
-    { path: "/overview", label: "Översikt" },
     { path: "/settings", label: "Inställningar" },
   ];
 
