@@ -3,9 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState } from "react";
 
 const TransactionList = () => {
   const navigate = useNavigate();
+  const [selectedUser, setSelectedUser] = useState<string>('all');
   
   const { data: transactions, isLoading } = useQuery({
     queryKey: ["latestTransactions"],
@@ -90,6 +99,18 @@ const TransactionList = () => {
     return format(date, "d MMMM yyyy");
   };
 
+  // Get unique user display names from transactions
+  const uniqueUsers = transactions?.transactions 
+    ? Array.from(new Set(transactions.transactions.map(t => t["User Display Name"])))
+    : [];
+
+  // Filter transactions based on selected user
+  const filteredTransactions = transactions?.transactions
+    ? selectedUser === 'all'
+      ? transactions.transactions
+      : transactions.transactions.filter(t => t["User Display Name"] === selectedUser)
+    : [];
+
   return (
     <div className="p-4 pb-24">
       <div className="flex items-center gap-2 mb-6">
@@ -104,6 +125,26 @@ const TransactionList = () => {
         </h1>
       </div>
 
+      {/* User filter dropdown */}
+      <div className="mb-4">
+        <Select
+          value={selectedUser}
+          onValueChange={(value) => setSelectedUser(value)}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Filtrera på säljare" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Alla säljare</SelectItem>
+            {uniqueUsers.map((user) => (
+              <SelectItem key={user} value={user || ''}>
+                {user || 'Okänd säljare'}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {isLoading ? (
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
@@ -113,9 +154,9 @@ const TransactionList = () => {
             </div>
           ))}
         </div>
-      ) : transactions?.transactions && transactions.transactions.length > 0 ? (
+      ) : filteredTransactions.length > 0 ? (
         <div className="space-y-4">
-          {transactions.transactions.map((transaction) => (
+          {filteredTransactions.map((transaction) => (
             <div key={transaction.id} className="bg-card rounded-xl p-4 hover:scale-[1.02] transition-transform duration-200">
               <div className="flex justify-between items-start mb-2">
                 <span className="text-gray-400">
