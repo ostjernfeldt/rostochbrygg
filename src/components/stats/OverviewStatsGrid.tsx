@@ -16,19 +16,16 @@ export const OverviewStatsGrid = ({ stats }: { stats: OverviewStats }) => {
         title="Total försäljning"
         value={`SEK ${Math.round(stats.totalAmount).toLocaleString()}`}
         userName=""
-        percentageChange={-2.8}
       />
       <StatCard
         title="Antal sälj"
         value={stats.salesCount.toLocaleString()}
         userName=""
-        percentageChange={1.5}
       />
       <StatCard
         title="Snittordervärde"
         value={`SEK ${Math.round(stats.averageValue).toLocaleString()}`}
         userName=""
-        percentageChange={-0.5}
       />
       <StatCard
         title="Antal säljdagar"
