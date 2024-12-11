@@ -1,22 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { PageLayout } from "@/components/PageLayout";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, parseISO } from "date-fns";
-import { useState, useEffect } from "react";
-import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection";
+import { useState } from "react";
+import { format, startOfWeek, parseISO, subMonths } from "date-fns";
 import { useNavigate } from "react-router-dom";
-
-interface UserSales {
-  "User Display Name": string;
-  totalAmount: number;
-  salesCount: number;
-}
-
-interface PurchaseData {
-  "User Display Name": string;
-  Amount: number;
-  Timestamp: string;
-}
+import { PageLayout } from "@/components/PageLayout";
+import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection";
+import { useLeaderboardDates } from "@/hooks/useLeaderboardDates";
+import { useLeaderboardData } from "@/hooks/useLeaderboardData";
 
 const Leaderboard = () => {
   const navigate = useNavigate();
@@ -24,40 +12,19 @@ const Leaderboard = () => {
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [selectedWeek, setSelectedWeek] = useState("");
 
-  // Fetch dates with sales activity for the daily filter
-  const { data: salesDates } = useQuery({
-    queryKey: ["salesDates"],
-    queryFn: async () => {
-      console.log("Fetching dates with sales activity...");
-      const { data, error } = await supabase
-        .from("purchases")
-        .select("Timestamp")
-        .order("Timestamp", { ascending: false });
-
-      if (error) throw error;
-
-      // Get unique dates and format them
-      const uniqueDates = Array.from(new Set(
-        data.map(purchase => format(new Date(purchase.Timestamp), 'yyyy-MM-dd'))
-      ));
-
-      console.log("Found sales dates:", uniqueDates);
-      return uniqueDates;
-    },
-    meta: {
-      onSuccess: (dates: string[]) => {
-        if (dates && dates.length > 0 && !selectedDay) {
-          // Set the most recent date as default
-          const latestDate = dates[0];
-          setSelectedDay(latestDate);
-          
-          // Set the week containing the latest date as default
-          const latestWeekStart = format(startOfWeek(parseISO(latestDate)), 'yyyy-MM-dd');
-          setSelectedWeek(latestWeekStart);
-        }
-      }
+  // Handle dates loaded from the server
+  const handleDatesLoaded = (dates: string[]) => {
+    if (dates.length > 0 && !selectedDay) {
+      const latestDate = dates[0];
+      setSelectedDay(latestDate);
+      
+      const latestWeekStart = format(startOfWeek(parseISO(latestDate)), 'yyyy-MM-dd');
+      setSelectedWeek(latestWeekStart);
     }
-  });
+  };
+
+  // Fetch dates with sales activity
+  const { data: salesDates } = useLeaderboardDates(handleDatesLoaded);
 
   // Generate date options from sales dates
   const dayOptions = (salesDates || []).map(date => ({
@@ -84,93 +51,10 @@ const Leaderboard = () => {
     };
   });
 
-  const processLeaderboardData = (salesData: PurchaseData[]): UserSales[] => {
-    const userSales = salesData.reduce((acc: { [key: string]: UserSales }, sale) => {
-      const userName = sale["User Display Name"];
-      const amount = Number(sale.Amount || 0);
-
-      if (!acc[userName]) {
-        acc[userName] = {
-          "User Display Name": userName,
-          totalAmount: 0,
-          salesCount: 0
-        };
-      }
-
-      acc[userName].totalAmount += amount;
-      acc[userName].salesCount += 1;
-
-      return acc;
-    }, {});
-
-    return Object.values(userSales).sort((a, b) => b.totalAmount - a.totalAmount);
-  };
-
-  const { data: dailyLeaderboard, isLoading: isDailyLoading } = useQuery({
-    queryKey: ["dailyLeaderboard", selectedDay],
-    queryFn: async () => {
-      if (!selectedDay) return [];
-      
-      console.log("Fetching daily leaderboard data...");
-      const dayStart = parseISO(selectedDay);
-      dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(dayStart);
-      dayEnd.setHours(23, 59, 59, 999);
-
-      const { data: salesData, error: salesError } = await supabase
-        .from("purchases")
-        .select('"User Display Name", Amount, Timestamp')
-        .gte("Timestamp", dayStart.toISOString())
-        .lte("Timestamp", dayEnd.toISOString())
-        .not("User Display Name", "is", null);
-
-      if (salesError) throw salesError;
-      return processLeaderboardData(salesData || []);
-    },
-    enabled: !!selectedDay
-  });
-
-  const { data: weeklyLeaderboard, isLoading: isWeeklyLoading } = useQuery({
-    queryKey: ["weeklyLeaderboard", selectedWeek],
-    queryFn: async () => {
-      if (!selectedWeek) return [];
-
-      console.log("Fetching weekly leaderboard data...");
-      const weekStart = parseISO(selectedWeek);
-      const weekEnd = endOfWeek(weekStart);
-
-      const { data: salesData, error: salesError } = await supabase
-        .from("purchases")
-        .select('"User Display Name", Amount, Timestamp')
-        .gte("Timestamp", weekStart.toISOString())
-        .lte("Timestamp", weekEnd.toISOString())
-        .not("User Display Name", "is", null);
-
-      if (salesError) throw salesError;
-      return processLeaderboardData(salesData || []);
-    },
-    enabled: !!selectedWeek
-  });
-
-  const { data: monthlyLeaderboard, isLoading: isMonthlyLoading } = useQuery({
-    queryKey: ["monthlyLeaderboard", selectedMonth],
-    queryFn: async () => {
-      console.log("Fetching monthly leaderboard data...");
-      const [year, month] = selectedMonth.split('-');
-      const monthStart = startOfMonth(new Date(Number(year), Number(month) - 1));
-      const monthEnd = endOfMonth(monthStart);
-
-      const { data: salesData, error: salesError } = await supabase
-        .from("purchases")
-        .select('"User Display Name", Amount, Timestamp')
-        .gte("Timestamp", monthStart.toISOString())
-        .lte("Timestamp", monthEnd.toISOString())
-        .not("User Display Name", "is", null);
-
-      if (salesError) throw salesError;
-      return processLeaderboardData(salesData || []);
-    }
-  });
+  // Fetch leaderboard data for each time period
+  const { data: dailyLeaderboard, isLoading: isDailyLoading } = useLeaderboardData('daily', selectedDay);
+  const { data: weeklyLeaderboard, isLoading: isWeeklyLoading } = useLeaderboardData('weekly', selectedWeek);
+  const { data: monthlyLeaderboard, isLoading: isMonthlyLoading } = useLeaderboardData('monthly', selectedMonth);
 
   const handleUserClick = (userName: string) => {
     navigate(`/staff/${encodeURIComponent(userName)}`);
