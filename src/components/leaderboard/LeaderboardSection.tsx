@@ -3,6 +3,7 @@ import { LeaderboardFilter } from "./LeaderboardFilter";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface UserSales {
   "User Display Name": string;
@@ -24,6 +25,7 @@ interface LeaderboardSectionProps {
 
 export const LeaderboardSection = ({ title, data, isLoading, filter }: LeaderboardSectionProps) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const copyToClipboard = (data: UserSales[] | undefined, title: string) => {
     if (!data) return;
@@ -45,13 +47,17 @@ export const LeaderboardSection = ({ title, data, isLoading, filter }: Leaderboa
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
+    <div className="mb-8">
+      <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-center'} mb-4`}>
         <h2 className="text-2xl font-bold">{title}</h2>
-        {filter && <LeaderboardFilter {...filter} />}
+        {filter && (
+          <div className={`${isMobile ? 'w-full' : 'w-auto'}`}>
+            <LeaderboardFilter {...filter} />
+          </div>
+        )}
       </div>
       <div className="space-y-3">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-2">
           <Button
             variant="outline"
             size="icon"
