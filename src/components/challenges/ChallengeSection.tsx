@@ -1,45 +1,23 @@
 import { Trophy, Gift, Laptop } from "lucide-react";
 import { ChallengeCard } from "./ChallengeCard";
-import { format, startOfWeek, endOfWeek, subMonths, parseISO, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfWeek, endOfWeek, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ChallengeDateFilter } from "./ChallengeDateFilter";
+import { useDefaultSalesDate } from "@/hooks/useDefaultSalesDate";
 
 interface ChallengeSectionProps {
   salesDates: string[] | undefined;
 }
 
 export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
-  const [selectedDay, setSelectedDay] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+  const defaultDate = useDefaultSalesDate(salesDates);
+  const [selectedDay, setSelectedDay] = useState(defaultDate);
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [selectedWeek, setSelectedWeek] = useState(() => {
     const now = new Date();
     return `${format(startOfWeek(now), 'yyyy-MM-dd')}`;
-  });
-
-  // Generate date options from sales dates
-  const dayOptions = (salesDates || []).map(date => ({
-    value: date,
-    label: format(parseISO(date), 'd MMMM yyyy')
-  }));
-
-  // Generate last 12 months for the dropdown
-  const monthOptions = Array.from({ length: 12 }, (_, i) => {
-    const date = subMonths(new Date(), i);
-    return {
-      value: format(date, 'yyyy-MM'),
-      label: format(date, 'MMMM yyyy')
-    };
-  });
-
-  // Generate weeks for the current month
-  const weekOptions = Array.from({ length: 5 }, (_, i) => {
-    const date = startOfWeek(new Date());
-    date.setDate(date.getDate() - (i * 7));
-    return {
-      value: format(date, 'yyyy-MM-dd'),
-      label: `Vecka ${format(date, 'w')} (${format(date, 'd MMM')} - ${format(endOfWeek(date), 'd MMM')})`
-    };
   });
 
   const { data: challenges } = useQuery({
@@ -72,10 +50,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
           .limit(1)
           .single();
 
-        if (saleError) {
-          console.error("Error fetching latest sale:", saleError);
-          throw saleError;
-        }
+        if (saleError) throw saleError;
 
         if (!latestSale) {
           console.log("No sales found");
@@ -146,21 +121,39 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
         const dailyLeader = calculateLeader(dailySales || []);
         const weeklyLeader = calculateLeader(weeklySales || []);
         const monthlyLeader = calculateLeader(monthlySales || []);
-        const currentMonthName = format(monthStart, 'MMMM yyyy');
 
         console.log("Leaders calculated:", { dailyLeader, weeklyLeader, monthlyLeader });
 
         return {
           dailyLeader,
           weeklyLeader,
-          monthlyLeader,
-          currentMonth: currentMonthName
+          monthlyLeader
         };
       } catch (error) {
         console.error("Error in challenge leaders query:", error);
         throw error;
       }
     }
+  });
+
+  // Generate filters using the ChallengeDateFilter component
+  const dailyFilter = ChallengeDateFilter({
+    type: 'day',
+    salesDates,
+    selectedValue: selectedDay,
+    onValueChange: setSelectedDay
+  });
+
+  const weeklyFilter = ChallengeDateFilter({
+    type: 'week',
+    selectedValue: selectedWeek,
+    onValueChange: setSelectedWeek
+  });
+
+  const monthlyFilter = ChallengeDateFilter({
+    type: 'month',
+    selectedValue: selectedMonth,
+    onValueChange: setSelectedMonth
   });
 
   return (
@@ -172,12 +165,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
         challenge={challenges?.daily_challenge || "Laddar..."}
         reward={challenges?.daily_reward || "Laddar..."}
         leader={leaders?.dailyLeader}
-        filter={{
-          options: dayOptions,
-          value: selectedDay,
-          onValueChange: setSelectedDay,
-          placeholder: "Välj datum"
-        }}
+        filter={dailyFilter}
       />
 
       <ChallengeCard
@@ -187,12 +175,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
         challenge={challenges?.weekly_challenge || "Laddar..."}
         reward={challenges?.weekly_reward || "Laddar..."}
         leader={leaders?.weeklyLeader}
-        filter={{
-          options: weekOptions,
-          value: selectedWeek,
-          onValueChange: setSelectedWeek,
-          placeholder: "Välj vecka"
-        }}
+        filter={weeklyFilter}
       />
 
       <ChallengeCard
@@ -202,12 +185,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
         challenge={challenges?.monthly_challenge || "Laddar..."}
         reward={challenges?.monthly_reward || "Laddar..."}
         leader={leaders?.monthlyLeader}
-        filter={{
-          options: monthOptions,
-          value: selectedMonth,
-          onValueChange: setSelectedMonth,
-          placeholder: "Välj månad"
-        }}
+        filter={monthlyFilter}
       />
     </>
   );
