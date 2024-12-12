@@ -41,15 +41,15 @@ export const StatsSection = ({ stats, isLoading, selectedPeriod }: StatsSectionP
 
   return (
     <>
-      <OverviewStatsGrid stats={stats} />
-      <PaymentMethodStats stats={stats.paymentMethodStats} />
-      <div className="mt-8">
+      <div className="mb-8">
         <h2 className="mb-4 text-xl font-bold">Försäljningsutveckling</h2>
         <SalesChart 
           transactions={stats.transactions} 
           groupByWeek={selectedPeriod !== 'week'} 
         />
       </div>
+      <OverviewStatsGrid stats={stats} />
+      <PaymentMethodStats stats={stats.paymentMethodStats} />
     </>
   );
 };
