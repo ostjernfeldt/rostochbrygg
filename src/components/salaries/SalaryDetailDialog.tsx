@@ -59,6 +59,42 @@ export const ShiftDetail = ({ shifts, baseAmount }: ShiftDetailProps) => {
   );
 };
 
+interface SalesDetailProps {
+  sales: any[];
+  totalSales: number;
+}
+
+export const SalesDetail = ({ sales, totalSales }: SalesDetailProps) => {
+  // Group sales by date and calculate total for each date
+  const salesByDate = sales.reduce((acc, sale) => {
+    const date = new Date(sale.Timestamp).toISOString().split('T')[0];
+    if (!acc[date]) {
+      acc[date] = 0;
+    }
+    acc[date] += Number(sale.Amount) || 0;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Sort dates
+  const sortedDates = Object.keys(salesByDate).sort();
+
+  return (
+    <div className="space-y-4">
+      <div className="text-sm text-gray-400">
+        Total försäljning: {totalSales.toLocaleString()} kr
+      </div>
+      <div className="space-y-2">
+        {sortedDates.map((date) => (
+          <div key={date} className="text-sm flex justify-between">
+            <span>{format(new Date(date), 'd MMMM yyyy', { locale: sv })}</span>
+            <span>{salesByDate[date].toLocaleString()} kr</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 interface CommissionDetailProps {
   totalSales: number;
   commission: number;

@@ -8,7 +8,8 @@ import SalaryDetail, {
   BonusDetail,
   SubtotalDetail,
   VacationPayDetail,
-  TotalSalaryDetail
+  TotalSalaryDetail,
+  SalesDetail
 } from "./SalaryDetailDialog";
 
 interface SalaryCardProps {
