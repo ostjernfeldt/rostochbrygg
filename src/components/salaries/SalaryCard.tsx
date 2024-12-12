@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
-import { Calendar, User, DollarSign, Percent } from "lucide-react";
+import { Calendar, User, DollarSign, Percent, Gift } from "lucide-react";
 
 interface SalaryCardProps {
   salary: {
@@ -23,8 +23,11 @@ export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps)
   // Calculate commission (14% of total sales)
   const commission = totalSales * (salary.commission_rate / 100);
   
-  // Calculate subtotal before vacation pay
-  const subtotal = baseAmount + commission;
+  // Get bonus amount (if any)
+  const bonus = salary.bonus || 0;
+  
+  // Calculate subtotal before vacation pay (now including bonus)
+  const subtotal = baseAmount + commission + bonus;
   
   // Calculate vacation pay (12% of total)
   const vacationPay = subtotal * 0.12;
@@ -47,7 +50,7 @@ export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps)
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         <div className="bg-background p-3 rounded-lg">
           <div className="text-sm text-gray-400 mb-1">Antal pass</div>
           <div className="text-lg font-semibold">
@@ -82,6 +85,18 @@ export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps)
           </div>
         </div>
 
+        {bonus > 0 && (
+          <div className="bg-background p-3 rounded-lg">
+            <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
+              <Gift className="h-4 w-4" />
+              <span>Bonus</span>
+            </div>
+            <div className="text-lg font-semibold">
+              {bonus.toLocaleString()} kr
+            </div>
+          </div>
+        )}
+
         <div className="bg-background p-3 rounded-lg">
           <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
             <span>Delsumma</span>
@@ -102,7 +117,7 @@ export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps)
           </div>
         </div>
 
-        <div className="bg-background p-3 rounded-lg sm:col-span-2">
+        <div className="bg-background p-3 rounded-lg sm:col-span-2 md:col-span-1">
           <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
             <DollarSign className="h-4 w-4" />
             <span>Total lön</span>
