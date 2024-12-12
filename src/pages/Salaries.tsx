@@ -155,15 +155,20 @@ const Salaries = () => {
   };
 
   const calculateShiftsCount = (userName: string, startDate: string, endDate: string) => {
-    if (!shifts) return 0;
+    if (!sales) return 0;
     
-    const userShifts = shifts.filter(shift => 
-      shift.user_display_name === userName &&
-      new Date(shift.presence_start) >= new Date(startDate) &&
-      new Date(shift.presence_start) <= new Date(endDate)
+    // Get unique dates where the user had sales
+    const uniqueDates = new Set(
+      sales
+        .filter(sale => 
+          sale["User Display Name"] === userName &&
+          new Date(sale.Timestamp!) >= new Date(startDate) &&
+          new Date(sale.Timestamp!) <= new Date(endDate)
+        )
+        .map(sale => new Date(sale.Timestamp!).toDateString())
     );
     
-    return userShifts.length;
+    return uniqueDates.size;
   };
 
   const calculateBonus = (userName: string, startDate: string, endDate: string) => {

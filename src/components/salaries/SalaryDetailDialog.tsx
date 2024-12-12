@@ -38,15 +38,20 @@ interface ShiftDetailProps {
 }
 
 export const ShiftDetail = ({ shifts, baseAmount }: ShiftDetailProps) => {
+  // Get unique dates from shifts
+  const uniqueDates = Array.from(new Set(
+    shifts.map(shift => new Date(shift.Timestamp).toISOString().split('T')[0])
+  )).sort();
+
   return (
     <div className="space-y-4">
       <div className="text-sm text-gray-400">
-        Beräkning: {shifts.length} pass × 140 kr = {baseAmount} kr
+        Beräkning: {uniqueDates.length} pass × 140 kr = {baseAmount} kr
       </div>
       <div className="space-y-2">
-        {shifts.map((shift, index) => (
+        {uniqueDates.map((date, index) => (
           <div key={index} className="text-sm">
-            {format(new Date(shift.presence_start), 'd MMMM yyyy', { locale: sv })}
+            {format(new Date(date), 'd MMMM yyyy', { locale: sv })}
           </div>
         ))}
       </div>

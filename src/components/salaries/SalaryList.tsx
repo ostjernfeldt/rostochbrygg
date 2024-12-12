@@ -49,10 +49,11 @@ export const SalaryList = ({
           salary.period_end
         );
 
-        const periodShifts = shifts.filter(shift => 
-          shift.user_display_name === salary.user_display_name &&
-          new Date(shift.presence_start) >= new Date(salary.period_start) &&
-          new Date(shift.presence_start) <= new Date(salary.period_end)
+        // Get all sales for this user in the period (these will be our "shifts")
+        const periodShifts = sales.filter(sale => 
+          sale["User Display Name"] === salary.user_display_name &&
+          new Date(sale.Timestamp) >= new Date(salary.period_start) &&
+          new Date(sale.Timestamp) <= new Date(salary.period_end)
         );
 
         const periodBonuses = bonuses.filter(bonus => 
