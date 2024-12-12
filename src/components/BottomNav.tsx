@@ -20,6 +20,7 @@ export const BottomNav = () => {
     { path: "/competitions", label: "Tävlingar" },
     { path: "/leaderboard", label: "Topplista" },
     { path: "/staff", label: "Personal" },
+    { path: "/salaries", label: "Löner" },
     { path: "/learn", label: "Kunskap" },
     { path: "/settings", label: "Inställningar" },
   ];
@@ -58,7 +59,7 @@ export const BottomNav = () => {
                 key={item.path}
                 onClick={() => {
                   navigate(item.path);
-                  setOpen(false); // Close menu after navigation
+                  setOpen(false);
                 }}
                 className={`p-3 text-left rounded-lg transition-colors ${
                   location.pathname === item.path
@@ -72,7 +73,7 @@ export const BottomNav = () => {
             <button
               onClick={() => {
                 handleSignOut();
-                setOpen(false); // Close menu after sign out
+                setOpen(false);
               }}
               className="p-3 text-left rounded-lg transition-colors text-gray-400 hover:bg-card/80 mt-4 flex items-center gap-2"
             >

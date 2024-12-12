@@ -129,6 +129,45 @@ export type Database = {
         }
         Relationships: []
       }
+      salaries: {
+        Row: {
+          base_salary: number
+          bonus: number | null
+          commission_rate: number
+          created_at: string | null
+          id: string
+          period_end: string
+          period_start: string
+          updated_at: string | null
+          user_display_name: string
+          vacation_pay: number | null
+        }
+        Insert: {
+          base_salary?: number
+          bonus?: number | null
+          commission_rate?: number
+          created_at?: string | null
+          id?: string
+          period_end: string
+          period_start: string
+          updated_at?: string | null
+          user_display_name: string
+          vacation_pay?: number | null
+        }
+        Update: {
+          base_salary?: number
+          bonus?: number | null
+          commission_rate?: number
+          created_at?: string | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          updated_at?: string | null
+          user_display_name?: string
+          vacation_pay?: number | null
+        }
+        Relationships: []
+      }
       user_presence: {
         Row: {
           created_at: string | null
