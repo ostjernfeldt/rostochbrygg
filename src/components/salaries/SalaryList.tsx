@@ -29,64 +29,51 @@ export const SalaryList = ({
     );
   }
 
-  // Calculate total salaries and collect individual salary details
-  const salaryDetails: Array<{ name: string; total: number; periodStart: string; periodEnd: string }> = [];
-  const totalSalaries = filteredSalaries.reduce((total, salary) => {
-    // Calculate shifts count
+  // Calculate salary details for each seller
+  const salaryDetails = filteredSalaries.map(salary => {
     const shiftsCount = calculateShiftsCount(
       salary.user_display_name,
       salary.period_start,
       salary.period_end
     );
 
-    // Calculate base amount (140 SEK per shift)
     const baseAmount = shiftsCount * 140;
-    
-    // Calculate total sales for the period
     const periodSales = calculateTotalSales(
       salary.user_display_name,
       salary.period_start,
       salary.period_end
     );
     
-    // Calculate accumulated sales
     const accumulatedSales = calculateAccumulatedSales(
       sales,
       salary.user_display_name,
       salary.period_end
     );
 
-    // Calculate commission
     const commission = accumulatedSales > 25000 ? 
       periodSales * 0.15 : 
       periodSales * salary.commission_rate;
 
-    // Get bonus amount
     const bonus = calculateBonus(
       salary.user_display_name,
       salary.period_start,
       salary.period_end
     );
 
-    // Calculate subtotal before vacation pay
     const subtotal = baseAmount + commission + bonus;
-    
-    // Calculate vacation pay (12% of subtotal)
     const vacationPay = subtotal * 0.12;
-    
-    // Calculate final total
-    const salaryTotal = subtotal + vacationPay;
+    const totalSalary = subtotal + vacationPay;
 
-    // Add to salary details
-    salaryDetails.push({
+    return {
       name: salary.user_display_name,
-      total: salaryTotal,
+      total: totalSalary,
       periodStart: salary.period_start,
       periodEnd: salary.period_end
-    });
+    };
+  });
 
-    return total + salaryTotal;
-  }, 0);
+  // Calculate total by summing up all individual totals
+  const totalSalaries = salaryDetails.reduce((sum, detail) => sum + detail.total, 0);
 
   return (
     <div className="space-y-4">
