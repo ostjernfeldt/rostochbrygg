@@ -41,7 +41,12 @@ export const PeriodFilter = ({
     <div className="flex flex-col gap-4 w-full">
       <Select
         value={selectedPeriod}
-        onValueChange={setSelectedPeriod}
+        onValueChange={(value) => {
+          setSelectedPeriod(value);
+          if (value !== "custom") {
+            setDateRange(undefined);
+          }
+        }}
       >
         <SelectTrigger className="w-full bg-card border-gray-800">
           <SelectValue placeholder="Välj period" />
