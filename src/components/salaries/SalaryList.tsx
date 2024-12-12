@@ -4,6 +4,8 @@ import { calculateAccumulatedSales } from "@/utils/salaryCalculations";
 interface SalaryListProps {
   filteredSalaries: any[];
   sales: any[];
+  shifts: any[];
+  bonuses: any[];
   calculateTotalSales: (userName: string, startDate: string, endDate: string) => number;
   calculateShiftsCount: (userName: string, startDate: string, endDate: string) => number;
   calculateBonus: (userName: string, startDate: string, endDate: string) => number;
@@ -12,6 +14,8 @@ interface SalaryListProps {
 export const SalaryList = ({
   filteredSalaries,
   sales,
+  shifts,
+  bonuses,
   calculateTotalSales,
   calculateShiftsCount,
   calculateBonus
@@ -45,6 +49,18 @@ export const SalaryList = ({
           salary.period_end
         );
 
+        const periodShifts = shifts.filter(shift => 
+          shift.user_display_name === salary.user_display_name &&
+          new Date(shift.presence_start) >= new Date(salary.period_start) &&
+          new Date(shift.presence_start) <= new Date(salary.period_end)
+        );
+
+        const periodBonuses = bonuses.filter(bonus => 
+          bonus.user_display_name === salary.user_display_name &&
+          new Date(bonus.bonus_date) >= new Date(salary.period_start) &&
+          new Date(bonus.bonus_date) <= new Date(salary.period_end)
+        );
+
         return (
           <SalaryCard
             key={`${salary.id}-${salary.period_start}`}
@@ -59,6 +75,8 @@ export const SalaryList = ({
               salary.period_start,
               salary.period_end
             )}
+            shifts={periodShifts}
+            bonuses={periodBonuses}
           />
         );
       })}

@@ -38,13 +38,13 @@ export const PeriodFilter = ({
   setDateRange
 }: PeriodFilterProps) => {
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4">
+    <div className="space-y-4 w-full sm:w-auto">
+      <div className="flex flex-col gap-4">
         <Select
           value={selectedPeriod}
           onValueChange={setSelectedPeriod}
         >
-          <SelectTrigger className="w-[180px] bg-card border-gray-800">
+          <SelectTrigger className="w-full sm:w-[180px] bg-card border-gray-800">
             <SelectValue placeholder="Välj period" />
           </SelectTrigger>
           <SelectContent className="bg-card border-gray-800">
@@ -67,7 +67,7 @@ export const PeriodFilter = ({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full sm:w-[300px] justify-start text-left font-normal bg-card border-gray-800"
+                className="w-full justify-start text-left font-normal bg-card border-gray-800"
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {dateRange?.from ? (
@@ -98,14 +98,14 @@ export const PeriodFilter = ({
             </PopoverContent>
           </Popover>
         )}
-      </div>
 
-      <Input
-        placeholder="Sök säljare..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="w-full sm:w-[300px] bg-card border-gray-800"
-      />
+        <Input
+          placeholder="Sök säljare..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full sm:w-[300px] bg-card border-gray-800"
+        />
+      </div>
     </div>
   );
 };

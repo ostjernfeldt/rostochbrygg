@@ -2,6 +2,14 @@ import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 import { Calendar, User, DollarSign, Percent, Gift, TrendingUp } from "lucide-react";
 import { calculateCommission } from "@/utils/salaryCalculations";
+import SalaryDetail, { 
+  ShiftDetail, 
+  CommissionDetail, 
+  BonusDetail,
+  SubtotalDetail,
+  VacationPayDetail,
+  TotalSalaryDetail
+} from "./SalaryDetailDialog";
 
 interface SalaryCardProps {
   salary: {
@@ -16,9 +24,18 @@ interface SalaryCardProps {
   totalSales: number;
   accumulatedSales: number;
   shiftsCount: number;
+  shifts: any[];
+  bonuses: any[];
 }
 
-export const SalaryCard = ({ salary, totalSales, accumulatedSales, shiftsCount }: SalaryCardProps) => {
+export const SalaryCard = ({ 
+  salary, 
+  totalSales, 
+  accumulatedSales, 
+  shiftsCount,
+  shifts,
+  bonuses
+}: SalaryCardProps) => {
   // Calculate base salary (140 SEK per shift)
   const baseAmount = shiftsCount * 140;
   
@@ -39,6 +56,12 @@ export const SalaryCard = ({ salary, totalSales, accumulatedSales, shiftsCount }
 
   const hasIncreasedCommission = accumulatedSales > 25000;
 
+  const DetailTrigger = ({ children }: { children: React.ReactNode }) => (
+    <div className="cursor-pointer hover:bg-background/80 transition-colors">
+      {children}
+    </div>
+  );
+
   return (
     <div className="bg-card p-4 sm:p-6 rounded-xl space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
@@ -55,19 +78,37 @@ export const SalaryCard = ({ salary, totalSales, accumulatedSales, shiftsCount }
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        <div className="bg-background p-3 rounded-lg">
-          <div className="text-sm text-gray-400 mb-1">Antal pass</div>
-          <div className="text-lg font-semibold">
-            {shiftsCount} st
-          </div>
-        </div>
+        <SalaryDetail 
+          title="Antal pass" 
+          trigger={
+            <DetailTrigger>
+              <div className="bg-background p-3 rounded-lg">
+                <div className="text-sm text-gray-400 mb-1">Antal pass</div>
+                <div className="text-lg font-semibold">
+                  {shiftsCount} st
+                </div>
+              </div>
+            </DetailTrigger>
+          }
+        >
+          <ShiftDetail shifts={shifts} baseAmount={baseAmount} />
+        </SalaryDetail>
         
-        <div className="bg-background p-3 rounded-lg">
-          <div className="text-sm text-gray-400 mb-1">Grundlön</div>
-          <div className="text-lg font-semibold">
-            {baseAmount.toLocaleString()} kr
-          </div>
-        </div>
+        <SalaryDetail 
+          title="Grundlön" 
+          trigger={
+            <DetailTrigger>
+              <div className="bg-background p-3 rounded-lg">
+                <div className="text-sm text-gray-400 mb-1">Grundlön</div>
+                <div className="text-lg font-semibold">
+                  {baseAmount.toLocaleString()} kr
+                </div>
+              </div>
+            </DetailTrigger>
+          }
+        >
+          <ShiftDetail shifts={shifts} baseAmount={baseAmount} />
+        </SalaryDetail>
 
         <div className="bg-background p-3 rounded-lg">
           <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
@@ -88,67 +129,139 @@ export const SalaryCard = ({ salary, totalSales, accumulatedSales, shiftsCount }
           </div>
         </div>
 
-        <div className="bg-background p-3 rounded-lg">
-          <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
-            <span>Provision</span>
-            <Percent className="h-3 w-3" />
-            <span>{salary.commission_rate}</span>
-          </div>
-          <div className="text-lg font-semibold">
-            {commission.toLocaleString()} kr
-          </div>
-        </div>
+        <SalaryDetail 
+          title="Provision" 
+          trigger={
+            <DetailTrigger>
+              <div className="bg-background p-3 rounded-lg">
+                <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
+                  <span>Provision</span>
+                  <Percent className="h-3 w-3" />
+                  <span>{salary.commission_rate}</span>
+                </div>
+                <div className="text-lg font-semibold">
+                  {commission.toLocaleString()} kr
+                </div>
+              </div>
+            </DetailTrigger>
+          }
+        >
+          <CommissionDetail 
+            totalSales={totalSales} 
+            commission={commission} 
+            rate={salary.commission_rate} 
+          />
+        </SalaryDetail>
 
-        <div className="bg-background p-3 rounded-lg">
-          <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
-            <span>Provision 15%</span>
-            <Percent className="h-3 w-3" />
-            <TrendingUp className={`h-4 w-4 ${hasIncreasedCommission ? 'text-green-500' : ''}`} />
-          </div>
-          <div className="text-lg font-semibold">
-            {hasIncreasedCommission ? (totalSales * 0.15).toLocaleString() : '0'} kr
-          </div>
-        </div>
+        <SalaryDetail 
+          title="Provision 15%" 
+          trigger={
+            <DetailTrigger>
+              <div className="bg-background p-3 rounded-lg">
+                <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
+                  <span>Provision 15%</span>
+                </div>
+                <div className="text-lg font-semibold">
+                  {hasIncreasedCommission ? (totalSales * 0.15).toLocaleString() : '0'} kr
+                </div>
+              </div>
+            </DetailTrigger>
+          }
+        >
+          <CommissionDetail 
+            totalSales={totalSales} 
+            commission={hasIncreasedCommission ? totalSales * 0.15 : 0} 
+            rate={15} 
+          />
+        </SalaryDetail>
 
-        <div className="bg-background p-3 rounded-lg">
-          <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
-            <Gift className="h-4 w-4" />
-            <span>Bonus</span>
-          </div>
-          <div className="text-lg font-semibold">
-            {bonus.toLocaleString()} kr
-          </div>
-        </div>
+        <SalaryDetail 
+          title="Bonus" 
+          trigger={
+            <DetailTrigger>
+              <div className="bg-background p-3 rounded-lg">
+                <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
+                  <Gift className="h-4 w-4" />
+                  <span>Bonus</span>
+                </div>
+                <div className="text-lg font-semibold">
+                  {bonus.toLocaleString()} kr
+                </div>
+              </div>
+            </DetailTrigger>
+          }
+        >
+          <BonusDetail bonuses={bonuses} />
+        </SalaryDetail>
 
-        <div className="bg-background p-3 rounded-lg">
-          <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
-            <span>Delsumma</span>
-          </div>
-          <div className="text-lg font-semibold">
-            {subtotal.toLocaleString()} kr
-          </div>
-        </div>
+        <SalaryDetail 
+          title="Delsumma" 
+          trigger={
+            <DetailTrigger>
+              <div className="bg-background p-3 rounded-lg">
+                <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
+                  <span>Delsumma</span>
+                </div>
+                <div className="text-lg font-semibold">
+                  {subtotal.toLocaleString()} kr
+                </div>
+              </div>
+            </DetailTrigger>
+          }
+        >
+          <SubtotalDetail 
+            baseAmount={baseAmount}
+            commission={commission}
+            bonusAmount={bonus}
+            subtotal={subtotal}
+          />
+        </SalaryDetail>
 
-        <div className="bg-background p-3 rounded-lg">
-          <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
-            <span>Semesterersättning</span>
-            <Percent className="h-3 w-3" />
-            <span>12</span>
-          </div>
-          <div className="text-lg font-semibold">
-            {vacationPay.toLocaleString()} kr
-          </div>
-        </div>
+        <SalaryDetail 
+          title="Semesterersättning" 
+          trigger={
+            <DetailTrigger>
+              <div className="bg-background p-3 rounded-lg">
+                <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
+                  <span>Semesterersättning</span>
+                  <Percent className="h-3 w-3" />
+                  <span>12</span>
+                </div>
+                <div className="text-lg font-semibold">
+                  {vacationPay.toLocaleString()} kr
+                </div>
+              </div>
+            </DetailTrigger>
+          }
+        >
+          <VacationPayDetail 
+            subtotal={subtotal}
+            vacationPay={vacationPay}
+          />
+        </SalaryDetail>
 
-        <div className="bg-background p-3 rounded-lg sm:col-span-2 md:col-span-1">
-          <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
-            <DollarSign className="h-4 w-4" />
-            <span>Total lön</span>
-          </div>
-          <div className="text-lg font-semibold text-primary">
-            {totalSalary.toLocaleString()} kr
-          </div>
-        </div>
+        <SalaryDetail 
+          title="Total lön" 
+          trigger={
+            <DetailTrigger>
+              <div className="bg-background p-3 rounded-lg sm:col-span-2 md:col-span-1">
+                <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
+                  <DollarSign className="h-4 w-4" />
+                  <span>Total lön</span>
+                </div>
+                <div className="text-lg font-semibold text-primary">
+                  {totalSalary.toLocaleString()} kr
+                </div>
+              </div>
+            </DetailTrigger>
+          }
+        >
+          <TotalSalaryDetail 
+            subtotal={subtotal}
+            vacationPay={vacationPay}
+            totalSalary={totalSalary}
+          />
+        </SalaryDetail>
       </div>
     </div>
   );
