@@ -29,7 +29,7 @@ export const SalaryList = ({
     );
   }
 
-  // Calculate total salaries for the period
+  // Calculate total salaries for the period by summing up each salary card's total
   const totalSalaries = filteredSalaries.reduce((total, salary) => {
     const shiftsCount = calculateShiftsCount(
       salary.user_display_name,
