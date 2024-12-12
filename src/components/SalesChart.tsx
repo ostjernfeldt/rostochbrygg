@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { format, startOfWeek } from "date-fns";
+import { format, startOfWeek, startOfDay } from "date-fns";
 import { sv } from "date-fns/locale";
 
 interface SalesChartProps {
@@ -90,7 +90,7 @@ export const SalesChart = ({ transactions, groupByWeek = false }: SalesChartProp
               const date = new Date(value);
               return groupByWeek 
                 ? `v.${format(date, 'w', { locale: sv })}`
-                : format(date, 'HH:mm', { locale: sv });
+                : format(date, 'd MMM', { locale: sv });
             }}
           />
           <YAxis 
@@ -112,7 +112,7 @@ export const SalesChart = ({ transactions, groupByWeek = false }: SalesChartProp
               const date = new Date(label);
               return groupByWeek 
                 ? `Vecka ${format(date, 'w', { locale: sv })}`
-                : format(date, 'HH:mm', { locale: sv });
+                : format(date, 'd MMMM', { locale: sv });
             }}
           />
           <Area 
