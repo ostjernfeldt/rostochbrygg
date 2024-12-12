@@ -1,114 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { PageLayout } from "@/components/PageLayout";
 import { useState } from "react";
-import { PeriodFilter } from "@/components/salaries/PeriodFilter";
+import { PageLayout } from "@/components/PageLayout";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 import { SalaryList } from "@/components/salaries/SalaryList";
 import { DateRange } from "react-day-picker";
+import { SalaryFilters } from "@/components/salaries/SalaryFilters";
+import { useSalaryData } from "@/components/salaries/useSalaryData";
 
 const Salaries = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
-  // Fetch unique sellers from purchases table
-  const { data: actualSellers, isLoading: sellersLoading } = useQuery({
-    queryKey: ["actualSellers"],
-    queryFn: async () => {
-      console.log("Fetching actual sellers from purchases...");
-      const { data, error } = await supabase
-        .from("purchases")
-        .select('"User Display Name"')
-        .not("User Display Name", "is", null)
-        .not("User Display Name", "eq", "")
-        .not("User Display Name", "ilike", '%test%')
-        .not("User Display Name", "ilike", '%another%');
-
-      if (error) {
-        console.error("Error fetching sellers:", error);
-        throw error;
-      }
-
-      const uniqueSellers = [...new Set(data.map(sale => sale["User Display Name"]))];
-      console.log("Unique sellers found:", uniqueSellers);
-      return uniqueSellers;
-    }
-  });
-
-  // Fetch salaries data
-  const { data: salaries, isLoading: salariesLoading } = useQuery({
-    queryKey: ["salaries"],
-    queryFn: async () => {
-      console.log("Fetching salaries...");
-      const { data, error } = await supabase
-        .from("salaries")
-        .select("*")
-        .order("period_start", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching salaries:", error);
-        throw error;
-      }
-      
-      return data;
-    }
-  });
-
-  // Fetch bonus records
-  const { data: bonuses, isLoading: bonusesLoading } = useQuery({
-    queryKey: ["bonuses"],
-    queryFn: async () => {
-      console.log("Fetching bonuses...");
-      const { data, error } = await supabase
-        .from("bonus_records")
-        .select("*");
-
-      if (error) {
-        console.error("Error fetching bonuses:", error);
-        throw error;
-      }
-
-      return data;
-    }
-  });
-
-  // Fetch shifts data
-  const { data: shifts, isLoading: shiftsLoading } = useQuery({
-    queryKey: ["shifts"],
-    queryFn: async () => {
-      console.log("Fetching shifts...");
-      const { data, error } = await supabase
-        .from("user_presence")
-        .select("*");
-
-      if (error) {
-        console.error("Error fetching shifts:", error);
-        throw error;
-      }
-
-      return data;
-    }
-  });
-
-  // Fetch sales data for the period
-  const { data: sales, isLoading: salesLoading } = useQuery({
-    queryKey: ["sales"],
-    queryFn: async () => {
-      console.log("Fetching sales...");
-      const { data, error } = await supabase
-        .from("purchases")
-        .select("*");
-
-      if (error) {
-        console.error("Error fetching sales:", error);
-        throw error;
-      }
-
-      return data;
-    }
-  });
+  const { actualSellers, salaries, sales, bonuses, isLoading } = useSalaryData();
 
   const uniquePeriods = salaries ? [...new Set(salaries.map(salary => 
     format(new Date(salary.period_start), 'yyyy-MM', { locale: sv })
@@ -130,11 +34,12 @@ const Salaries = () => {
     if (selectedPeriod === "custom" && dateRange) {
       const salaryStart = new Date(salary.period_start);
       const salaryEnd = new Date(salary.period_end);
-      
-      return (
-        (!dateRange.from || salaryStart >= dateRange.from) &&
-        (!dateRange.to || salaryEnd <= dateRange.to)
-      );
+      const rangeStart = dateRange.from ? new Date(dateRange.from) : null;
+      const rangeEnd = dateRange.to ? new Date(dateRange.to) : null;
+
+      // Check if the salary period overlaps with the selected date range
+      return (!rangeStart || salaryEnd >= rangeStart) && 
+             (!rangeEnd || salaryStart <= rangeEnd);
     }
 
     // Filter by selected period
@@ -183,8 +88,6 @@ const Salaries = () => {
     return periodBonuses.reduce((sum, bonus) => sum + (Number(bonus.amount) || 0), 0);
   };
 
-  const isLoading = salariesLoading || salesLoading || bonusesLoading || sellersLoading || shiftsLoading;
-
   if (isLoading) {
     return (
       <PageLayout>
@@ -202,30 +105,25 @@ const Salaries = () => {
 
   return (
     <PageLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col gap-6">
-          <h1 className="text-2xl font-bold">Löner</h1>
-          <PeriodFilter
-            selectedPeriod={selectedPeriod}
-            setSelectedPeriod={setSelectedPeriod}
-            uniquePeriods={uniquePeriods}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            dateRange={dateRange}
-            setDateRange={setDateRange}
-          />
-        </div>
+      <SalaryFilters
+        selectedPeriod={selectedPeriod}
+        setSelectedPeriod={setSelectedPeriod}
+        uniquePeriods={uniquePeriods}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
+      />
 
-        <SalaryList
-          filteredSalaries={filteredSalaries || []}
-          sales={sales || []}
-          shifts={shifts || []}
-          bonuses={bonuses || []}
-          calculateTotalSales={calculateTotalSales}
-          calculateShiftsCount={calculateShiftsCount}
-          calculateBonus={calculateBonus}
-        />
-      </div>
+      <SalaryList
+        filteredSalaries={filteredSalaries || []}
+        sales={sales || []}
+        shifts={[]}
+        bonuses={bonuses || []}
+        calculateTotalSales={calculateTotalSales}
+        calculateShiftsCount={calculateShiftsCount}
+        calculateBonus={calculateBonus}
+      />
     </PageLayout>
   );
 };
