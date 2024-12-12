@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
-import { Calendar, User, DollarSign, Percent, Gift } from "lucide-react";
+import { Calendar, User, DollarSign, Percent, Gift, TrendingUp } from "lucide-react";
+import { calculateCommission } from "@/utils/salaryCalculations";
 
 interface SalaryCardProps {
   salary: {
@@ -13,20 +14,21 @@ interface SalaryCardProps {
     vacation_pay?: number;
   };
   totalSales: number;
+  accumulatedSales: number;
   shiftsCount: number;
 }
 
-export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps) => {
+export const SalaryCard = ({ salary, totalSales, accumulatedSales, shiftsCount }: SalaryCardProps) => {
   // Calculate base salary (140 SEK per shift)
   const baseAmount = shiftsCount * 140;
   
-  // Calculate commission (14% of total sales)
-  const commission = totalSales * (salary.commission_rate / 100);
+  // Calculate commission with the new logic
+  const commission = calculateCommission(totalSales, salary.commission_rate, accumulatedSales);
   
   // Get bonus amount (if any)
   const bonus = salary.bonus || 0;
   
-  // Calculate subtotal before vacation pay (now including bonus)
+  // Calculate subtotal before vacation pay
   const subtotal = baseAmount + commission + bonus;
   
   // Calculate vacation pay (12% of total)
@@ -34,6 +36,8 @@ export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps)
   
   // Calculate final total
   const totalSalary = subtotal + vacationPay;
+
+  const hasIncreasedCommission = accumulatedSales > 25000;
 
   return (
     <div className="bg-card p-4 sm:p-6 rounded-xl space-y-4">
@@ -76,9 +80,19 @@ export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps)
 
         <div className="bg-background p-3 rounded-lg">
           <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
+            <span>Ackumulerad försäljning</span>
+            <TrendingUp className={`h-4 w-4 ${hasIncreasedCommission ? 'text-green-500' : ''}`} />
+          </div>
+          <div className="text-lg font-semibold">
+            {accumulatedSales.toLocaleString()} kr
+          </div>
+        </div>
+
+        <div className="bg-background p-3 rounded-lg">
+          <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
             <span>Provision</span>
             <Percent className="h-3 w-3" />
-            <span>{salary.commission_rate}</span>
+            <span>{hasIncreasedCommission ? '15' : salary.commission_rate}</span>
           </div>
           <div className="text-lg font-semibold">
             {commission.toLocaleString()} kr

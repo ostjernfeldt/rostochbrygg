@@ -1,0 +1,67 @@
+import { SalaryCard } from "./SalaryCard";
+import { calculateAccumulatedSales } from "@/utils/salaryCalculations";
+
+interface SalaryListProps {
+  filteredSalaries: any[];
+  sales: any[];
+  calculateTotalSales: (userName: string, startDate: string, endDate: string) => number;
+  calculateShiftsCount: (userName: string, startDate: string, endDate: string) => number;
+  calculateBonus: (userName: string, startDate: string, endDate: string) => number;
+}
+
+export const SalaryList = ({
+  filteredSalaries,
+  sales,
+  calculateTotalSales,
+  calculateShiftsCount,
+  calculateBonus
+}: SalaryListProps) => {
+  if (!filteredSalaries || filteredSalaries.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-400">
+        Inga löner hittades för denna period
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {filteredSalaries.map((salary) => {
+        const periodSales = calculateTotalSales(
+          salary.user_display_name,
+          salary.period_start,
+          salary.period_end
+        );
+        
+        const accumulatedSales = calculateAccumulatedSales(
+          sales,
+          salary.user_display_name,
+          salary.period_end
+        );
+
+        const bonus = calculateBonus(
+          salary.user_display_name,
+          salary.period_start,
+          salary.period_end
+        );
+
+        return (
+          <SalaryCard
+            key={`${salary.id}-${salary.period_start}`}
+            salary={{
+              ...salary,
+              bonus: bonus
+            }}
+            totalSales={periodSales}
+            accumulatedSales={accumulatedSales}
+            shiftsCount={calculateShiftsCount(
+              salary.user_display_name,
+              salary.period_start,
+              salary.period_end
+            )}
+          />
+        );
+      })}
+    </div>
+  );
+};

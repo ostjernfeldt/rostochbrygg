@@ -2,10 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
 import { useState } from "react";
-import { SalaryCard } from "@/components/salaries/SalaryCard";
 import { PeriodFilter } from "@/components/salaries/PeriodFilter";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
+import { SalaryList } from "@/components/salaries/SalaryList";
 
 const Salaries = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>("all");
@@ -171,41 +171,13 @@ const Salaries = () => {
           />
         </div>
 
-        <div className="space-y-4">
-          {filteredSalaries?.map((salary) => {
-            const bonus = calculateBonus(
-              salary.user_display_name,
-              salary.period_start,
-              salary.period_end
-            );
-            
-            return (
-              <SalaryCard
-                key={`${salary.id}-${salary.period_start}`}
-                salary={{
-                  ...salary,
-                  bonus: bonus
-                }}
-                totalSales={calculateTotalSales(
-                  salary.user_display_name,
-                  salary.period_start,
-                  salary.period_end
-                )}
-                shiftsCount={calculateShiftsCount(
-                  salary.user_display_name,
-                  salary.period_start,
-                  salary.period_end
-                )}
-              />
-            );
-          })}
-          
-          {(!filteredSalaries || filteredSalaries.length === 0) && (
-            <div className="text-center py-8 text-gray-400">
-              Inga löner hittades för denna period
-            </div>
-          )}
-        </div>
+        <SalaryList
+          filteredSalaries={filteredSalaries || []}
+          sales={sales || []}
+          calculateTotalSales={calculateTotalSales}
+          calculateShiftsCount={calculateShiftsCount}
+          calculateBonus={calculateBonus}
+        />
       </div>
     </PageLayout>
   );
