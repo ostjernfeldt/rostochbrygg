@@ -61,7 +61,7 @@ export const SalaryList = ({
       periodSales * salary.commission_rate;
     const subtotal = baseAmount + commission + bonus;
     const vacationPay = subtotal * 0.12;
-    const totalSalary = subtotal + vacationPay;
+    const totalSalary = Math.round(subtotal + vacationPay);
 
     return total + totalSalary;
   }, 0);

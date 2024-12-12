@@ -6,7 +6,7 @@ interface TotalSalariesCardProps {
 
 export const TotalSalariesCard = ({ totalSalaries }: TotalSalariesCardProps) => {
   return (
-    <Card className="bg-card p-4 sm:p-6 mb-6">
+    <Card className="bg-card p-4 sm:p-6 mb-6 mt-6 border-0">
       <div className="text-sm text-gray-400 mb-1">Total löner för perioden</div>
       <div className="text-2xl font-semibold text-primary">
         {totalSalaries.toLocaleString()} kr
