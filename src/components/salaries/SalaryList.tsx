@@ -31,45 +31,50 @@ export const SalaryList = ({
 
   // Calculate total salaries by summing up each individual total salary
   const totalSalaries = filteredSalaries.reduce((total, salary) => {
-    // Calculate all components needed for this salary
+    // Calculate shifts count
     const shiftsCount = calculateShiftsCount(
       salary.user_display_name,
       salary.period_start,
       salary.period_end
     );
+
+    // Calculate base amount (140 SEK per shift)
+    const baseAmount = shiftsCount * 140;
     
+    // Calculate total sales for the period
     const periodSales = calculateTotalSales(
       salary.user_display_name,
       salary.period_start,
       salary.period_end
     );
     
+    // Calculate accumulated sales
     const accumulatedSales = calculateAccumulatedSales(
       sales,
       salary.user_display_name,
       salary.period_end
     );
 
+    // Calculate commission
+    const commission = accumulatedSales > 25000 ? 
+      periodSales * 0.15 : 
+      periodSales * salary.commission_rate;
+
+    // Get bonus amount
     const bonus = calculateBonus(
       salary.user_display_name,
       salary.period_start,
       salary.period_end
     );
 
-    // Calculate base amount
-    const baseAmount = shiftsCount * 140;
-    
-    // Calculate commission based on accumulated sales
-    const commission = accumulatedSales > 25000 ? 
-      periodSales * 0.15 : 
-      periodSales * salary.commission_rate;
-    
-    // Calculate subtotal and final total
+    // Calculate subtotal before vacation pay
     const subtotal = baseAmount + commission + bonus;
+    
+    // Calculate vacation pay (12% of subtotal)
     const vacationPay = subtotal * 0.12;
-    const salaryTotal = Math.round(subtotal + vacationPay);
-
-    return total + salaryTotal;
+    
+    // Calculate final total and add to accumulator
+    return total + (subtotal + vacationPay);
   }, 0);
 
   return (
