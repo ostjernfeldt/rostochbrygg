@@ -56,7 +56,7 @@ export const SalaryList = ({
     );
 
     const baseAmount = shiftsCount * 140;
-    const commission = calculateAccumulatedSales > 25000 ? 
+    const commission = accumulatedSales > 25000 ? 
       periodSales * 0.15 : 
       periodSales * salary.commission_rate;
     const subtotal = baseAmount + commission + bonus;

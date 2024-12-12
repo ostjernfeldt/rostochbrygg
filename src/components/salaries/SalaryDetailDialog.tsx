@@ -8,13 +8,13 @@ import {
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 
-interface SalaryDetailProps {
+export interface SalaryDetailProps {
   title: string;
   children: React.ReactNode;
   trigger: React.ReactNode;
 }
 
-const SalaryDetail = ({ title, children, trigger }: SalaryDetailProps) => {
+export const SalaryDetail = ({ title, children, trigger }: SalaryDetailProps) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
