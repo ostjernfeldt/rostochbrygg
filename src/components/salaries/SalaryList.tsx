@@ -29,15 +29,14 @@ export const SalaryList = ({
     );
   }
 
-  // Calculate total salaries by summing up the final total salary from each salary card
+  // Calculate total salaries by summing up each individual total salary
   const totalSalaries = filteredSalaries.reduce((total, salary) => {
+    // Calculate all components needed for this salary
     const shiftsCount = calculateShiftsCount(
       salary.user_display_name,
       salary.period_start,
       salary.period_end
     );
-    
-    const baseAmount = shiftsCount * 140;
     
     const periodSales = calculateTotalSales(
       salary.user_display_name,
@@ -57,10 +56,15 @@ export const SalaryList = ({
       salary.period_end
     );
 
+    // Calculate base amount
+    const baseAmount = shiftsCount * 140;
+    
+    // Calculate commission based on accumulated sales
     const commission = accumulatedSales > 25000 ? 
       periodSales * 0.15 : 
       periodSales * salary.commission_rate;
     
+    // Calculate subtotal and final total
     const subtotal = baseAmount + commission + bonus;
     const vacationPay = subtotal * 0.12;
     const salaryTotal = Math.round(subtotal + vacationPay);
