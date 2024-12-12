@@ -10,10 +10,36 @@ import { sv } from "date-fns/locale";
 const Salaries = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>("all");
   
+  // Fetch unique sellers from purchases table
+  const { data: actualSellers, isLoading: sellersLoading } = useQuery({
+    queryKey: ["actualSellers"],
+    queryFn: async () => {
+      console.log("Fetching actual sellers from purchases...");
+      const { data, error } = await supabase
+        .from("purchases")
+        .select("User Display Name")
+        .not("User Display Name", "is", null)
+        .not("User Display Name", "eq", "")
+        .not("User Display Name", "ilike", '%test%')
+        .not("User Display Name", "ilike", '%another%');
+
+      if (error) {
+        console.error("Error fetching sellers:", error);
+        throw error;
+      }
+
+      // Get unique seller names
+      const uniqueSellers = [...new Set(data.map(sale => sale["User Display Name"]))];
+      console.log("Unique sellers found:", uniqueSellers);
+      return uniqueSellers;
+    }
+  });
+
   // Fetch salaries data
   const { data: salaries, isLoading: salariesLoading } = useQuery({
     queryKey: ["salaries"],
     queryFn: async () => {
+      console.log("Fetching salaries...");
       const { data, error } = await supabase
         .from("salaries")
         .select("*")
@@ -32,6 +58,7 @@ const Salaries = () => {
   const { data: bonuses, isLoading: bonusesLoading } = useQuery({
     queryKey: ["bonuses"],
     queryFn: async () => {
+      console.log("Fetching bonuses...");
       const { data, error } = await supabase
         .from("bonus_records")
         .select("*");
@@ -49,6 +76,7 @@ const Salaries = () => {
   const { data: sales, isLoading: salesLoading } = useQuery({
     queryKey: ["sales"],
     queryFn: async () => {
+      console.log("Fetching sales...");
       const { data, error } = await supabase
         .from("purchases")
         .select("*");
@@ -66,8 +94,10 @@ const Salaries = () => {
     format(new Date(salary.period_start), 'yyyy-MM', { locale: sv })
   ))].sort((a, b) => b.localeCompare(a)) : [];
 
+  // Filter salaries to only include actual sellers and selected period
   const filteredSalaries = salaries?.filter(salary => 
-    selectedPeriod === "all" || format(new Date(salary.period_start), 'yyyy-MM') === selectedPeriod
+    (selectedPeriod === "all" || format(new Date(salary.period_start), 'yyyy-MM') === selectedPeriod) &&
+    actualSellers?.includes(salary.user_display_name)
   );
 
   const calculateTotalSales = (userName: string, startDate: string, endDate: string) => {
@@ -112,7 +142,7 @@ const Salaries = () => {
     return periodBonuses.reduce((sum, bonus) => sum + (Number(bonus.amount) || 0), 0);
   };
 
-  const isLoading = salariesLoading || salesLoading || bonusesLoading;
+  const isLoading = salariesLoading || salesLoading || bonusesLoading || sellersLoading;
 
   if (isLoading) {
     return (
