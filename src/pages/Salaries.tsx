@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { sv } from "date-fns/locale";
 import { PageLayout } from "@/components/PageLayout";
 import { useState } from "react";
 import { SalaryCard } from "@/components/salaries/SalaryCard";
 import { PeriodFilter } from "@/components/salaries/PeriodFilter";
+import { format } from "date-fns";
+import { sv } from "date-fns/locale";
 
 const Salaries = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>("all");
@@ -25,11 +25,12 @@ const Salaries = () => {
         throw error;
       }
       
+      console.log("Fetched salaries:", data);
       return data;
     }
   });
 
-  // Fetch sales data
+  // Fetch sales data for the period
   const { data: sales, isLoading: salesLoading } = useQuery({
     queryKey: ["sales"],
     queryFn: async () => {
@@ -37,7 +38,12 @@ const Salaries = () => {
         .from("purchases")
         .select("*");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching sales:", error);
+        throw error;
+      }
+
+      console.log("Fetched sales:", data);
       return data;
     }
   });
@@ -50,7 +56,12 @@ const Salaries = () => {
         .from("user_presence")
         .select("*");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching shifts:", error);
+        throw error;
+      }
+
+      console.log("Fetched shifts:", data);
       return data;
     }
   });
@@ -65,22 +76,30 @@ const Salaries = () => {
 
   const calculateTotalSales = (userName: string, startDate: string, endDate: string) => {
     if (!sales) return 0;
-    return sales
-      .filter(sale => 
-        sale["User Display Name"] === userName &&
-        new Date(sale.Timestamp!) >= new Date(startDate) &&
-        new Date(sale.Timestamp!) <= new Date(endDate)
-      )
-      .reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
+    
+    const periodSales = sales.filter(sale => 
+      sale["User Display Name"] === userName &&
+      new Date(sale.Timestamp!) >= new Date(startDate) &&
+      new Date(sale.Timestamp!) <= new Date(endDate)
+    );
+    
+    console.log(`Calculating sales for ${userName} between ${startDate} and ${endDate}:`, periodSales);
+    
+    return periodSales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
   };
 
   const calculateShiftsCount = (userName: string, startDate: string, endDate: string) => {
     if (!shifts) return 0;
-    return shifts.filter(shift => 
+    
+    const periodShifts = shifts.filter(shift => 
       shift.user_display_name === userName &&
       new Date(shift.presence_start) >= new Date(startDate) &&
       new Date(shift.presence_start) <= new Date(endDate)
-    ).length;
+    );
+    
+    console.log(`Calculating shifts for ${userName} between ${startDate} and ${endDate}:`, periodShifts);
+    
+    return periodShifts.length;
   };
 
   const isLoading = salariesLoading || salesLoading || shiftsLoading;
@@ -130,7 +149,7 @@ const Salaries = () => {
             />
           ))}
           
-          {filteredSalaries?.length === 0 && (
+          {(!filteredSalaries || filteredSalaries.length === 0) && (
             <div className="text-center py-8 text-gray-400">
               Inga löner hittades för denna period
             </div>
