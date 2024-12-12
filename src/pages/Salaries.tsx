@@ -24,7 +24,7 @@ const Salaries = () => {
         throw error;
       }
       
-      console.log("Fetched salaries:", data);
+      console.log("Fetched salaries with bonuses:", data);
       return data;
     }
   });
