@@ -10,7 +10,7 @@ import { DateFilterSection } from "@/components/overview/DateFilterSection";
 import { StatsSection } from "@/components/overview/StatsSection";
 
 export default function Overview() {
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("day");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("all"); // Changed default to "all"
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
