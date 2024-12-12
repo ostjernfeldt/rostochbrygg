@@ -111,7 +111,12 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
+      <img 
+        src="/lovable-uploads/f3b5392a-fb40-467e-b32d-aa71eb2156af.png" 
+        alt="R&B Logo" 
+        className="h-24 w-auto mb-8 object-contain"
+      />
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>{isResetMode ? "Återställ lösenord" : "Logga in"}</CardTitle>
