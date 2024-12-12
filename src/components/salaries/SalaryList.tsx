@@ -31,6 +31,12 @@ export const SalaryList = ({
 
   // Calculate total salaries for the period
   const totalSalaries = filteredSalaries.reduce((total, salary) => {
+    const shiftsCount = calculateShiftsCount(
+      salary.user_display_name,
+      salary.period_start,
+      salary.period_end
+    );
+
     const periodSales = calculateTotalSales(
       salary.user_display_name,
       salary.period_start,
@@ -43,18 +49,13 @@ export const SalaryList = ({
       salary.period_end
     );
 
-    const shiftsCount = calculateShiftsCount(
-      salary.user_display_name,
-      salary.period_start,
-      salary.period_end
-    );
-
     const bonus = calculateBonus(
       salary.user_display_name,
       salary.period_start,
       salary.period_end
     );
 
+    // Calculate individual components
     const baseAmount = shiftsCount * 140;
     const commission = accumulatedSales > 25000 ? 
       periodSales * 0.15 : 
