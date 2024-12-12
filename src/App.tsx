@@ -26,25 +26,21 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Initial session check
     const checkSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        console.log("Session check result:", session ? "Session exists" : "No session");
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Initial session check:", session ? "Session exists" : "No session");
         
-        if (error) {
-          console.error("Session check error:", error);
+        if (!session) {
+          console.log("No session found, redirecting to login");
           setIsAuthenticated(false);
           navigate('/login');
           return;
         }
-
-        setIsAuthenticated(!!session);
-        if (!session) {
-          navigate('/login');
-        }
+        
+        setIsAuthenticated(true);
       } catch (error) {
-        console.error("Session check failed:", error);
+        console.error("Session check error:", error);
         setIsAuthenticated(false);
         navigate('/login');
       }
@@ -52,11 +48,10 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
 
     checkSession();
 
-    // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state change:", event, session ? "Session exists" : "No session");
       
-      if (event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
         setIsAuthenticated(false);
         navigate('/login');
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -156,6 +151,7 @@ const AppContent = () => {
             <Overview />
           </PrivateRoute>
         } />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       {location.pathname !== '/login' && <BottomNav />}
     </div>
