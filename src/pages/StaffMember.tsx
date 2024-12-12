@@ -27,66 +27,38 @@ const StaffMember = () => {
 
       if (salesError) throw salesError;
 
-      // Fetch presence data
-      const { data: shifts, error: presenceError } = await supabase
-        .from("user_presence")
-        .select("*")
-        .eq("user_display_name", decodeURIComponent(name))
-        .order("presence_start", { ascending: false });
-
-      if (presenceError) throw presenceError;
-
-      // Fetch challenges data
-      const { data: challenges, error: challengesError } = await supabase
-        .from("challenges")
-        .select("*");
-
-      if (challengesError) throw challengesError;
-
       if (!sales || sales.length === 0) return null;
 
-      const firstSale = new Date(sales[0].Timestamp as string);
-      const totalAmount = sales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
-      const averageAmount = totalAmount / sales.length;
-      
-      // Calculate unique active days
-      const uniqueDays = new Set(sales.map(s => new Date(s.Timestamp as string).toDateString()));
-      
-      // Process shifts with sales data
-      const processedShifts = shifts?.map(shift => {
-        const shiftStart = new Date(shift.presence_start);
-        const shiftEnd = shift.presence_end ? new Date(shift.presence_end) : new Date();
+      // Process sales data by date
+      const salesByDate = sales.reduce((acc: { [key: string]: any[] }, sale) => {
+        const dateStr = new Date(sale.Timestamp as string).toDateString();
+        if (!acc[dateStr]) {
+          acc[dateStr] = [];
+        }
+        acc[dateStr].push(sale);
+        return acc;
+      }, {});
+
+      // Calculate totals for each date
+      const shifts = Object.entries(salesByDate).map(([dateStr, dateSales]) => {
+        const date = new Date(dateStr);
+        const totalSales = dateSales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
         
-        // Calculate sales during this shift
-        const shiftSales = sales.filter(sale => {
-          const saleTime = new Date(sale.Timestamp as string);
-          return saleTime >= shiftStart && saleTime <= shiftEnd;
-        });
-
-        const totalSales = shiftSales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
-
-        // Find challenge wins for this shift
-        const challengeWins = challenges?.filter(challenge => {
-          const challengeStart = new Date(challenge.start_date);
-          const challengeEnd = new Date(challenge.end_date);
-          const shiftDate = new Date(shift.presence_start);
-          
-          // Set hours to 0 for date comparison
-          shiftDate.setHours(0, 0, 0, 0);
-          challengeStart.setHours(0, 0, 0, 0);
-          challengeEnd.setHours(0, 0, 0, 0);
-          
-          return shiftDate >= challengeStart && shiftDate <= challengeEnd;
-        });
-
         return {
-          ...shift,
+          id: date.toISOString(), // Using date as ID since we group by date
+          presence_start: date.toISOString(),
           totalSales,
-          challengeWins: challengeWins || []
+          sales: dateSales
         };
       });
 
-      console.log("Processed shifts:", processedShifts);
+      console.log("Processed shifts by date:", shifts);
+
+      // Calculate overall stats
+      const firstSale = new Date(sales[0].Timestamp as string);
+      const totalAmount = sales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
+      const averageAmount = totalAmount / sales.length;
+      const uniqueDays = new Set(sales.map(s => new Date(s.Timestamp as string).toDateString()));
 
       return {
         displayName: name,
@@ -96,7 +68,7 @@ const StaffMember = () => {
         salesCount: sales.length,
         daysActive: uniqueDays.size,
         sales,
-        shifts: processedShifts || []
+        shifts
       };
     }
   });
