@@ -9,7 +9,8 @@ import { PeriodFilter } from "@/components/salaries/PeriodFilter";
 const Salaries = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>("all");
   
-  const { data: salaries, isLoading } = useQuery({
+  // Fetch salaries data
+  const { data: salaries, isLoading: salariesLoading } = useQuery({
     queryKey: ["salaries"],
     queryFn: async () => {
       console.log("Fetching salaries data...");
@@ -27,11 +28,25 @@ const Salaries = () => {
     }
   });
 
-  const { data: sales } = useQuery({
+  // Fetch sales data
+  const { data: sales, isLoading: salesLoading } = useQuery({
     queryKey: ["sales"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("purchases")
+        .select("*");
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch shifts data
+  const { data: shifts, isLoading: shiftsLoading } = useQuery({
+    queryKey: ["shifts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_presence")
         .select("*");
 
       if (error) throw error;
@@ -57,6 +72,17 @@ const Salaries = () => {
       )
       .reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
   };
+
+  const calculateShiftsCount = (userName: string, startDate: string, endDate: string) => {
+    if (!shifts) return 0;
+    return shifts.filter(shift => 
+      shift.user_display_name === userName &&
+      new Date(shift.presence_start) >= new Date(startDate) &&
+      new Date(shift.presence_start) <= new Date(endDate)
+    ).length;
+  };
+
+  const isLoading = salariesLoading || salesLoading || shiftsLoading;
 
   if (isLoading) {
     return (
@@ -91,6 +117,11 @@ const Salaries = () => {
               key={salary.id}
               salary={salary}
               totalSales={calculateTotalSales(
+                salary.user_display_name,
+                salary.period_start,
+                salary.period_end
+              )}
+              shiftsCount={calculateShiftsCount(
                 salary.user_display_name,
                 salary.period_start,
                 salary.period_end
