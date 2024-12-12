@@ -1,4 +1,5 @@
 import { SalaryCard } from "./SalaryCard";
+import { TotalSalariesCard } from "./TotalSalariesCard";
 import { calculateAccumulatedSales } from "@/utils/salaryCalculations";
 
 interface SalaryListProps {
@@ -28,8 +29,47 @@ export const SalaryList = ({
     );
   }
 
+  // Calculate total salaries for the period
+  const totalSalaries = filteredSalaries.reduce((total, salary) => {
+    const periodSales = calculateTotalSales(
+      salary.user_display_name,
+      salary.period_start,
+      salary.period_end
+    );
+    
+    const accumulatedSales = calculateAccumulatedSales(
+      sales,
+      salary.user_display_name,
+      salary.period_end
+    );
+
+    const shiftsCount = calculateShiftsCount(
+      salary.user_display_name,
+      salary.period_start,
+      salary.period_end
+    );
+
+    const bonus = calculateBonus(
+      salary.user_display_name,
+      salary.period_start,
+      salary.period_end
+    );
+
+    const baseAmount = shiftsCount * 140;
+    const commission = calculateAccumulatedSales > 25000 ? 
+      periodSales * 0.15 : 
+      periodSales * salary.commission_rate;
+    const subtotal = baseAmount + commission + bonus;
+    const vacationPay = subtotal * 0.12;
+    const totalSalary = subtotal + vacationPay;
+
+    return total + totalSalary;
+  }, 0);
+
   return (
     <div className="space-y-4">
+      <TotalSalariesCard totalSalaries={totalSalaries} />
+      
       {filteredSalaries.map((salary) => {
         const periodSales = calculateTotalSales(
           salary.user_display_name,
