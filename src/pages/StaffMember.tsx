@@ -28,7 +28,7 @@ const StaffMember = () => {
       if (salesError) throw salesError;
 
       // Fetch presence data
-      const { data: presence, error: presenceError } = await supabase
+      const { data: shifts, error: presenceError } = await supabase
         .from("user_presence")
         .select("*")
         .eq("user_display_name", decodeURIComponent(name))
@@ -52,8 +52,8 @@ const StaffMember = () => {
       // Calculate unique active days
       const uniqueDays = new Set(sales.map(s => new Date(s.Timestamp as string).toDateString()));
       
-      // Process presence data with sales and challenge wins
-      const processedPresence = presence?.map(shift => {
+      // Process shifts with sales data
+      const processedShifts = shifts?.map(shift => {
         const shiftStart = new Date(shift.presence_start);
         const shiftEnd = shift.presence_end ? new Date(shift.presence_end) : new Date();
         
@@ -70,6 +70,7 @@ const StaffMember = () => {
           const challengeStart = new Date(challenge.start_date);
           const challengeEnd = new Date(challenge.end_date);
           const shiftDate = new Date(shift.presence_start);
+          
           // Set hours to 0 for date comparison
           shiftDate.setHours(0, 0, 0, 0);
           challengeStart.setHours(0, 0, 0, 0);
@@ -81,9 +82,11 @@ const StaffMember = () => {
         return {
           ...shift,
           totalSales,
-          challengeWins
+          challengeWins: challengeWins || []
         };
       });
+
+      console.log("Processed shifts:", processedShifts);
 
       return {
         displayName: name,
@@ -93,7 +96,7 @@ const StaffMember = () => {
         salesCount: sales.length,
         daysActive: uniqueDays.size,
         sales,
-        shifts: processedPresence
+        shifts: processedShifts || []
       };
     }
   });
