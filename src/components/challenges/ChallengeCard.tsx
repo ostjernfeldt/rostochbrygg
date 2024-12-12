@@ -15,6 +15,7 @@ interface ChallengeCardProps {
     onValueChange: (value: string) => void;
     placeholder: string;
   };
+  hasActiveChallenge?: boolean;
 }
 
 export const ChallengeCard = ({
@@ -24,7 +25,8 @@ export const ChallengeCard = ({
   challenge,
   reward,
   leader,
-  filter
+  filter,
+  hasActiveChallenge = false
 }: ChallengeCardProps) => {
   const isMobile = useIsMobile();
 
@@ -50,7 +52,7 @@ export const ChallengeCard = ({
         )}
       </div>
       <p className="text-green-500 mt-2">{reward}</p>
-      {leader && (
+      {hasActiveChallenge && leader && (
         <div className="mt-4 p-3 bg-card/50 rounded-lg">
           <p className="font-bold">{leader.name}</p>
           <p style={{ color: "#D3E4FD" }}>SEK {leader.amount.toLocaleString()}</p>

@@ -55,6 +55,11 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
     onValueChange: setSelectedMonth
   });
 
+  // Check if there are active challenges for each period
+  const hasDailyChallenge = challenges?.daily_reward !== "Ingen tävling idag";
+  const hasWeeklyChallenge = challenges?.weekly_reward !== "Ingen tävling denna vecka";
+  const hasMonthlyChallenge = challenges?.monthly_reward !== "Ingen tävling denna månad";
+
   return (
     <>
       <ChallengeCard
@@ -65,6 +70,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
         reward={challenges?.daily_reward || "Laddar..."}
         leader={getTopLeader(leaders?.dailyLeaders)}
         filter={dailyFilter}
+        hasActiveChallenge={hasDailyChallenge}
       />
 
       <ChallengeCard
@@ -75,6 +81,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
         reward={challenges?.weekly_reward || "Laddar..."}
         leader={getTopLeader(leaders?.weeklyLeaders)}
         filter={weeklyFilter}
+        hasActiveChallenge={hasWeeklyChallenge}
       />
 
       <ChallengeCard
@@ -85,6 +92,7 @@ export const ChallengeSection = ({ salesDates }: ChallengeSectionProps) => {
         reward={challenges?.monthly_reward || "Laddar..."}
         leader={getTopLeader(leaders?.monthlyLeaders)}
         filter={monthlyFilter}
+        hasActiveChallenge={hasMonthlyChallenge}
       />
     </>
   );
