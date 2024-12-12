@@ -33,36 +33,36 @@ export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps)
   const totalSalary = subtotal + vacationPay;
 
   return (
-    <div className="bg-card p-6 rounded-xl space-y-4">
-      <div className="flex justify-between items-start">
+    <div className="bg-card p-4 sm:p-6 rounded-xl space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
         <div className="flex items-center gap-2">
           <User className="h-5 w-5 text-primary" />
           <h3 className="text-xl font-semibold">{salary.user_display_name}</h3>
         </div>
         <div className="flex items-center gap-2">
           <Calendar className="h-5 w-5 text-gray-400" />
-          <span className="text-gray-400">
+          <span className="text-gray-400 text-sm">
             {format(new Date(salary.period_start), 'd MMM yyyy', { locale: sv })} - {format(new Date(salary.period_end), 'd MMM yyyy', { locale: sv })}
           </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-background p-4 rounded-lg">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-background p-3 rounded-lg">
           <div className="text-sm text-gray-400 mb-1">Antal pass</div>
           <div className="text-lg font-semibold">
             {shiftsCount} st
           </div>
         </div>
         
-        <div className="bg-background p-4 rounded-lg">
+        <div className="bg-background p-3 rounded-lg">
           <div className="text-sm text-gray-400 mb-1">Grundlön</div>
           <div className="text-lg font-semibold">
             {baseAmount.toLocaleString()} kr
           </div>
         </div>
 
-        <div className="bg-background p-4 rounded-lg">
+        <div className="bg-background p-3 rounded-lg">
           <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
             <span>Total försäljning</span>
           </div>
@@ -71,7 +71,7 @@ export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps)
           </div>
         </div>
 
-        <div className="bg-background p-4 rounded-lg">
+        <div className="bg-background p-3 rounded-lg">
           <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
             <span>Provision</span>
             <Percent className="h-3 w-3" />
@@ -82,7 +82,7 @@ export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps)
           </div>
         </div>
 
-        <div className="bg-background p-4 rounded-lg">
+        <div className="bg-background p-3 rounded-lg">
           <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
             <span>Delsumma</span>
           </div>
@@ -91,7 +91,7 @@ export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps)
           </div>
         </div>
 
-        <div className="bg-background p-4 rounded-lg">
+        <div className="bg-background p-3 rounded-lg">
           <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
             <span>Semesterersättning</span>
             <Percent className="h-3 w-3" />
@@ -102,7 +102,7 @@ export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps)
           </div>
         </div>
 
-        <div className="bg-background p-4 rounded-lg col-span-2">
+        <div className="bg-background p-3 rounded-lg sm:col-span-2">
           <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
             <DollarSign className="h-4 w-4" />
             <span>Total lön</span>

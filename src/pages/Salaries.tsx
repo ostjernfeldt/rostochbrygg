@@ -14,7 +14,6 @@ const Salaries = () => {
   const { data: salaries, isLoading: salariesLoading } = useQuery({
     queryKey: ["salaries"],
     queryFn: async () => {
-      console.log("Fetching salaries data...");
       const { data, error } = await supabase
         .from("salaries")
         .select("*")
@@ -48,24 +47,6 @@ const Salaries = () => {
     }
   });
 
-  // Fetch shifts data
-  const { data: shifts, isLoading: shiftsLoading } = useQuery({
-    queryKey: ["shifts"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_presence")
-        .select("*");
-
-      if (error) {
-        console.error("Error fetching shifts:", error);
-        throw error;
-      }
-
-      console.log("Fetched shifts:", data);
-      return data;
-    }
-  });
-
   const uniquePeriods = salaries ? [...new Set(salaries.map(salary => 
     format(new Date(salary.period_start), 'yyyy-MM', { locale: sv })
   ))].sort((a, b) => b.localeCompare(a)) : [];
@@ -89,20 +70,34 @@ const Salaries = () => {
   };
 
   const calculateShiftsCount = (userName: string, startDate: string, endDate: string) => {
-    if (!shifts) return 0;
+    if (!sales) return 0;
     
-    const periodShifts = shifts.filter(shift => 
-      shift.user_display_name === userName &&
-      new Date(shift.presence_start) >= new Date(startDate) &&
-      new Date(shift.presence_start) <= new Date(endDate)
+    // Get all sales for the user in the period
+    const userSales = sales.filter(sale => 
+      sale["User Display Name"] === userName &&
+      new Date(sale.Timestamp!) >= new Date(startDate) &&
+      new Date(sale.Timestamp!) <= new Date(endDate)
     );
     
-    console.log(`Calculating shifts for ${userName} between ${startDate} and ${endDate}:`, periodShifts);
+    // Group sales by date and count days with sales > 0
+    const salesByDate = userSales.reduce((acc, sale) => {
+      const date = new Date(sale.Timestamp!).toDateString();
+      acc[date] = (acc[date] || 0) + Number(sale.Amount || 0);
+      return acc;
+    }, {} as Record<string, number>);
     
-    return periodShifts.length;
+    // Count days where total sales > 0
+    const shiftsCount = Object.values(salesByDate).filter(total => total > 0).length;
+    
+    console.log(`Calculating shifts for ${userName} between ${startDate} and ${endDate}:`, {
+      salesByDate,
+      shiftsCount
+    });
+    
+    return shiftsCount;
   };
 
-  const isLoading = salariesLoading || salesLoading || shiftsLoading;
+  const isLoading = salariesLoading || salesLoading;
 
   if (isLoading) {
     return (
