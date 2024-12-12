@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
-import { Calendar, User, DollarSign, Percent, Gift } from "lucide-react";
+import { Calendar, User, Percent, Gift } from "lucide-react";
 import { calculateCommission } from "@/utils/salaryCalculations";
 import SalaryDetail, { 
   ShiftDetail, 
@@ -224,7 +224,6 @@ export const SalaryCard = ({
           trigger={
             <div className="bg-background p-3 rounded-lg cursor-pointer hover:bg-background/80 transition-colors sm:col-span-2 md:col-span-1">
               <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
-                <DollarSign className="h-4 w-4" />
                 <span>Total lön</span>
               </div>
               <div className="text-lg font-semibold text-primary">
