@@ -29,14 +29,16 @@ export const SalaryList = ({
     );
   }
 
-  // Calculate total salaries for the period by summing up each salary card's total
+  // Calculate total salaries by summing up the final total salary from each salary card
   const totalSalaries = filteredSalaries.reduce((total, salary) => {
     const shiftsCount = calculateShiftsCount(
       salary.user_display_name,
       salary.period_start,
       salary.period_end
     );
-
+    
+    const baseAmount = shiftsCount * 140;
+    
     const periodSales = calculateTotalSales(
       salary.user_display_name,
       salary.period_start,
@@ -55,16 +57,15 @@ export const SalaryList = ({
       salary.period_end
     );
 
-    // Calculate individual components
-    const baseAmount = shiftsCount * 140;
     const commission = accumulatedSales > 25000 ? 
       periodSales * 0.15 : 
       periodSales * salary.commission_rate;
+    
     const subtotal = baseAmount + commission + bonus;
     const vacationPay = subtotal * 0.12;
-    const totalSalary = Math.round(subtotal + vacationPay);
+    const salaryTotal = Math.round(subtotal + vacationPay);
 
-    return total + totalSalary;
+    return total + salaryTotal;
   }, 0);
 
   return (
@@ -90,7 +91,6 @@ export const SalaryList = ({
           salary.period_end
         );
 
-        // Get all sales for this user in the period (these will be our "shifts")
         const periodShifts = sales.filter(sale => 
           sale["User Display Name"] === salary.user_display_name &&
           new Date(sale.Timestamp) >= new Date(salary.period_start) &&
