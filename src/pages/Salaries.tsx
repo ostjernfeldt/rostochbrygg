@@ -18,6 +18,18 @@ const Salaries = () => {
     format(new Date(salary.period_start), 'yyyy-MM', { locale: sv })
   ))].sort((a, b) => b.localeCompare(a)) : [];
 
+  const calculateTotalSales = (userName: string, startDate: string, endDate: string) => {
+    if (!sales) return 0;
+    
+    const periodSales = sales.filter(sale => 
+      sale["User Display Name"] === userName &&
+      new Date(sale.Timestamp!) >= new Date(startDate) &&
+      new Date(sale.Timestamp!) <= new Date(endDate)
+    );
+    
+    return periodSales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
+  };
+
   // Filter salaries based on period, custom date range, and search query
   const filteredSalaries = salaries?.filter(salary => {
     // Filter by seller name if search query exists
@@ -27,6 +39,18 @@ const Salaries = () => {
 
     // Filter by actual sellers
     if (!actualSellers?.includes(salary.user_display_name)) {
+      return false;
+    }
+
+    // Calculate total sales for the period
+    const totalSales = calculateTotalSales(
+      salary.user_display_name,
+      salary.period_start,
+      salary.period_end
+    );
+
+    // Filter out sellers with zero sales
+    if (totalSales === 0) {
       return false;
     }
 
@@ -46,18 +70,6 @@ const Salaries = () => {
     return selectedPeriod === "all" || 
            format(new Date(salary.period_start), 'yyyy-MM') === selectedPeriod;
   });
-
-  const calculateTotalSales = (userName: string, startDate: string, endDate: string) => {
-    if (!sales) return 0;
-    
-    const periodSales = sales.filter(sale => 
-      sale["User Display Name"] === userName &&
-      new Date(sale.Timestamp!) >= new Date(startDate) &&
-      new Date(sale.Timestamp!) <= new Date(endDate)
-    );
-    
-    return periodSales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
-  };
 
   const calculateShiftsCount = (userName: string, startDate: string, endDate: string) => {
     if (!sales) return 0;
