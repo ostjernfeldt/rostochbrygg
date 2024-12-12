@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { sv } from "date-fns/locale";
 import { Calendar, User, DollarSign, Percent } from "lucide-react";
 
 interface SalaryCardProps {
@@ -41,7 +42,7 @@ export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps)
         <div className="flex items-center gap-2">
           <Calendar className="h-5 w-5 text-gray-400" />
           <span className="text-gray-400">
-            {format(new Date(salary.period_start), 'yyyy-MM-dd')} - {format(new Date(salary.period_end), 'yyyy-MM-dd')}
+            {format(new Date(salary.period_start), 'd MMM yyyy', { locale: sv })} - {format(new Date(salary.period_end), 'd MMM yyyy', { locale: sv })}
           </span>
         </div>
       </div>

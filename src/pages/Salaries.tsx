@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { sv } from "date-fns/locale";
 import { PageLayout } from "@/components/PageLayout";
 import { useState } from "react";
 import { SalaryCard } from "@/components/salaries/SalaryCard";
@@ -55,7 +56,7 @@ const Salaries = () => {
   });
 
   const uniquePeriods = salaries ? [...new Set(salaries.map(salary => 
-    format(new Date(salary.period_start), 'yyyy-MM')
+    format(new Date(salary.period_start), 'yyyy-MM', { locale: sv })
   ))].sort((a, b) => b.localeCompare(a)) : [];
 
   const filteredSalaries = salaries?.filter(salary => 
@@ -91,7 +92,7 @@ const Salaries = () => {
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="animate-pulse">
-              <div className="h-24 bg-card rounded-xl"></div>
+              <div className="h-48 bg-card rounded-xl"></div>
             </div>
           ))}
         </div>
@@ -114,7 +115,7 @@ const Salaries = () => {
         <div className="space-y-4">
           {filteredSalaries?.map((salary) => (
             <SalaryCard
-              key={salary.id}
+              key={`${salary.id}-${salary.period_start}`}
               salary={salary}
               totalSales={calculateTotalSales(
                 salary.user_display_name,
@@ -128,6 +129,12 @@ const Salaries = () => {
               )}
             />
           ))}
+          
+          {filteredSalaries?.length === 0 && (
+            <div className="text-center py-8 text-gray-400">
+              Inga löner hittades för denna period
+            </div>
+          )}
         </div>
       </div>
     </PageLayout>

@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { sv } from "date-fns/locale";
 import {
   Select,
   SelectContent,
@@ -30,7 +31,7 @@ export const PeriodFilter = ({ selectedPeriod, setSelectedPeriod, uniquePeriods 
             value={period}
             className="focus:bg-gray-800"
           >
-            {period}
+            {format(new Date(period), 'MMMM yyyy', { locale: sv })}
           </SelectItem>
         ))}
       </SelectContent>
