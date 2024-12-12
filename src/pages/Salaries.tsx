@@ -31,7 +31,6 @@ const Salaries = () => {
         throw error;
       }
 
-      // Get unique seller names
       const uniqueSellers = [...new Set(data.map(sale => sale["User Display Name"]))];
       console.log("Unique sellers found:", uniqueSellers);
       return uniqueSellers;
@@ -68,6 +67,24 @@ const Salaries = () => {
 
       if (error) {
         console.error("Error fetching bonuses:", error);
+        throw error;
+      }
+
+      return data;
+    }
+  });
+
+  // Fetch shifts data
+  const { data: shifts, isLoading: shiftsLoading } = useQuery({
+    queryKey: ["shifts"],
+    queryFn: async () => {
+      console.log("Fetching shifts...");
+      const { data, error } = await supabase
+        .from("user_presence")
+        .select("*");
+
+      if (error) {
+        console.error("Error fetching shifts:", error);
         throw error;
       }
 
@@ -138,21 +155,15 @@ const Salaries = () => {
   };
 
   const calculateShiftsCount = (userName: string, startDate: string, endDate: string) => {
-    if (!sales) return 0;
+    if (!shifts) return 0;
     
-    const userSales = sales.filter(sale => 
-      sale["User Display Name"] === userName &&
-      new Date(sale.Timestamp!) >= new Date(startDate) &&
-      new Date(sale.Timestamp!) <= new Date(endDate)
+    const userShifts = shifts.filter(shift => 
+      shift.user_display_name === userName &&
+      new Date(shift.presence_start) >= new Date(startDate) &&
+      new Date(shift.presence_start) <= new Date(endDate)
     );
     
-    const salesByDate = userSales.reduce((acc, sale) => {
-      const date = new Date(sale.Timestamp!).toDateString();
-      acc[date] = (acc[date] || 0) + Number(sale.Amount || 0);
-      return acc;
-    }, {} as Record<string, number>);
-    
-    return Object.values(salesByDate).filter(total => total > 0).length;
+    return userShifts.length;
   };
 
   const calculateBonus = (userName: string, startDate: string, endDate: string) => {
@@ -167,7 +178,7 @@ const Salaries = () => {
     return periodBonuses.reduce((sum, bonus) => sum + (Number(bonus.amount) || 0), 0);
   };
 
-  const isLoading = salariesLoading || salesLoading || bonusesLoading || sellersLoading;
+  const isLoading = salariesLoading || salesLoading || bonusesLoading || sellersLoading || shiftsLoading;
 
   if (isLoading) {
     return (
@@ -203,6 +214,8 @@ const Salaries = () => {
         <SalaryList
           filteredSalaries={filteredSalaries || []}
           sales={sales || []}
+          shifts={shifts || []}
+          bonuses={bonuses || []}
           calculateTotalSales={calculateTotalSales}
           calculateShiftsCount={calculateShiftsCount}
           calculateBonus={calculateBonus}
