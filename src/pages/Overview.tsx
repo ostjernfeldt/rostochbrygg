@@ -141,7 +141,11 @@ export default function Overview() {
           />
         </div>
 
-        <StatsSection stats={stats} isLoading={isLoading} />
+        <StatsSection 
+          stats={stats} 
+          isLoading={isLoading} 
+          selectedPeriod={selectedPeriod}
+        />
       </div>
     </PageLayout>
   );

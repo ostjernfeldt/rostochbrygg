@@ -14,9 +14,10 @@ interface StatsSectionProps {
     paymentMethodStats: any[];
   } | null;
   isLoading: boolean;
+  selectedPeriod: string;
 }
 
-export const StatsSection = ({ stats, isLoading }: StatsSectionProps) => {
+export const StatsSection = ({ stats, isLoading, selectedPeriod }: StatsSectionProps) => {
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -44,7 +45,10 @@ export const StatsSection = ({ stats, isLoading }: StatsSectionProps) => {
       <PaymentMethodStats stats={stats.paymentMethodStats} />
       <div className="mt-8">
         <h2 className="mb-4 text-xl font-bold">Försäljningsutveckling</h2>
-        <SalesChart transactions={stats.transactions} groupByWeek={true} />
+        <SalesChart 
+          transactions={stats.transactions} 
+          groupByWeek={selectedPeriod !== 'week'} 
+        />
       </div>
     </>
   );
