@@ -14,6 +14,13 @@ export const ShiftsList = ({ shifts }: ShiftsListProps) => {
   const [selectedDate, setSelectedDate] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
+  // Sort shifts by date in descending order
+  const sortedShifts = [...shifts].sort((a, b) => {
+    return new Date(b.presence_start).getTime() - new Date(a.presence_start).getTime();
+  });
+
+  console.log("Sorted shifts:", sortedShifts);
+
   return (
     <div className="stat-card">
       <h3 className="text-gray-400 mb-4">Säljpass</h3>
@@ -28,7 +35,7 @@ export const ShiftsList = ({ shifts }: ShiftsListProps) => {
       
       <ScrollArea className="h-[400px] mt-4">
         <div className="space-y-4">
-          {shifts?.map((shift) => (
+          {sortedShifts?.map((shift) => (
             <div 
               key={shift.id} 
               className="p-4 bg-card/50 rounded-lg border border-primary/20 hover:border-primary/40 transition-colors"
