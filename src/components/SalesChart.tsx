@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { format, startOfWeek, startOfDay, addDays, isSameDay } from "date-fns";
+import { format, startOfWeek, startOfDay, addDays, isSameDay, parseISO } from "date-fns";
 import { sv } from "date-fns/locale";
 
 interface SalesChartProps {
@@ -9,9 +9,10 @@ interface SalesChartProps {
     Amount: number | null;
   }>;
   groupByWeek?: boolean;
+  selectedPeriod?: string;
 }
 
-export const SalesChart = ({ transactions, groupByWeek = false }: SalesChartProps) => {
+export const SalesChart = ({ transactions, groupByWeek = false, selectedPeriod }: SalesChartProps) => {
   const chartData = useMemo(() => {
     if (transactions.length === 0) return [];
 
@@ -23,6 +24,21 @@ export const SalesChart = ({ transactions, groupByWeek = false }: SalesChartProp
     );
     
     console.log("Sorted transactions:", sortedTransactions);
+
+    // Handle daily view differently
+    if (selectedPeriod === "day") {
+      let cumulativeAmount = 0;
+      return sortedTransactions.map(transaction => {
+        if (transaction.Amount) {
+          cumulativeAmount += transaction.Amount;
+        }
+        return {
+          timestamp: transaction.Timestamp,
+          amount: cumulativeAmount,
+          time: format(parseISO(transaction.Timestamp), 'HH:mm')
+        };
+      });
+    }
 
     if (groupByWeek) {
       // Group transactions by week and calculate cumulative amount for each week
@@ -83,22 +99,12 @@ export const SalesChart = ({ transactions, groupByWeek = false }: SalesChartProp
         return result;
       }
       
-      // For other views, calculate cumulative amount for each transaction
-      let cumulativeAmount = 0;
-      const result = sortedTransactions.map(transaction => {
-        if (transaction.Amount) {
-          cumulativeAmount += transaction.Amount;
-        }
-        return {
-          timestamp: transaction.Timestamp,
-          amount: cumulativeAmount
-        };
-      });
-      
-      console.log("Cumulative chart data:", result);
-      return result;
+      return sortedTransactions.map(transaction => ({
+        timestamp: transaction.Timestamp,
+        amount: Number(transaction.Amount) || 0
+      }));
     }
-  }, [transactions, groupByWeek]);
+  }, [transactions, groupByWeek, selectedPeriod]);
 
   if (chartData.length === 0) return null;
 
@@ -116,12 +122,15 @@ export const SalesChart = ({ transactions, groupByWeek = false }: SalesChartProp
             dataKey="timestamp" 
             stroke="#666"
             tickFormatter={(value) => {
-              const date = new Date(value);
+              if (selectedPeriod === "day") {
+                return format(new Date(value), 'HH:mm');
+              }
               if (!groupByWeek) {
+                const date = new Date(value);
                 const weekday = format(date, 'EEEEEE', { locale: sv }).toUpperCase();
                 return weekday === 'L' ? 'LÖ' : weekday === 'S' ? 'SÖ' : weekday;
               }
-              return `v.${format(date, 'w', { locale: sv })}`;
+              return `v.${format(new Date(value), 'w', { locale: sv })}`;
             }}
           />
           <YAxis 
@@ -137,10 +146,13 @@ export const SalesChart = ({ transactions, groupByWeek = false }: SalesChartProp
             }}
             formatter={(value: number) => [
               `${value.toLocaleString()} kr`, 
-              groupByWeek ? 'Total försäljning' : 'Total försäljning'
+              'Total försäljning'
             ]}
             labelFormatter={(label) => {
               const date = new Date(label);
+              if (selectedPeriod === "day") {
+                return format(date, 'HH:mm');
+              }
               return groupByWeek 
                 ? `Vecka ${format(date, 'w', { locale: sv })}`
                 : format(date, 'EEEE d MMMM', { locale: sv });

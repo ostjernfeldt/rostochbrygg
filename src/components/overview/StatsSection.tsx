@@ -46,6 +46,7 @@ export const StatsSection = ({ stats, isLoading, selectedPeriod }: StatsSectionP
         <SalesChart 
           transactions={stats.transactions} 
           groupByWeek={selectedPeriod !== 'week'} 
+          selectedPeriod={selectedPeriod}
         />
       </div>
       <OverviewStatsGrid stats={stats} />
