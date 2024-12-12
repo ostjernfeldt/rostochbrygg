@@ -85,17 +85,15 @@ export const SalaryCard = ({ salary, totalSales, shiftsCount }: SalaryCardProps)
           </div>
         </div>
 
-        {bonus > 0 && (
-          <div className="bg-background p-3 rounded-lg">
-            <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
-              <Gift className="h-4 w-4" />
-              <span>Bonus</span>
-            </div>
-            <div className="text-lg font-semibold">
-              {bonus.toLocaleString()} kr
-            </div>
+        <div className="bg-background p-3 rounded-lg">
+          <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
+            <Gift className="h-4 w-4" />
+            <span>Bonus</span>
           </div>
-        )}
+          <div className="text-lg font-semibold">
+            {bonus.toLocaleString()} kr
+          </div>
+        </div>
 
         <div className="bg-background p-3 rounded-lg">
           <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">

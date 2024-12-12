@@ -24,7 +24,23 @@ const Salaries = () => {
         throw error;
       }
       
-      console.log("Fetched salaries with bonuses:", data);
+      return data;
+    }
+  });
+
+  // Fetch bonus records
+  const { data: bonuses, isLoading: bonusesLoading } = useQuery({
+    queryKey: ["bonuses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bonus_records")
+        .select("*");
+
+      if (error) {
+        console.error("Error fetching bonuses:", error);
+        throw error;
+      }
+
       return data;
     }
   });
@@ -42,7 +58,6 @@ const Salaries = () => {
         throw error;
       }
 
-      console.log("Fetched sales:", data);
       return data;
     }
   });
@@ -64,40 +79,40 @@ const Salaries = () => {
       new Date(sale.Timestamp!) <= new Date(endDate)
     );
     
-    console.log(`Calculating sales for ${userName} between ${startDate} and ${endDate}:`, periodSales);
-    
     return periodSales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
   };
 
   const calculateShiftsCount = (userName: string, startDate: string, endDate: string) => {
     if (!sales) return 0;
     
-    // Get all sales for the user in the period
     const userSales = sales.filter(sale => 
       sale["User Display Name"] === userName &&
       new Date(sale.Timestamp!) >= new Date(startDate) &&
       new Date(sale.Timestamp!) <= new Date(endDate)
     );
     
-    // Group sales by date and count days with sales > 0
     const salesByDate = userSales.reduce((acc, sale) => {
       const date = new Date(sale.Timestamp!).toDateString();
       acc[date] = (acc[date] || 0) + Number(sale.Amount || 0);
       return acc;
     }, {} as Record<string, number>);
     
-    // Count days where total sales > 0
-    const shiftsCount = Object.values(salesByDate).filter(total => total > 0).length;
-    
-    console.log(`Calculating shifts for ${userName} between ${startDate} and ${endDate}:`, {
-      salesByDate,
-      shiftsCount
-    });
-    
-    return shiftsCount;
+    return Object.values(salesByDate).filter(total => total > 0).length;
   };
 
-  const isLoading = salariesLoading || salesLoading;
+  const calculateBonus = (userName: string, startDate: string, endDate: string) => {
+    if (!bonuses) return 0;
+    
+    const periodBonuses = bonuses.filter(bonus => 
+      bonus.user_display_name === userName &&
+      new Date(bonus.bonus_date) >= new Date(startDate) &&
+      new Date(bonus.bonus_date) <= new Date(endDate)
+    );
+    
+    return periodBonuses.reduce((sum, bonus) => sum + (Number(bonus.amount) || 0), 0);
+  };
+
+  const isLoading = salariesLoading || salesLoading || bonusesLoading;
 
   if (isLoading) {
     return (
@@ -127,22 +142,33 @@ const Salaries = () => {
         </div>
 
         <div className="space-y-4">
-          {filteredSalaries?.map((salary) => (
-            <SalaryCard
-              key={`${salary.id}-${salary.period_start}`}
-              salary={salary}
-              totalSales={calculateTotalSales(
-                salary.user_display_name,
-                salary.period_start,
-                salary.period_end
-              )}
-              shiftsCount={calculateShiftsCount(
-                salary.user_display_name,
-                salary.period_start,
-                salary.period_end
-              )}
-            />
-          ))}
+          {filteredSalaries?.map((salary) => {
+            const bonus = calculateBonus(
+              salary.user_display_name,
+              salary.period_start,
+              salary.period_end
+            );
+            
+            return (
+              <SalaryCard
+                key={`${salary.id}-${salary.period_start}`}
+                salary={{
+                  ...salary,
+                  bonus: bonus
+                }}
+                totalSales={calculateTotalSales(
+                  salary.user_display_name,
+                  salary.period_start,
+                  salary.period_end
+                )}
+                shiftsCount={calculateShiftsCount(
+                  salary.user_display_name,
+                  salary.period_start,
+                  salary.period_end
+                )}
+              />
+            );
+          })}
           
           {(!filteredSalaries || filteredSalaries.length === 0) && (
             <div className="text-center py-8 text-gray-400">
