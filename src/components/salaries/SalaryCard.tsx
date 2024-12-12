@@ -92,10 +92,21 @@ export const SalaryCard = ({ salary, totalSales, accumulatedSales, shiftsCount }
           <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
             <span>Provision</span>
             <Percent className="h-3 w-3" />
-            <span>{hasIncreasedCommission ? '15' : salary.commission_rate}</span>
+            <span>{salary.commission_rate}</span>
           </div>
           <div className="text-lg font-semibold">
             {commission.toLocaleString()} kr
+          </div>
+        </div>
+
+        <div className="bg-background p-3 rounded-lg">
+          <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
+            <span>Provision 15%</span>
+            <Percent className="h-3 w-3" />
+            <TrendingUp className={`h-4 w-4 ${hasIncreasedCommission ? 'text-green-500' : ''}`} />
+          </div>
+          <div className="text-lg font-semibold">
+            {hasIncreasedCommission ? (totalSales * 0.15).toLocaleString() : '0'} kr
           </div>
         </div>
 

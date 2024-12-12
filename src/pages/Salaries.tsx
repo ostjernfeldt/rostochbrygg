@@ -6,9 +6,12 @@ import { PeriodFilter } from "@/components/salaries/PeriodFilter";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 import { SalaryList } from "@/components/salaries/SalaryList";
+import { DateRange } from "react-day-picker";
 
 const Salaries = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
   // Fetch unique sellers from purchases table
   const { data: actualSellers, isLoading: sellersLoading } = useQuery({
@@ -94,11 +97,33 @@ const Salaries = () => {
     format(new Date(salary.period_start), 'yyyy-MM', { locale: sv })
   ))].sort((a, b) => b.localeCompare(a)) : [];
 
-  // Filter salaries to only include actual sellers and selected period
-  const filteredSalaries = salaries?.filter(salary => 
-    (selectedPeriod === "all" || format(new Date(salary.period_start), 'yyyy-MM') === selectedPeriod) &&
-    actualSellers?.includes(salary.user_display_name)
-  );
+  // Filter salaries based on period, custom date range, and search query
+  const filteredSalaries = salaries?.filter(salary => {
+    // Filter by seller name if search query exists
+    if (searchQuery && !salary.user_display_name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+
+    // Filter by actual sellers
+    if (!actualSellers?.includes(salary.user_display_name)) {
+      return false;
+    }
+
+    // Filter by custom date range if selected
+    if (selectedPeriod === "custom" && dateRange) {
+      const salaryStart = new Date(salary.period_start);
+      const salaryEnd = new Date(salary.period_end);
+      
+      return (
+        (!dateRange.from || salaryStart >= dateRange.from) &&
+        (!dateRange.to || salaryEnd <= dateRange.to)
+      );
+    }
+
+    // Filter by selected period
+    return selectedPeriod === "all" || 
+           format(new Date(salary.period_start), 'yyyy-MM') === selectedPeriod;
+  });
 
   const calculateTotalSales = (userName: string, startDate: string, endDate: string) => {
     if (!sales) return 0;
@@ -162,12 +187,16 @@ const Salaries = () => {
   return (
     <PageLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
           <h1 className="text-2xl font-bold">Löner</h1>
           <PeriodFilter
             selectedPeriod={selectedPeriod}
             setSelectedPeriod={setSelectedPeriod}
             uniquePeriods={uniquePeriods}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
           />
         </div>
 
