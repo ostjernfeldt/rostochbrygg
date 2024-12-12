@@ -198,7 +198,7 @@ const Salaries = () => {
   return (
     <PageLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col gap-6">
           <h1 className="text-2xl font-bold">Löner</h1>
           <PeriodFilter
             selectedPeriod={selectedPeriod}

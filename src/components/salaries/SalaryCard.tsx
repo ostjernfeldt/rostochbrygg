@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
-import { Calendar, User, DollarSign, Percent, Gift, TrendingUp } from "lucide-react";
+import { Calendar, User, DollarSign, Percent, Gift } from "lucide-react";
 import { calculateCommission } from "@/utils/salaryCalculations";
 import SalaryDetail, { 
   ShiftDetail, 
@@ -120,9 +120,8 @@ export const SalaryCard = ({
         </div>
 
         <div className="bg-background p-3 rounded-lg">
-          <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
+          <div className="text-sm text-gray-400 mb-1">
             <span>Ackumulerad försäljning</span>
-            <TrendingUp className={`h-4 w-4 ${hasIncreasedCommission ? 'text-green-500' : ''}`} />
           </div>
           <div className="text-lg font-semibold">
             {accumulatedSales.toLocaleString()} kr
@@ -158,7 +157,7 @@ export const SalaryCard = ({
           trigger={
             <DetailTrigger>
               <div className="bg-background p-3 rounded-lg">
-                <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
+                <div className="text-sm text-gray-400 mb-1">
                   <span>Provision 15%</span>
                 </div>
                 <div className="text-lg font-semibold">
@@ -199,7 +198,7 @@ export const SalaryCard = ({
           trigger={
             <DetailTrigger>
               <div className="bg-background p-3 rounded-lg">
-                <div className="flex items-center gap-1 text-sm text-gray-400 mb-1">
+                <div className="text-sm text-gray-400 mb-1">
                   <span>Delsumma</span>
                 </div>
                 <div className="text-lg font-semibold">
