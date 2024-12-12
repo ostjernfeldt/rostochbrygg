@@ -5,10 +5,12 @@ interface SalesChartSectionProps {
 }
 
 export const SalesChartSection = ({ sales }: SalesChartSectionProps) => {
+  console.log("Sales data in SalesChartSection:", sales);
+  
   return (
     <div className="stat-card">
       <h3 className="text-gray-400 mb-4">Försäljning över tid</h3>
-      <SalesChart transactions={sales} />
+      <SalesChart transactions={sales} groupByWeek={true} />
     </div>
   );
 };
