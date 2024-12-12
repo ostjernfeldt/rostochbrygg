@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { format, startOfWeek, startOfDay } from "date-fns";
+import { format, startOfWeek, startOfDay, addDays, isSameDay } from "date-fns";
 import { sv } from "date-fns/locale";
 
 interface SalesChartProps {
@@ -54,7 +54,36 @@ export const SalesChart = ({ transactions, groupByWeek = false }: SalesChartProp
       console.log("Weekly cumulative chart data:", result);
       return result;
     } else {
-      // Calculate cumulative amount for each transaction
+      // For a specific week view, create data points for all days of the week
+      if (sortedTransactions.length > 0) {
+        const firstDate = new Date(sortedTransactions[0].Timestamp);
+        const weekStart = startOfWeek(firstDate, { locale: sv });
+        let cumulativeAmount = 0;
+        
+        // Create an array of all days in the week
+        const result = Array.from({ length: 7 }, (_, i) => {
+          const currentDay = addDays(weekStart, i);
+          
+          // Find transactions for this day and update cumulative amount
+          sortedTransactions.forEach(transaction => {
+            const transactionDate = new Date(transaction.Timestamp);
+            if (isSameDay(transactionDate, currentDay) && transaction.Amount) {
+              cumulativeAmount += transaction.Amount;
+            }
+          });
+          
+          return {
+            timestamp: currentDay.toISOString(),
+            amount: cumulativeAmount,
+            weekday: format(currentDay, 'EEEEEE', { locale: sv }).toUpperCase()
+          };
+        });
+        
+        console.log("Daily cumulative chart data:", result);
+        return result;
+      }
+      
+      // For other views, calculate cumulative amount for each transaction
       let cumulativeAmount = 0;
       const result = sortedTransactions.map(transaction => {
         if (transaction.Amount) {
@@ -88,9 +117,11 @@ export const SalesChart = ({ transactions, groupByWeek = false }: SalesChartProp
             stroke="#666"
             tickFormatter={(value) => {
               const date = new Date(value);
-              return groupByWeek 
-                ? `v.${format(date, 'w', { locale: sv })}`
-                : format(date, 'd MMM', { locale: sv });
+              if (!groupByWeek) {
+                const weekday = format(date, 'EEEEEE', { locale: sv }).toUpperCase();
+                return weekday === 'L' ? 'LÖ' : weekday === 'S' ? 'SÖ' : weekday;
+              }
+              return `v.${format(date, 'w', { locale: sv })}`;
             }}
           />
           <YAxis 
@@ -112,7 +143,7 @@ export const SalesChart = ({ transactions, groupByWeek = false }: SalesChartProp
               const date = new Date(label);
               return groupByWeek 
                 ? `Vecka ${format(date, 'w', { locale: sv })}`
-                : format(date, 'd MMMM', { locale: sv });
+                : format(date, 'EEEE d MMMM', { locale: sv });
             }}
           />
           <Area 
