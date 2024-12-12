@@ -29,7 +29,8 @@ export const SalaryList = ({
     );
   }
 
-  // Calculate total salaries by summing up each individual total salary
+  // Calculate total salaries and collect individual salary details
+  const salaryDetails: Array<{ name: string; total: number; periodStart: string; periodEnd: string }> = [];
   const totalSalaries = filteredSalaries.reduce((total, salary) => {
     // Calculate shifts count
     const shiftsCount = calculateShiftsCount(
@@ -73,13 +74,26 @@ export const SalaryList = ({
     // Calculate vacation pay (12% of subtotal)
     const vacationPay = subtotal * 0.12;
     
-    // Calculate final total and add to accumulator
-    return total + (subtotal + vacationPay);
+    // Calculate final total
+    const salaryTotal = subtotal + vacationPay;
+
+    // Add to salary details
+    salaryDetails.push({
+      name: salary.user_display_name,
+      total: salaryTotal,
+      periodStart: salary.period_start,
+      periodEnd: salary.period_end
+    });
+
+    return total + salaryTotal;
   }, 0);
 
   return (
     <div className="space-y-4">
-      <TotalSalariesCard totalSalaries={totalSalaries} />
+      <TotalSalariesCard 
+        totalSalaries={totalSalaries} 
+        salaryDetails={salaryDetails}
+      />
       
       {filteredSalaries.map((salary) => {
         const periodSales = calculateTotalSales(
