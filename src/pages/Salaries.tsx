@@ -17,7 +17,7 @@ const Salaries = () => {
       console.log("Fetching actual sellers from purchases...");
       const { data, error } = await supabase
         .from("purchases")
-        .select("User Display Name")
+        .select('"User Display Name"')
         .not("User Display Name", "is", null)
         .not("User Display Name", "eq", "")
         .not("User Display Name", "ilike", '%test%')
