@@ -89,7 +89,7 @@ const StaffMember = () => {
     return (
       <PageLayout>
         <button 
-          onClick={() => navigate("/staff")}
+          onClick={() => navigate(-1)}
           className="text-gray-400 hover:text-primary transition-colors mb-6"
         >
           <ArrowLeft size={24} />
@@ -105,7 +105,7 @@ const StaffMember = () => {
     <PageLayout>
       <div className="flex items-center gap-2 mb-6">
         <button 
-          onClick={() => navigate("/staff")}
+          onClick={() => navigate(-1)}
           className="text-gray-400 hover:text-primary transition-colors"
         >
           <ArrowLeft size={24} />
