@@ -27,37 +27,34 @@ export const LeaderboardItem = ({
     }
   };
 
-  const getPercentageChangeElement = () => {
-    if (percentageChange === 0) return null;
-    
-    const isPositive = percentageChange > 0;
-    return (
-      <span className={`percentage-change ${isPositive ? 'positive' : 'negative'}`}>
-        {isPositive ? '+' : ''}{percentageChange}%
-      </span>
-    );
+  const getRankColor = () => {
+    switch (rank) {
+      case 1:
+        return 'text-[#FFD700]'; // Gold
+      case 2:
+        return 'text-[#C0C0C0]'; // Silver
+      case 3:
+        return 'text-[#CD7F32]'; // Bronze
+      default:
+        return 'text-gray-400';
+    }
   };
 
   return (
     <div 
-      className={`leaderboard-item hover:bg-gray-800/50 transition-colors cursor-pointer`}
+      className="bg-[#1A1F2C] rounded-xl p-4 cursor-pointer hover:bg-gray-800/50 transition-colors"
       onClick={handleClick}
     >
-      <div className="flex items-center gap-4">
-        <span className={`leaderboard-rank ${
-          rank === 1 ? 'gold' : 
-          rank === 2 ? 'silver' : 
-          rank === 3 ? 'bronze' : ''
-        }`}>#{rank}</span>
-        <div className="text-left">
-          <h3 className="font-bold text-lg">{displayName}</h3>
-          <p className="leaderboard-sales">
-            {salesCount} sälj
-            {getPercentageChangeElement()}
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className={`text-2xl font-bold ${getRankColor()}`}>#{rank}</span>
+          <div>
+            <h3 className="font-bold text-xl text-white">{displayName}</h3>
+            <p className="text-gray-400">{salesCount} sälj</p>
+          </div>
         </div>
+        <span className="text-[#3B82F6] text-xl font-semibold">SEK {totalAmount.toLocaleString()}</span>
       </div>
-      <span className="leaderboard-amount">SEK {totalAmount.toLocaleString()}</span>
     </div>
   );
 };
