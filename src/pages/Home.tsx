@@ -12,11 +12,16 @@ import { TimeLeftCard } from "@/components/stats/TimeLeftCard";
 import { SalesStats } from "@/components/stats/SalesStats";
 import { PageLayout } from "@/components/PageLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection";
+import { useLeaderboardData } from "@/hooks/useLeaderboardData";
+import { format } from "date-fns";
 
 const Home = () => {
   const navigate = useNavigate();
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [username, setUsername] = useState<string>("");
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const { data: leaderboardData, isLoading: isLeaderboardLoading } = useLeaderboardData('daily', today);
   
   useEffect(() => {
     const getUser = async () => {
@@ -91,6 +96,15 @@ const Home = () => {
 
         <TimeLeftCard />
         <SalesStats shouldAnimate={shouldAnimate} />
+        
+        <div className="mt-8">
+          <LeaderboardSection
+            title="Dagens topplista"
+            data={leaderboardData?.dailyLeaders}
+            isLoading={isLeaderboardLoading}
+            onUserClick={(userName) => navigate(`/staff/${encodeURIComponent(userName)}`)}
+          />
+        </div>
       </div>
     </PageLayout>
   );

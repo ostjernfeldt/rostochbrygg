@@ -64,14 +64,14 @@ export const LeaderboardSection = ({
         )}
       </div>
       <div className="space-y-3">
-        <div className="flex justify-between items-center mb-2">
+        <div className="flex justify-end mb-2">
           <Button
             variant="outline"
             size="icon"
             onClick={() => copyToClipboard(data)}
-            className="w-10 h-10"
+            className="w-10 h-10 bg-[#D3E4FD] hover:bg-[#D3E4FD]/80 border-none"
           >
-            <Copy className="h-4 w-4" />
+            <Copy className="h-4 w-4 text-gray-700" />
           </Button>
         </div>
         {isLoading ? (
