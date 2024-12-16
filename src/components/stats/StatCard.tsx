@@ -19,9 +19,9 @@ export const StatCard = ({
       style={{ animationDelay }}
     >
       <div className="mb-auto">
-        <div className="text-gray-400 text-base font-medium mb-1">{title}</div>
+        <div className="text-gray-400 text-base font-medium mb-1 truncate">{title}</div>
         {subtitle && (
-          <div className="text-gray-500 text-sm">{subtitle}</div>
+          <div className="text-gray-500 text-sm whitespace-nowrap overflow-hidden text-ellipsis">{subtitle}</div>
         )}
       </div>
       {userName && (
