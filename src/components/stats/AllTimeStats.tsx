@@ -37,9 +37,9 @@ export const AllTimeStats = () => {
     return (
       <div className="space-y-4 mt-8">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="stat-card animate-pulse">
-            <div className="h-6 bg-gray-700 rounded w-1/3 mb-2"></div>
-            <div className="h-8 bg-gray-700 rounded w-2/3"></div>
+          <div key={i} className="hall-of-fame-card animate-pulse">
+            <div className="h-6 bg-gray-700/50 rounded w-1/3 mb-2"></div>
+            <div className="h-8 bg-gray-700/50 rounded w-2/3"></div>
           </div>
         ))}
       </div>
@@ -56,12 +56,14 @@ export const AllTimeStats = () => {
       </h2>
 
       <StatCard
+        className="hall-of-fame-card hover:scale-[1.02] transition-all duration-300"
         title="Högst ackumulerad försäljning"
         userName={stats.topAccumulatedSeller["User Display Name"]}
         value={`SEK ${Math.round(stats.topAccumulatedSeller.value).toLocaleString()}`}
       />
 
       <StatCard
+        className="hall-of-fame-card hover:scale-[1.02] transition-all duration-300"
         title="Högsta registrerade sälj"
         userName={stats.highestSale["User Display Name"]}
         value={`SEK ${Math.round(stats.highestSale.value).toLocaleString()}`}
@@ -69,6 +71,7 @@ export const AllTimeStats = () => {
       />
 
       <StatCard
+        className="hall-of-fame-card hover:scale-[1.02] transition-all duration-300"
         title="Högsta snittordervärde"
         userName={stats.topAverageValue["User Display Name"]}
         value={`SEK ${Math.round(stats.topAverageValue.value).toLocaleString()}`}
@@ -76,6 +79,7 @@ export const AllTimeStats = () => {
       />
 
       <StatCard
+        className="hall-of-fame-card hover:scale-[1.02] transition-all duration-300"
         title="Högst närvaro senaste 30 dagarna"
         userName={stats.topPresence["User Display Name"]}
         value={`${Math.round(stats.topPresence.value)} dagar`}

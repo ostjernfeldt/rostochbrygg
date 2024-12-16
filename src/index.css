@@ -48,6 +48,16 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.hall-of-fame-card {
+  @apply p-6 rounded-xl mb-3;
+  background: linear-gradient(225deg, rgba(35,40,53,0.95) 0%, rgba(27,32,45,0.90) 100%);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1), 
+              0 8px 30px rgba(51, 195, 240, 0.1), 
+              inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
 .overview-stat-card {
   @apply p-4 rounded-xl;
   background: linear-gradient(145deg, rgba(26,31,44,0.95) 0%, rgba(26,31,44,0.85) 100%);

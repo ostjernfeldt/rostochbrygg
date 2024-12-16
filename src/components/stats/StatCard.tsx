@@ -1,36 +1,29 @@
+import { ReactNode } from "react";
+
 interface StatCardProps {
   title: string;
-  subtitle?: string;
   userName: string;
-  value: string | number;
+  value: string | ReactNode;
   animationDelay?: string;
+  className?: string;
 }
 
-export const StatCard = ({ 
-  title, 
-  subtitle,
-  value,
+export const StatCard = ({
+  title,
   userName,
-  animationDelay = "0ms" 
+  value,
+  animationDelay = "0ms",
+  className = "stat-card"
 }: StatCardProps) => {
   return (
-    <div 
-      className="overview-stat-card animate-fade-in bg-[#1A1F2C] rounded-xl p-4 flex flex-col h-full"
+    <div
+      className={`${className} animate-fade-in`}
       style={{ animationDelay }}
     >
-      <div className="mb-auto">
-        <div className="text-gray-400 text-base font-medium mb-1 truncate">{title}</div>
-        {subtitle && (
-          <div className="text-gray-500 text-sm whitespace-nowrap overflow-hidden text-ellipsis">{subtitle}</div>
-        )}
-      </div>
-      {userName && (
-        <div className="text-xl sm:text-2xl font-bold mt-2 text-white">
-          {userName}
-        </div>
-      )}
-      <div className="text-3xl sm:text-4xl font-bold mt-2 text-white">
-        {value}
+      <div className="flex flex-col">
+        <h3 className="text-sm text-gray-400 mb-1">{title}</h3>
+        <p className="font-bold text-lg mb-1">{userName}</p>
+        <p className="text-primary text-lg font-medium">{value}</p>
       </div>
     </div>
   );
