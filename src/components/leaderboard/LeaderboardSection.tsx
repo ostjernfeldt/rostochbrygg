@@ -34,12 +34,12 @@ export const LeaderboardSection = ({
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  const copyToClipboard = (data: UserSales[] | undefined, title: string) => {
+  const copyToClipboard = (data: UserSales[] | undefined) => {
     if (!data) return;
 
-    const formattedData = `${title}\n\n` + data
+    const formattedData = data
       .map((user, index) => 
-        `${index + 1}. ${user["User Display Name"]}: ${user.totalAmount.toLocaleString()}`
+        `${index + 1}. ${user["User Display Name"]}: ${user.totalAmount.toLocaleString()} kr`
       )
       .join('\n');
 
@@ -68,7 +68,7 @@ export const LeaderboardSection = ({
           <Button
             variant="outline"
             size="icon"
-            onClick={() => copyToClipboard(data, title)}
+            onClick={() => copyToClipboard(data)}
             className="w-10 h-10"
           >
             <Copy className="h-4 w-4" />
