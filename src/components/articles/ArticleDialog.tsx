@@ -70,12 +70,12 @@ export function ArticleDialog({ open, onOpenChange, article, onClose }: ArticleD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[725px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[725px] max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{article ? "Redigera artikel" : "Skapa ny artikel"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto pr-2">
             <FormField
               control={form.control}
               name="title"
@@ -164,7 +164,7 @@ export function ArticleDialog({ open, onOpenChange, article, onClose }: ArticleD
               )}
             />
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 sticky bottom-0 bg-background py-4 mt-6">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Avbryt
               </Button>
