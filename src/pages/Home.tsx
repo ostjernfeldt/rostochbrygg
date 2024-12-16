@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection";
 import { useLeaderboardData } from "@/hooks/useLeaderboardData";
 import { format } from "date-fns";
+import { sv } from "date-fns/locale";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -63,6 +64,13 @@ const Home = () => {
     navigate("/login");
   };
 
+  const getLeaderboardTitle = () => {
+    if (leaderboardData?.latestDate && leaderboardData.latestDate !== today) {
+      return `Topplista ${format(new Date(leaderboardData.latestDate), 'd MMMM', { locale: sv })}`;
+    }
+    return "Dagens topplista";
+  };
+
   return (
     <PageLayout>
       <div>
@@ -99,7 +107,7 @@ const Home = () => {
         
         <div className="mt-8">
           <LeaderboardSection
-            title="Dagens topplista"
+            title={getLeaderboardTitle()}
             data={leaderboardData?.dailyLeaders}
             isLoading={isLeaderboardLoading}
             onUserClick={(userName) => navigate(`/staff/${encodeURIComponent(userName)}`)}

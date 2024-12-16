@@ -22,17 +22,18 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
       console.log(`Fetching ${type} challenge leaders...`);
       
       try {
-        const { data: latestSale, error: saleError } = await supabase
+        // First, get the latest date with sales
+        const { data: latestSale, error: latestError } = await supabase
           .from("purchases")
           .select("Timestamp")
           .order("Timestamp", { ascending: false })
           .limit(1)
           .single();
 
-        if (saleError) throw saleError;
+        if (latestError) throw latestError;
 
         if (!latestSale) {
-          console.log("No sales found");
+          console.log("No sales found at all");
           return {
             dailyLeaders: [],
             weeklyLeaders: [],
@@ -42,6 +43,7 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
 
         let startDate: Date;
         let endDate: Date;
+        let useLatestDate = false;
 
         switch (type) {
           case 'daily':
@@ -49,6 +51,24 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
             startDate.setHours(0, 0, 0, 0);
             endDate = new Date(startDate);
             endDate.setHours(23, 59, 59, 999);
+
+            // Check if there are any sales for the selected date
+            const { data: checkSales } = await supabase
+              .from("purchases")
+              .select("id")
+              .gte("Timestamp", startDate.toISOString())
+              .lte("Timestamp", endDate.toISOString())
+              .limit(1);
+
+            // If no sales found for selected date, use the latest date with sales
+            if (!checkSales || checkSales.length === 0) {
+              console.log("No sales for selected date, using latest date:", latestSale.Timestamp);
+              startDate = new Date(latestSale.Timestamp);
+              startDate.setHours(0, 0, 0, 0);
+              endDate = new Date(startDate);
+              endDate.setHours(23, 59, 59, 999);
+              useLatestDate = true;
+            }
             break;
           case 'weekly':
             startDate = startOfWeek(parseISO(selectedDate));
@@ -60,6 +80,8 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
             endDate = endOfMonth(startDate);
             break;
         }
+
+        console.log("Fetching sales between:", startDate, "and", endDate);
 
         const { data: sales, error: salesError } = await supabase
           .from("purchases")
@@ -99,11 +121,13 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
 
         const leaders = calculateLeaders(sales || []);
         console.log(`${type} leaders calculated:`, leaders);
+        console.log("Using latest date:", useLatestDate);
 
         return {
           dailyLeaders: type === 'daily' ? leaders : [],
           weeklyLeaders: type === 'weekly' ? leaders : [],
-          monthlyLeaders: type === 'monthly' ? leaders : []
+          monthlyLeaders: type === 'monthly' ? leaders : [],
+          latestDate: useLatestDate ? startDate.toISOString() : null
         };
       } catch (error) {
         console.error(`Error in ${type} challenge leaders query:`, error);
