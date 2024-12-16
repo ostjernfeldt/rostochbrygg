@@ -56,7 +56,7 @@ export const LeaderboardSection = ({
   return (
     <div className="mb-8">
       <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-center'} mb-4`}>
-        <h2 className="text-4xl font-bold text-white">{title}</h2>
+        <h2 className="text-2xl font-bold">{title}</h2>
         {filter && (
           <div className={`${isMobile ? 'w-full' : 'w-auto'}`}>
             <LeaderboardFilter {...filter} />
@@ -75,9 +75,9 @@ export const LeaderboardSection = ({
           </Button>
         </div>
         {isLoading ? (
-          <div className="p-4 text-gray-400">Laddar data...</div>
+          <div className="p-4">Laddar data...</div>
         ) : !data || data.length === 0 ? (
-          <div className="p-4 text-gray-400">Ingen försäljningsdata tillgänglig.</div>
+          <div className="p-4">Ingen försäljningsdata tillgänglig.</div>
         ) : (
           data.map((user, index) => (
             <LeaderboardItem
