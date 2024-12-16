@@ -1,6 +1,14 @@
 import { SalaryCard } from "./SalaryCard";
 import { TotalSalariesCard } from "./TotalSalariesCard";
 import { calculateAccumulatedSales } from "@/utils/salaryCalculations";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { format } from "date-fns";
+import { sv } from "date-fns/locale";
 
 interface SalaryListProps {
   filteredSalaries: any[];
@@ -96,56 +104,73 @@ export const SalaryList = ({
         salaryDetails={salaryDetails}
       />
       
-      {filteredSalaries.map((salary) => {
-        const periodSales = calculateTotalSales(
-          salary.user_display_name,
-          salary.period_start,
-          salary.period_end
-        );
-        
-        const accumulatedSales = calculateAccumulatedSales(
-          sales,
-          salary.user_display_name,
-          salary.period_end
-        );
+      <Accordion type="single" collapsible className="space-y-4">
+        {filteredSalaries.map((salary) => {
+          const periodSales = calculateTotalSales(
+            salary.user_display_name,
+            salary.period_start,
+            salary.period_end
+          );
+          
+          const accumulatedSales = calculateAccumulatedSales(
+            sales,
+            salary.user_display_name,
+            salary.period_end
+          );
 
-        const bonus = calculateBonus(
-          salary.user_display_name,
-          salary.period_start,
-          salary.period_end
-        );
+          const bonus = calculateBonus(
+            salary.user_display_name,
+            salary.period_start,
+            salary.period_end
+          );
 
-        const periodShifts = sales.filter(sale => 
-          sale["User Display Name"] === salary.user_display_name &&
-          new Date(sale.Timestamp) >= new Date(salary.period_start) &&
-          new Date(sale.Timestamp) <= new Date(salary.period_end)
-        );
+          const periodShifts = sales.filter(sale => 
+            sale["User Display Name"] === salary.user_display_name &&
+            new Date(sale.Timestamp) >= new Date(salary.period_start) &&
+            new Date(sale.Timestamp) <= new Date(salary.period_end)
+          );
 
-        const periodBonuses = bonuses.filter(bonus => 
-          bonus.user_display_name === salary.user_display_name &&
-          new Date(bonus.bonus_date) >= new Date(salary.period_start) &&
-          new Date(bonus.bonus_date) <= new Date(salary.period_end)
-        );
+          const periodBonuses = bonuses.filter(bonus => 
+            bonus.user_display_name === salary.user_display_name &&
+            new Date(bonus.bonus_date) >= new Date(salary.period_start) &&
+            new Date(bonus.bonus_date) <= new Date(salary.period_end)
+          );
 
-        return (
-          <SalaryCard
-            key={`${salary.id}-${salary.period_start}`}
-            salary={{
-              ...salary,
-              bonus: bonus
-            }}
-            totalSales={periodSales}
-            accumulatedSales={accumulatedSales}
-            shiftsCount={calculateShiftsCount(
-              salary.user_display_name,
-              salary.period_start,
-              salary.period_end
-            )}
-            shifts={periodShifts}
-            bonuses={periodBonuses}
-          />
-        );
-      })}
+          return (
+            <AccordionItem 
+              key={`${salary.id}-${salary.period_start}`}
+              value={`${salary.id}-${salary.period_start}`}
+              className="bg-card rounded-xl border-0"
+            >
+              <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full gap-2">
+                  <div className="text-xl font-semibold">{salary.user_display_name}</div>
+                  <div className="text-gray-400 text-sm">
+                    {format(new Date(salary.period_start), 'd MMM yyyy', { locale: sv })} - {format(new Date(salary.period_end), 'd MMM yyyy', { locale: sv })}
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-0">
+                <SalaryCard
+                  salary={{
+                    ...salary,
+                    bonus: bonus
+                  }}
+                  totalSales={periodSales}
+                  accumulatedSales={accumulatedSales}
+                  shiftsCount={calculateShiftsCount(
+                    salary.user_display_name,
+                    salary.period_start,
+                    salary.period_end
+                  )}
+                  shifts={periodShifts}
+                  bonuses={periodBonuses}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          );
+        })}
+      </Accordion>
     </div>
   );
 };
