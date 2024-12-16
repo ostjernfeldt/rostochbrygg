@@ -24,6 +24,7 @@ export function ArticleDialog({ open, onOpenChange, article, onClose }: ArticleD
       content: article?.content ?? "",
       category: article?.category ?? "Kaffekunskap",
       slug: article?.slug ?? "",
+      reading_time: article?.reading_time ?? 5,
     },
   });
 
@@ -38,6 +39,7 @@ export function ArticleDialog({ open, onOpenChange, article, onClose }: ArticleD
             content: values.content,
             category: values.category,
             slug: values.slug,
+            reading_time: values.reading_time,
           })
           .eq('id', article.id);
 
@@ -51,6 +53,7 @@ export function ArticleDialog({ open, onOpenChange, article, onClose }: ArticleD
             content: values.content,
             category: values.category,
             slug: values.slug,
+            reading_time: values.reading_time,
           }]);
 
         if (error) throw error;
@@ -120,6 +123,25 @@ export function ArticleDialog({ open, onOpenChange, article, onClose }: ArticleD
                         <label htmlFor="saljutbildning">Säljutbildning</label>
                       </div>
                     </RadioGroup>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="reading_time"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Lästid (minuter)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min="1"
+                      placeholder="5" 
+                      {...field}
+                      onChange={e => field.onChange(parseInt(e.target.value))}
+                    />
                   </FormControl>
                 </FormItem>
               )}

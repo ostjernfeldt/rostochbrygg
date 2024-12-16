@@ -129,7 +129,7 @@ const Learn = () => {
             <p className="text-gray-400 mb-3 line-clamp-2">{article.content}</p>
             <div className="flex items-center text-gray-400">
               <Clock size={16} className="mr-2" />
-              <span>5 min</span>
+              <span>{article.reading_time} min</span>
             </div>
           </div>
         ))}
