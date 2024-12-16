@@ -39,20 +39,18 @@ const StaffMember = () => {
         return acc;
       }, {});
 
-      // Calculate totals for each date
-      const shifts = Object.entries(salesByDate).map(([dateStr, dateSales]) => {
-        const date = new Date(dateStr);
-        const totalSales = dateSales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
-        
+      // Calculate daily totals and find best/worst days
+      const dailyTotals = Object.entries(salesByDate).map(([dateStr, dateSales]) => {
+        const totalAmount = dateSales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
         return {
-          id: date.toISOString(), // Using date as ID since we group by date
-          presence_start: date.toISOString(),
-          totalSales,
-          sales: dateSales
+          date: new Date(dateStr).toISOString(),
+          amount: totalAmount
         };
       });
 
-      console.log("Processed shifts by date:", shifts);
+      const sortedDays = [...dailyTotals].sort((a, b) => b.amount - a.amount);
+      const bestDay = sortedDays[0];
+      const worstDay = sortedDays[sortedDays.length - 1];
 
       // Calculate overall stats
       const firstSale = new Date(sales[0].Timestamp as string);
@@ -68,7 +66,14 @@ const StaffMember = () => {
         salesCount: sales.length,
         daysActive: uniqueDays.size,
         sales,
-        shifts
+        shifts: Object.entries(salesByDate).map(([dateStr, dateSales]) => ({
+          id: new Date(dateStr).toISOString(),
+          presence_start: new Date(dateStr).toISOString(),
+          totalSales: dateSales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0),
+          sales: dateSales
+        })),
+        bestDay,
+        worstDay
       };
     }
   });
@@ -101,6 +106,15 @@ const StaffMember = () => {
     );
   }
 
+  const statsData = {
+    salesCount: memberData.salesCount,
+    averageValue: memberData.averageAmount,
+    activeDays: memberData.daysActive,
+    firstSaleDate: memberData.firstSale.toISOString(),
+    bestDay: memberData.bestDay,
+    worstDay: memberData.worstDay
+  };
+
   return (
     <PageLayout>
       <div className="flex items-center gap-2 mb-6">
@@ -114,7 +128,7 @@ const StaffMember = () => {
       </div>
 
       <div className="space-y-4">
-        <StaffStats memberData={memberData} />
+        <StaffStats stats={statsData} />
         <SalesChartSection sales={memberData.sales} />
         <ShiftsList shifts={memberData.shifts} />
       </div>
