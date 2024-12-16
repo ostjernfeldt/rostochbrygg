@@ -1,7 +1,7 @@
 {
-  "name": "Sales Rostochbrygg",
-  "short_name": "Sales",
-  "description": "Sales tracking and management app",
+  "short_name": "R&B Sales",
+  "name": "Rost & Brygg Sales",
+  "description": "Hitta ett kaffe som passar dig",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
