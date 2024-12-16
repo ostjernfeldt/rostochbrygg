@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useSwipeable } from "react-swipeable";
 import { BottomNav } from "./components/BottomNav";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,32 +73,10 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppContent = () => {
-  const navigate = useNavigate();
   const location = useLocation();
 
-  const routes = ['/', '/competitions', '/leaderboard', '/learn', '/settings', '/staff', '/salaries', '/overview'];
-
-  const handlers = useSwipeable({
-    onSwipedLeft: () => {
-      const currentIndex = routes.indexOf(location.pathname);
-      if (currentIndex < routes.length - 1) {
-        navigate(routes[currentIndex + 1]);
-      }
-    },
-    onSwipedRight: () => {
-      const currentIndex = routes.indexOf(location.pathname);
-      if (currentIndex > 0) {
-        navigate(routes[currentIndex - 1]);
-      }
-    },
-    touchEventOptions: { passive: false },
-    trackMouse: false
-  });
-
-  console.log('Current route:', location.pathname);
-
   return (
-    <div {...handlers} className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={
