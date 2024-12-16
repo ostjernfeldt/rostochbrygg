@@ -70,23 +70,29 @@ const Article = () => {
 
   return (
     <PageLayout>
-      <Button onClick={() => navigate("/learn")} variant="ghost" className="mb-4">
-        <ArrowLeft className="mr-2" />
-        Tillbaka
-      </Button>
-      
-      <div className="mb-3">
-        <span className={`px-3 py-1 rounded-full text-sm ${article.categoryColor} text-white`}>
-          {article.category}
-        </span>
+      <div className="max-w-2xl mx-auto">
+        <Button 
+          onClick={() => navigate("/learn")} 
+          variant="ghost" 
+          className="mb-6 -ml-2 text-gray-400 hover:text-white"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Tillbaka
+        </Button>
+        
+        <div className="mb-4">
+          <span className={`px-3 py-1 rounded-full text-sm ${article.categoryColor} text-white inline-block`}>
+            {article.category}
+          </span>
+        </div>
+        
+        <h1 className="text-3xl font-bold mb-8 leading-tight">{article.title}</h1>
+        
+        <div 
+          className="prose prose-invert max-w-none prose-headings:text-xl prose-headings:font-semibold prose-headings:mb-4 prose-headings:mt-8 prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-6"
+          dangerouslySetInnerHTML={{ __html: article.content }}
+        />
       </div>
-      
-      <h1 className="text-2xl font-bold mb-6">{article.title}</h1>
-      
-      <div 
-        className="prose prose-invert max-w-none"
-        dangerouslySetInnerHTML={{ __html: article.content }}
-      />
     </PageLayout>
   );
 };

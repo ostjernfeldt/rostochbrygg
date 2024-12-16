@@ -37,6 +37,32 @@ export default {
           foreground: "#FFFFFF",
         },
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: '65ch',
+            color: '#fff',
+            h1: {
+              color: '#fff',
+            },
+            h2: {
+              color: '#fff',
+            },
+            h3: {
+              color: '#fff',
+            },
+            strong: {
+              color: '#fff',
+            },
+            a: {
+              color: '#33C3F0',
+              '&:hover': {
+                color: '#60d5ff',
+              },
+            },
+          },
+        },
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -44,5 +70,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;
