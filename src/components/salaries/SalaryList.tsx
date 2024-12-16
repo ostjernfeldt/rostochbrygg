@@ -64,9 +64,18 @@ export const SalaryList = ({
     const vacationPay = subtotal * 0.12;
     const totalSalary = subtotal + vacationPay;
 
+    console.log(`Salary calculation for ${salary.user_display_name}:`, {
+      baseAmount,
+      commission,
+      bonus,
+      subtotal,
+      vacationPay,
+      totalSalary
+    });
+
     return {
       name: salary.user_display_name,
-      total: totalSalary,
+      total: Math.round(totalSalary), // Round to avoid floating point issues
       periodStart: salary.period_start,
       periodEnd: salary.period_end
     };
@@ -74,6 +83,11 @@ export const SalaryList = ({
 
   // Calculate total by summing up all individual totals
   const totalSalaries = salaryDetails.reduce((sum, detail) => sum + detail.total, 0);
+
+  console.log('Total salaries calculation:', {
+    salaryDetails: salaryDetails.map(d => ({ name: d.name, total: d.total })),
+    totalSum: totalSalaries
+  });
 
   return (
     <div className="space-y-4">
