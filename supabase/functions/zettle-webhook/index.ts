@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-zettle-signature',
 }
 
 const ZETTLE_API_KEY = Deno.env.get('ZETTLE_API_KEY')
@@ -42,13 +42,13 @@ serve(async (req) => {
 
     // Extract purchase data
     const purchaseData = {
-      zettle_purchase_id: purchase.purchaseUUID,
-      amount: purchase.amount,
-      vat_amount: purchase.vatAmount,
-      currency: purchase.currency,
-      timestamp: purchase.timestamp,
-      payment_type: purchase.type,
-      products: purchase.products,
+      "User Display Name": purchase.userDisplayName || null,
+      "Amount": purchase.amount || null,
+      "VAT Amount": purchase.vatAmount || null,
+      "Payment Type": purchase.type || null,
+      "Currency": purchase.currency || null,
+      "Purchase UUID": purchase.purchaseUUID || null,
+      "Timestamp": purchase.timestamp || null,
       raw_data: body
     }
 
@@ -62,7 +62,7 @@ serve(async (req) => {
       throw error
     }
 
-    console.log('Successfully stored purchase:', purchaseData.zettle_purchase_id)
+    console.log('Successfully stored purchase:', purchaseData["Purchase UUID"])
 
     return new Response(
       JSON.stringify({ success: true }), 
