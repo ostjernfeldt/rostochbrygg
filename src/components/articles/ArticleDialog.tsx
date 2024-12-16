@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ArticleDialogProps {
   open: boolean;
@@ -20,13 +20,34 @@ export function ArticleDialog({ open, onOpenChange, article, onClose }: ArticleD
   const [isLoading, setIsLoading] = useState(false);
   const form = useForm({
     defaultValues: {
-      title: article?.title ?? "",
-      content: article?.content ?? "",
-      category: article?.category ?? "Kaffekunskap",
-      slug: article?.slug ?? "",
-      reading_time: article?.reading_time ?? 5,
+      title: "",
+      content: "",
+      category: "Kaffekunskap",
+      slug: "",
+      reading_time: 5,
     },
   });
+
+  // Reset form with article data when editing
+  useEffect(() => {
+    if (article) {
+      form.reset({
+        title: article.title,
+        content: article.content,
+        category: article.category,
+        slug: article.slug,
+        reading_time: article.reading_time,
+      });
+    } else {
+      form.reset({
+        title: "",
+        content: "",
+        category: "Kaffekunskap",
+        slug: "",
+        reading_time: 5,
+      });
+    }
+  }, [article, form]);
 
   const onSubmit = async (values: any) => {
     setIsLoading(true);
