@@ -23,7 +23,7 @@ export const SalaryFilters = ({
   setDateRange
 }: SalaryFiltersProps) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mb-8">
       <div className="flex flex-col gap-6">
         <h1 className="text-2xl font-bold">Löner</h1>
         <PeriodFilter
