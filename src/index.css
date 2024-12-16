@@ -27,6 +27,17 @@
     min-height: -webkit-fill-available;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+@layer utilities {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .mt-safe {
+    margin-top: env(safe-area-inset-top);
   }
 }
 
