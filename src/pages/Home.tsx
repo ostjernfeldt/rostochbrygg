@@ -11,10 +11,23 @@ import {
 import { TimeLeftCard } from "@/components/stats/TimeLeftCard";
 import { SalesStats } from "@/components/stats/SalesStats";
 import { PageLayout } from "@/components/PageLayout";
+import { supabase } from "@/integrations/supabase/client";
 
 const Home = () => {
   const navigate = useNavigate();
   const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [username, setUsername] = useState<string>("");
+  
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.user_metadata?.username) {
+        setUsername(user.user_metadata.username);
+      }
+    };
+    
+    getUser();
+  }, []);
   
   useEffect(() => {
     const lastRefreshTime = localStorage.getItem('lastRefreshTime');
@@ -50,7 +63,9 @@ const Home = () => {
       <div>
         <div className="flex justify-between items-start mb-6 animate-fade-in">
           <div>
-            <h1 className="text-3xl font-bold mb-1 text-left">Välkommen Oscar</h1>
+            <h1 className="text-3xl font-bold mb-1 text-left">
+              Välkommen{username ? ` ${username}` : ''}
+            </h1>
             <p className="text-gray-400 text-lg text-left">Här kan du se statistiken från idag.</p>
             <button 
               onClick={() => navigate('/settings')}
