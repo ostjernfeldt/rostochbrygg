@@ -39,7 +39,7 @@ export const LeaderboardSection = ({
 
     const formattedData = `${title}\n\n` + data
       .map((user, index) => 
-        `${index + 1}. ${user["User Display Name"]}: ${user.salesCount} sälj - SEK ${user.totalAmount.toLocaleString()}`
+        `${index + 1}. ${user["User Display Name"]}: ${user.totalAmount.toLocaleString()}`
       )
       .join('\n');
 
