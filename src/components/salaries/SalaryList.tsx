@@ -1,6 +1,4 @@
 import { SalaryCard } from "./SalaryCard";
-import { TotalSalariesCard } from "./TotalSalariesCard";
-import { calculateAccumulatedSales } from "@/utils/salaryCalculations";
 import {
   Accordion,
   AccordionContent,
@@ -89,21 +87,8 @@ export const SalaryList = ({
     };
   });
 
-  // Calculate total by summing up all individual totals
-  const totalSalaries = salaryDetails.reduce((sum, detail) => sum + detail.total, 0);
-
-  console.log('Total salaries calculation:', {
-    salaryDetails: salaryDetails.map(d => ({ name: d.name, total: d.total })),
-    totalSum: totalSalaries
-  });
-
   return (
     <div className="space-y-4">
-      <TotalSalariesCard 
-        totalSalaries={totalSalaries} 
-        salaryDetails={salaryDetails}
-      />
-      
       <Accordion type="single" collapsible className="space-y-4">
         {filteredSalaries.map((salary) => {
           const periodSales = calculateTotalSales(
