@@ -35,7 +35,7 @@ const Learn = () => {
   const filteredArticles = articles.filter(article => {
     const matchesFilter = filter === "all" || article.category === filter;
     const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         article.description?.toLowerCase().includes(searchQuery.toLowerCase());
+                         article.content.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -126,7 +126,7 @@ const Learn = () => {
               </Button>
             </div>
             <h2 className="text-xl font-semibold mb-2">{article.title}</h2>
-            <p className="text-gray-400 mb-3">{article.description}</p>
+            <p className="text-gray-400 mb-3 line-clamp-2">{article.content}</p>
             <div className="flex items-center text-gray-400">
               <Clock size={16} className="mr-2" />
               <span>5 min</span>
