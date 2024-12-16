@@ -34,8 +34,7 @@ const Login = () => {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim(),
-      }, {
-        auth: {
+        options: {
           persistSession: true, // Detta gör att sessionen sparas även efter att webbläsaren stängts
           autoRefreshToken: true // Detta gör att token uppdateras automatiskt
         }
