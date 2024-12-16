@@ -1,4 +1,5 @@
 import { SalaryCard } from "./SalaryCard";
+import { calculateAccumulatedSales } from "@/utils/salaryCalculations";
 import {
   Accordion,
   AccordionContent,
