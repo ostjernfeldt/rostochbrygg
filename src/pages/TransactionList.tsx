@@ -124,7 +124,10 @@ const TransactionList = () => {
       {/* Sales Chart */}
       {transactions?.transactions && (
         <div className="mb-6">
-          <SalesChart transactions={transactions.transactions} />
+          <SalesChart 
+            transactions={transactions.transactions} 
+            showAccumulatedPerTransaction={true}
+          />
         </div>
       )}
 

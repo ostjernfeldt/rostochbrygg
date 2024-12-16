@@ -10,9 +10,15 @@ interface SalesChartProps {
   }>;
   groupByWeek?: boolean;
   selectedPeriod?: string;
+  showAccumulatedPerTransaction?: boolean; // New prop
 }
 
-export const SalesChart = ({ transactions, groupByWeek = false, selectedPeriod }: SalesChartProps) => {
+export const SalesChart = ({ 
+  transactions, 
+  groupByWeek = false, 
+  selectedPeriod,
+  showAccumulatedPerTransaction = false // Default to false to maintain existing behavior
+}: SalesChartProps) => {
   const chartData = useMemo(() => {
     if (transactions.length === 0) return [];
 
@@ -24,6 +30,21 @@ export const SalesChart = ({ transactions, groupByWeek = false, selectedPeriod }
     );
     
     console.log("Sorted transactions:", sortedTransactions);
+
+    // If we want to show accumulated per transaction
+    if (showAccumulatedPerTransaction) {
+      let cumulativeAmount = 0;
+      return sortedTransactions.map(transaction => {
+        if (transaction.Amount) {
+          cumulativeAmount += transaction.Amount;
+        }
+        return {
+          timestamp: transaction.Timestamp,
+          amount: cumulativeAmount,
+          time: format(parseISO(transaction.Timestamp), 'HH:mm')
+        };
+      });
+    }
 
     // Handle daily view differently
     if (selectedPeriod === "day") {
@@ -104,7 +125,7 @@ export const SalesChart = ({ transactions, groupByWeek = false, selectedPeriod }
         amount: Number(transaction.Amount) || 0
       }));
     }
-  }, [transactions, groupByWeek, selectedPeriod]);
+  }, [transactions, groupByWeek, selectedPeriod, showAccumulatedPerTransaction]);
 
   if (chartData.length === 0) return null;
 
@@ -122,7 +143,7 @@ export const SalesChart = ({ transactions, groupByWeek = false, selectedPeriod }
             dataKey="timestamp" 
             stroke="#666"
             tickFormatter={(value) => {
-              if (selectedPeriod === "day") {
+              if (showAccumulatedPerTransaction || selectedPeriod === "day") {
                 return format(new Date(value), 'HH:mm');
               }
               if (!groupByWeek) {
@@ -150,7 +171,7 @@ export const SalesChart = ({ transactions, groupByWeek = false, selectedPeriod }
             ]}
             labelFormatter={(label) => {
               const date = new Date(label);
-              if (selectedPeriod === "day") {
+              if (showAccumulatedPerTransaction || selectedPeriod === "day") {
                 return format(date, 'HH:mm');
               }
               return groupByWeek 
