@@ -47,13 +47,15 @@ export const StaffStats = ({ stats }: StaffStatsProps) => {
         animationDelay="800ms"
       />
       <StatCard
-        title={`Första säljdagen (${format(new Date(stats.worstDay.date), "d MMM yyyy", { locale: sv })})`}
+        title="Första säljdagen"
+        subtitle={format(new Date(stats.worstDay.date), "d MMM yyyy", { locale: sv })}
         value={`SEK ${Math.round(stats.worstDay.amount).toLocaleString()}`}
         userName=""
         animationDelay="1000ms"
       />
       <StatCard
-        title={`Bästa säljdagen (${format(new Date(stats.bestDay.date), "d MMM yyyy", { locale: sv })})`}
+        title="Bästa säljdagen"
+        subtitle={format(new Date(stats.bestDay.date), "d MMM yyyy", { locale: sv })}
         value={`SEK ${Math.round(stats.bestDay.amount).toLocaleString()}`}
         userName=""
         animationDelay="1200ms"
