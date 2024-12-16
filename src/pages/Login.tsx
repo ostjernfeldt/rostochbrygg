@@ -33,11 +33,7 @@ const Login = () => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
-        password: password.trim(),
-        options: {
-          persistSession: true, // Detta gör att sessionen sparas även efter att webbläsaren stängts
-          autoRefreshToken: true // Detta gör att token uppdateras automatiskt
-        }
+        password: password.trim()
       });
 
       console.log("Login response:", error ? "Error occurred" : "Success", data?.user ? "User exists" : "No user");
@@ -49,6 +45,11 @@ const Login = () => {
 
       if (!data?.user) {
         throw new Error("No user data received");
+      }
+
+      // Set session persistence after successful login
+      if (data.session) {
+        await supabase.auth.setSession(data.session);
       }
 
       toast({
