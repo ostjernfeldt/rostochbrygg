@@ -2,59 +2,47 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLayout } from "@/components/PageLayout";
-
-const articles = {
-  "kaffe-grundlaggande": {
-    category: "Kaffekunskap",
-    title: "Kaffe - Grundläggande",
-    content: `
-      <h2>Introduktion till kaffe</h2>
-      <p>Kaffe är en av världens mest populära drycker och har en rik historia som sträcker sig hundratals år tillbaka i tiden.</p>
-      
-      <h2>Kaffebönan</h2>
-      <p>Kaffebönor kommer från kaffeplantan och det finns huvudsakligen två typer: Arabica och Robusta.</p>
-      
-      <h2>Rostning</h2>
-      <p>Rostningsprocessen är avgörande för kaffets smak. Olika rostningstider ger olika smaker och intensitet.</p>
-    `,
-    categoryColor: "bg-[#8B5E3C]",
-  },
-  "dorrforsaljning-101": {
-    category: "Säljutbildning",
-    title: "Dörrförsäljning 101",
-    content: `
-      <h2>Grunderna i dörrförsäljning</h2>
-      <p>Dörrförsäljning är en direkt form av försäljning där du möter kunden på deras hemmaplan.</p>
-      
-      <h2>Första intrycket</h2>
-      <p>De första sekunderna är avgörande. Ett professionellt och vänligt bemötande öppnar dörrar.</p>
-      
-      <h2>Presentationsteknik</h2>
-      <p>En effektiv presentation är kort, relevant och anpassad efter kundens behov.</p>
-    `,
-    categoryColor: "bg-primary",
-  },
-  "oka-snittordervarde": {
-    category: "Säljutbildning",
-    title: "Öka ditt snittordervärde",
-    content: `
-      <h2>Strategier för högre ordervärde</h2>
-      <p>Att öka snittordervärdet är ett effektivt sätt att förbättra din försäljning utan att behöva fler kunder.</p>
-      
-      <h2>Merförsäljning</h2>
-      <p>Identifiera kompletterande produkter som kan vara relevanta för kunden.</p>
-      
-      <h2>Värdehöjande argument</h2>
-      <p>Fokusera på värdet och fördelarna snarare än priset när du presenterar uppgraderingsmöjligheter.</p>
-    `,
-    categoryColor: "bg-primary",
-  },
-};
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Article = () => {
   const navigate = useNavigate();
   const { slug } = useParams();
-  const article = articles[slug as keyof typeof articles];
+
+  const { data: article, isLoading } = useQuery({
+    queryKey: ['article', slug],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+      
+      if (error) {
+        toast.error("Kunde inte hämta artikeln");
+        throw error;
+      }
+      
+      return data;
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <PageLayout>
+        <div className="animate-pulse">
+          <div className="h-8 w-32 bg-gray-700 rounded mb-4"></div>
+          <div className="h-12 w-64 bg-gray-700 rounded mb-8"></div>
+          <div className="space-y-4">
+            <div className="h-4 bg-gray-700 rounded w-full"></div>
+            <div className="h-4 bg-gray-700 rounded w-5/6"></div>
+            <div className="h-4 bg-gray-700 rounded w-4/6"></div>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
 
   if (!article) {
     return (
@@ -81,7 +69,9 @@ const Article = () => {
         </Button>
         
         <div className="mb-4">
-          <span className={`px-3 py-1 rounded-full text-sm ${article.categoryColor} text-white inline-block`}>
+          <span className={`px-3 py-1 rounded-full text-sm ${
+            article.category === "Kaffekunskap" ? "bg-[#8B5E3C]" : "bg-primary"
+          } text-white inline-block`}>
             {article.category}
           </span>
         </div>

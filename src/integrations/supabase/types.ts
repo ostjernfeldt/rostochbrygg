@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      articles: {
+        Row: {
+          category: Database["public"]["Enums"]["article_category"]
+          content: string
+          created_at: string | null
+          id: string
+          slug: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["article_category"]
+          content: string
+          created_at?: string | null
+          id?: string
+          slug: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["article_category"]
+          content?: string
+          created_at?: string | null
+          id?: string
+          slug?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       bonus_records: {
         Row: {
           amount: number
@@ -233,7 +263,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      article_category: "Kaffekunskap" | "Säljutbildning"
     }
     CompositeTypes: {
       [_ in never]: never
