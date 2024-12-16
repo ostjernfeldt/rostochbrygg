@@ -47,9 +47,16 @@ const Login = () => {
         throw new Error("No user data received");
       }
 
-      // Set session persistence after successful login
+      // Update session persistence using the session data directly
       if (data.session) {
-        await supabase.auth.setSession(data.session);
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+        
+        if (sessionError) {
+          console.error("Session persistence error:", sessionError);
+        }
       }
 
       toast({
