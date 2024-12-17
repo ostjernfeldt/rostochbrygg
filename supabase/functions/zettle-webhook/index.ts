@@ -3,10 +3,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-zettle-signature',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const ZETTLE_API_KEY = Deno.env.get('ZETTLE_API_KEY')
 const supabaseUrl = Deno.env.get('SUPABASE_URL')
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
@@ -17,52 +16,86 @@ serve(async (req) => {
   }
 
   try {
-    // Validate iZettle webhook signature
-    const signature = req.headers.get('x-zettle-signature')
-    if (!signature) {
-      console.error('Missing Zettle signature')
-      return new Response(
-        JSON.stringify({ error: 'Missing signature' }), 
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Get the raw body
     const body = await req.json()
     console.log('Received webhook payload:', body)
 
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
 
-    // Process purchase data
-    const purchase = body.payload
-    if (!purchase) {
-      throw new Error('Invalid purchase payload')
+    // Only process PurchaseCreated events
+    if (body.eventName !== 'PurchaseCreated') {
+      return new Response(
+        JSON.stringify({ message: 'Event type not supported' }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    // Extract purchase data
-    const purchaseData = {
-      "User Display Name": purchase.userDisplayName || null,
-      "Amount": purchase.amount || null,
-      "VAT Amount": purchase.vatAmount || null,
-      "Payment Type": purchase.type || null,
-      "Currency": purchase.currency || null,
-      "Purchase UUID": purchase.purchaseUUID || null,
-      "Timestamp": purchase.timestamp || null,
-      raw_data: body
-    }
+    // Parse the payload string into an object
+    const purchase = JSON.parse(body.payload)
+    console.log('Parsed purchase data:', purchase)
 
-    // Store in Supabase
-    const { data, error } = await supabase
+    // Store purchase data
+    const { data: purchaseData, error: purchaseError } = await supabase
       .from('purchases')
-      .insert(purchaseData)
+      .insert({
+        purchase_uuid: purchase.purchaseUuid,
+        user_uuid: purchase.userUuid,
+        purchase_number: purchase.purchaseNumber?.toString(),
+        timestamp: new Date(purchase.timestamp).toISOString(),
+        amount: purchase.amount,
+        vat_amount: purchase.vatAmount,
+        country: purchase.country,
+        currency: purchase.currency,
+        user_display_name: purchase.userDisplayName
+      })
+      .select()
 
-    if (error) {
-      console.error('Error storing purchase:', error)
-      throw error
+    if (purchaseError) {
+      console.error('Error storing purchase:', purchaseError)
+      throw purchaseError
     }
 
-    console.log('Successfully stored purchase:', purchaseData["Purchase UUID"])
+    // Store products data
+    if (purchase.products && purchase.products.length > 0) {
+      const productsToInsert = purchase.products.map((product: any) => ({
+        purchase_uuid: purchase.purchaseUuid,
+        product_uuid: product.productUuid,
+        name: product.name,
+        unit_price: product.unitPrice,
+        quantity: parseInt(product.quantity),
+        vat_percentage: product.vatPercentage
+      }))
+
+      const { error: productsError } = await supabase
+        .from('products')
+        .insert(productsToInsert)
+
+      if (productsError) {
+        console.error('Error storing products:', productsError)
+        throw productsError
+      }
+    }
+
+    // Store payments data
+    if (purchase.payments && purchase.payments.length > 0) {
+      const paymentsToInsert = purchase.payments.map((payment: any) => ({
+        purchase_uuid: purchase.purchaseUuid,
+        payment_uuid: payment.uuid,
+        amount: payment.amount,
+        type: payment.type
+      }))
+
+      const { error: paymentsError } = await supabase
+        .from('payments')
+        .insert(paymentsToInsert)
+
+      if (paymentsError) {
+        console.error('Error storing payments:', paymentsError)
+        throw paymentsError
+      }
+    }
+
+    console.log('Successfully stored purchase:', purchase.purchaseUuid)
 
     return new Response(
       JSON.stringify({ success: true }), 

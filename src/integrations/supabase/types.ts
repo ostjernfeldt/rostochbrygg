@@ -102,25 +102,7 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
-        Row: {
-          created_at: string | null
-          id: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      purchases: {
+      legacy_purchases: {
         Row: {
           Amount: number | null
           Cost: number | null
@@ -192,6 +174,148 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          id: string
+          payment_uuid: string | null
+          purchase_uuid: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string
+          payment_uuid?: string | null
+          purchase_uuid?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string
+          payment_uuid?: string | null
+          purchase_uuid?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_purchase_uuid_fkey"
+            columns: ["purchase_uuid"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["purchase_uuid"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string | null
+          product_uuid: string | null
+          purchase_uuid: string | null
+          quantity: number | null
+          unit_price: number | null
+          updated_at: string | null
+          vat_percentage: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          product_uuid?: string | null
+          purchase_uuid?: string | null
+          quantity?: number | null
+          unit_price?: number | null
+          updated_at?: string | null
+          vat_percentage?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          product_uuid?: string | null
+          purchase_uuid?: string | null
+          quantity?: number | null
+          unit_price?: number | null
+          updated_at?: string | null
+          vat_percentage?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_purchase_uuid_fkey"
+            columns: ["purchase_uuid"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["purchase_uuid"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          amount: number | null
+          country: string | null
+          created_at: string | null
+          currency: string | null
+          purchase_number: string | null
+          purchase_uuid: string
+          timestamp: string | null
+          updated_at: string | null
+          user_display_name: string | null
+          user_uuid: string | null
+          vat_amount: number | null
+        }
+        Insert: {
+          amount?: number | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          purchase_number?: string | null
+          purchase_uuid: string
+          timestamp?: string | null
+          updated_at?: string | null
+          user_display_name?: string | null
+          user_uuid?: string | null
+          vat_amount?: number | null
+        }
+        Update: {
+          amount?: number | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          purchase_number?: string | null
+          purchase_uuid?: string
+          timestamp?: string | null
+          updated_at?: string | null
+          user_display_name?: string | null
+          user_uuid?: string | null
+          vat_amount?: number | null
+        }
+        Relationships: []
+      }
       salaries: {
         Row: {
           base_salary: number
@@ -255,130 +379,6 @@ export type Database = {
           presence_start?: string
           updated_at?: string | null
           user_display_name?: string
-        }
-        Relationships: []
-      }
-      zettle_payments: {
-        Row: {
-          amount: number | null
-          created_at: string | null
-          id: string
-          payment_uuid: string | null
-          purchase_uuid: string | null
-          type: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          amount?: number | null
-          created_at?: string | null
-          id?: string
-          payment_uuid?: string | null
-          purchase_uuid?: string | null
-          type?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          amount?: number | null
-          created_at?: string | null
-          id?: string
-          payment_uuid?: string | null
-          purchase_uuid?: string | null
-          type?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "zettle_payments_purchase_uuid_fkey"
-            columns: ["purchase_uuid"]
-            isOneToOne: false
-            referencedRelation: "zettle_purchases"
-            referencedColumns: ["purchase_uuid"]
-          },
-        ]
-      }
-      zettle_products: {
-        Row: {
-          created_at: string | null
-          id: string
-          name: string | null
-          product_uuid: string | null
-          purchase_uuid: string | null
-          quantity: number | null
-          unit_price: number | null
-          updated_at: string | null
-          vat_percentage: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          name?: string | null
-          product_uuid?: string | null
-          purchase_uuid?: string | null
-          quantity?: number | null
-          unit_price?: number | null
-          updated_at?: string | null
-          vat_percentage?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          name?: string | null
-          product_uuid?: string | null
-          purchase_uuid?: string | null
-          quantity?: number | null
-          unit_price?: number | null
-          updated_at?: string | null
-          vat_percentage?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "zettle_products_purchase_uuid_fkey"
-            columns: ["purchase_uuid"]
-            isOneToOne: false
-            referencedRelation: "zettle_purchases"
-            referencedColumns: ["purchase_uuid"]
-          },
-        ]
-      }
-      zettle_purchases: {
-        Row: {
-          amount: number | null
-          country: string | null
-          created_at: string | null
-          currency: string | null
-          purchase_number: string | null
-          purchase_uuid: string
-          timestamp: string | null
-          updated_at: string | null
-          user_display_name: string | null
-          user_uuid: string | null
-          vat_amount: number | null
-        }
-        Insert: {
-          amount?: number | null
-          country?: string | null
-          created_at?: string | null
-          currency?: string | null
-          purchase_number?: string | null
-          purchase_uuid: string
-          timestamp?: string | null
-          updated_at?: string | null
-          user_display_name?: string | null
-          user_uuid?: string | null
-          vat_amount?: number | null
-        }
-        Update: {
-          amount?: number | null
-          country?: string | null
-          created_at?: string | null
-          currency?: string | null
-          purchase_number?: string | null
-          purchase_uuid?: string
-          timestamp?: string | null
-          updated_at?: string | null
-          user_display_name?: string | null
-          user_uuid?: string | null
-          vat_amount?: number | null
         }
         Relationships: []
       }
