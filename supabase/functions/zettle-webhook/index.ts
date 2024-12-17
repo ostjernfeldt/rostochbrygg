@@ -15,120 +15,39 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  const logs: any[] = [];
-  const debugLog = (message: string, data: any) => {
-    const log = { message, data, timestamp: new Date().toISOString() };
-    logs.push(log);
-    console.log(JSON.stringify(log));
-  };
-
   try {
     const body = await req.json()
-    console.log('Raw webhook data:', body)
-
-    // Validate webhook structure
-    if (!body || !body.eventName || !body.payload) {
-      return new Response(
-        JSON.stringify({
-          message: 'Invalid webhook format',
-          receivedData: body,
-          expectedFormat: {
-            organizationUuid: 'string',
-            messageUuid: 'string',
-            eventName: 'PurchaseCreated',
-            messageId: 'string',
-            payload: 'JSON string',
-            timestamp: 'string'
-          }
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Parse payload
-    let parsedPayload;
-    try {
-      parsedPayload = typeof body.payload === 'string' 
-        ? JSON.parse(body.payload) 
-        : body.payload;
-
-      console.log('Parsed purchase data:', parsedPayload)
-    } catch (e) {
-      return new Response(
-        JSON.stringify({
-          message: 'Failed to parse payload',
-          error: e.message,
-          receivedPayload: body.payload
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Validate required fields
-    const validation = {
-      purchaseUuid: {
-        value: parsedPayload.purchaseUuid,
-        exists: !!parsedPayload.purchaseUuid,
-        type: typeof parsedPayload.purchaseUuid
-      },
-      timestamp: {
-        value: parsedPayload.timestamp,
-        exists: !!parsedPayload.timestamp,
-        type: typeof parsedPayload.timestamp
-      },
-      amount: {
-        value: parsedPayload.amount,
-        exists: parsedPayload.amount !== undefined,
-        type: typeof parsedPayload.amount
-      }
-    };
-
-    const missingFields = Object.entries(validation)
-      .filter(([_, v]) => !v.exists)
-      .map(([k, _]) => k);
-
-    if (missingFields.length > 0) {
-      return new Response(
-        JSON.stringify({
-          message: 'Missing required fields',
-          missingFields,
-          validation,
-          receivedData: {
-            webhook: {
-              eventName: body.eventName,
-              messageId: body.messageId,
-              timestamp: body.timestamp
-            },
-            parsedPayload,
-            payloadKeys: Object.keys(parsedPayload || {})
-          }
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    console.log('Received webhook payload:', body)
 
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
 
-    // Map data to our database structure
-    const purchaseData = {
-      purchase_uuid: parsedPayload.purchaseUuid,
-      timestamp: new Date(parsedPayload.timestamp).toISOString(),
-      amount: parsedPayload.amount,
-      user_uuid: parsedPayload.userUuid,
-      purchase_number: parsedPayload.purchaseNumber?.toString(),
-      vat_amount: parsedPayload.vatAmount,
-      country: parsedPayload.country,
-      currency: parsedPayload.currency,
-      user_display_name: parsedPayload.userDisplayName
-    };
+    // Only process PurchaseCreated events
+    if (body.eventName !== 'PurchaseCreated') {
+      return new Response(
+        JSON.stringify({ message: 'Event type not supported' }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    debugLog('Mapped purchase data:', purchaseData);
+    // Parse the payload string into an object
+    const purchase = JSON.parse(body.payload)
+    console.log('Parsed purchase data:', purchase)
 
     // Store purchase data
-    const { data: purchaseInsert, error: purchaseError } = await supabase
+    const { data: purchaseData, error: purchaseError } = await supabase
       .from('purchases')
-      .insert(purchaseData)
+      .insert({
+        purchase_uuid: purchase.purchaseUuid,
+        user_uuid: purchase.userUuid,
+        purchase_number: purchase.purchaseNumber?.toString(),
+        timestamp: new Date(purchase.timestamp).toISOString(),
+        amount: purchase.amount,
+        vat_amount: purchase.vatAmount,
+        country: purchase.country,
+        currency: purchase.currency,
+        user_display_name: purchase.userDisplayName
+      })
       .select()
 
     if (purchaseError) {
@@ -137,9 +56,9 @@ serve(async (req) => {
     }
 
     // Store products data
-    if (parsedPayload.products && parsedPayload.products.length > 0) {
-      const productsToInsert = parsedPayload.products.map((product: any) => ({
-        purchase_uuid: parsedPayload.purchaseUuid,
+    if (purchase.products && purchase.products.length > 0) {
+      const productsToInsert = purchase.products.map((product: any) => ({
+        purchase_uuid: purchase.purchaseUuid,
         product_uuid: product.productUuid,
         name: product.name,
         unit_price: product.unitPrice,
@@ -158,9 +77,9 @@ serve(async (req) => {
     }
 
     // Store payments data
-    if (parsedPayload.payments && parsedPayload.payments.length > 0) {
-      const paymentsToInsert = parsedPayload.payments.map((payment: any) => ({
-        purchase_uuid: parsedPayload.purchaseUuid,
+    if (purchase.payments && purchase.payments.length > 0) {
+      const paymentsToInsert = purchase.payments.map((payment: any) => ({
+        purchase_uuid: purchase.purchaseUuid,
         payment_uuid: payment.uuid,
         amount: payment.amount,
         type: payment.type
@@ -176,24 +95,17 @@ serve(async (req) => {
       }
     }
 
-    console.log('Successfully stored purchase:', parsedPayload.purchaseUuid)
+    console.log('Successfully stored purchase:', purchase.purchaseUuid)
 
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        message: 'Webhook processed successfully',
-        purchaseId: parsedPayload.purchaseUuid
-      }), 
+      JSON.stringify({ success: true }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
     console.error('Error processing webhook:', error)
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        logs
-      }), 
+      JSON.stringify({ error: error.message }), 
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
