@@ -16,97 +16,185 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json()
-    console.log('Received webhook payload:', body)
-
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
+    
+    // Parse request body
+    const body = await req.json()
+    console.log('Raw webhook data:', JSON.stringify(body, null, 2))
 
-    // Only process PurchaseCreated events
-    if (body.eventName !== 'PurchaseCreated') {
+    // Validera webhook struktur
+    if (!body || !body.eventName || !body.payload) {
       return new Response(
-        JSON.stringify({ message: 'Event type not supported' }), 
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          message: 'Invalid webhook format',
+          receivedData: body,
+          expectedFormat: {
+            organizationUuid: 'string',
+            messageUuid: 'string',
+            eventName: 'PurchaseCreated',
+            messageId: 'string',
+            payload: 'JSON string',
+            timestamp: 'string'
+          }
+        }),
+        { 
+          status: 400, 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json' 
+          } 
+        }
       )
     }
 
-    // Parse the payload string into an object
-    const purchase = JSON.parse(body.payload)
-    console.log('Parsed purchase data:', purchase)
+    // Parse payload
+    let parsedPayload
+    try {
+      parsedPayload = typeof body.payload === 'string' 
+        ? JSON.parse(body.payload) 
+        : body.payload
 
-    // Store purchase data
-    const { data: purchaseData, error: purchaseError } = await supabase
+      console.log('Parsed purchase data:', JSON.stringify(parsedPayload, null, 2))
+    } catch (e) {
+      return new Response(
+        JSON.stringify({
+          message: 'Failed to parse payload',
+          error: e.message,
+          receivedPayload: body.payload
+        }),
+        { 
+          status: 400, 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json' 
+          } 
+        }
+      )
+    }
+
+    // Validera required fields
+    const validation = {
+      purchaseUuid: {
+        value: parsedPayload.purchaseUuid,
+        exists: !!parsedPayload.purchaseUuid,
+        type: typeof parsedPayload.purchaseUuid,
+        raw: parsedPayload.purchaseUuid
+      },
+      timestamp: {
+        value: parsedPayload.timestamp,
+        exists: !!parsedPayload.timestamp,
+        type: typeof parsedPayload.timestamp,
+        raw: parsedPayload.timestamp
+      },
+      amount: {
+        value: parsedPayload.amount,
+        exists: parsedPayload.amount !== undefined,
+        type: typeof parsedPayload.amount,
+        raw: parsedPayload.amount
+      }
+    }
+
+    console.log('Validation results:', validation)
+
+    const missingFields = Object.entries(validation)
+      .filter(([_, v]) => !v.exists)
+      .map(([k, _]) => k)
+
+    if (missingFields.length > 0) {
+      return new Response(
+        JSON.stringify({
+          message: 'Felaktig data, vissa obligatoriska fält saknas',
+          missingFields,
+          validation,
+          receivedData: {
+            webhook: {
+              eventName: body.eventName,
+              messageId: body.messageId,
+              timestamp: body.timestamp
+            },
+            parsedPayload,
+            payloadKeys: Object.keys(parsedPayload || {}),
+            originalPayload: body.payload
+          }
+        }),
+        { 
+          status: 400, 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json' 
+          } 
+        }
+      )
+    }
+
+    // Mappa data
+    const mappedData = {
+      purchase_uuid: parsedPayload.purchaseUuid,
+      timestamp: parsedPayload.created || new Date(parsedPayload.timestamp).toISOString(),
+      amount: parsedPayload.amount,
+      user_uuid: parsedPayload.userUuid,
+      purchase_number: parsedPayload.purchaseNumber,
+      vat_amount: parsedPayload.vatAmount,
+      country: parsedPayload.country,
+      currency: parsedPayload.currency,
+      user_display_name: parsedPayload.userDisplayName
+    }
+
+    console.log('Mapped data for insert:', mappedData)
+
+    // Insert i Supabase
+    const { data: purchaseInsert, error: purchaseError } = await supabase
       .from('purchases')
-      .insert({
-        purchase_uuid: purchase.purchaseUuid,
-        user_uuid: purchase.userUuid,
-        purchase_number: purchase.purchaseNumber?.toString(),
-        timestamp: new Date(purchase.timestamp).toISOString(),
-        amount: purchase.amount,
-        vat_amount: purchase.vatAmount,
-        country: purchase.country,
-        currency: purchase.currency,
-        user_display_name: purchase.userDisplayName
-      })
-      .select()
+      .insert([mappedData])
 
     if (purchaseError) {
-      console.error('Error storing purchase:', purchaseError)
-      throw purchaseError
+      console.error('Error inserting purchase:', purchaseError)
+      return new Response(
+        JSON.stringify({
+          message: 'Error inserting purchase data',
+          error: purchaseError.message
+        }),
+        { 
+          status: 500, 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json' 
+          } 
+        }
+      )
     }
 
-    // Store products data
-    if (purchase.products && purchase.products.length > 0) {
-      const productsToInsert = purchase.products.map((product: any) => ({
-        purchase_uuid: purchase.purchaseUuid,
-        product_uuid: product.productUuid,
-        name: product.name,
-        unit_price: product.unitPrice,
-        quantity: parseInt(product.quantity),
-        vat_percentage: product.vatPercentage
-      }))
-
-      const { error: productsError } = await supabase
-        .from('products')
-        .insert(productsToInsert)
-
-      if (productsError) {
-        console.error('Error storing products:', productsError)
-        throw productsError
-      }
-    }
-
-    // Store payments data
-    if (purchase.payments && purchase.payments.length > 0) {
-      const paymentsToInsert = purchase.payments.map((payment: any) => ({
-        purchase_uuid: purchase.purchaseUuid,
-        payment_uuid: payment.uuid,
-        amount: payment.amount,
-        type: payment.type
-      }))
-
-      const { error: paymentsError } = await supabase
-        .from('payments')
-        .insert(paymentsToInsert)
-
-      if (paymentsError) {
-        console.error('Error storing payments:', paymentsError)
-        throw paymentsError
-      }
-    }
-
-    console.log('Successfully stored purchase:', purchase.purchaseUuid)
+    console.log('Purchase inserted successfully:', purchaseInsert)
 
     return new Response(
-      JSON.stringify({ success: true }), 
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        message: 'Webhook processed successfully',
+        purchaseInsert
+      }),
+      { 
+        status: 200, 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json' 
+        } 
+      }
     )
 
-  } catch (error) {
-    console.error('Error processing webhook:', error)
+  } catch (err) {
+    console.error('Unexpected error:', err)
     return new Response(
-      JSON.stringify({ error: error.message }), 
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        message: 'Internal server error',
+        error: err.message
+      }),
+      { 
+        status: 500, 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json' 
+        } 
+      }
     )
   }
 })
