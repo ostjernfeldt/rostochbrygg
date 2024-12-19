@@ -8,7 +8,7 @@ export const mapDatabaseToLegacyFormat = (purchase: DatabasePurchase | TotalPurc
   };
 
   return {
-    Timestamp: 'timestamp' in purchase ? purchase.timestamp : purchase.Timestamp,
+    Timestamp: purchase.timestamp,
     Amount: typeof purchase.amount === 'number' ? purchase.amount : normalizeNumeric(purchase.amount),
     "User Display Name": purchase.user_display_name || '',
     "Payment Type": purchase.payment_type || undefined,

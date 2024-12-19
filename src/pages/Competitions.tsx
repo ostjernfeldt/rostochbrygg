@@ -12,15 +12,15 @@ const Competitions = () => {
     queryFn: async () => {
       console.log("Fetching dates with sales activity...");
       const { data, error } = await supabase
-        .from("purchases")
-        .select("Timestamp")
-        .order("Timestamp", { ascending: false });
+        .from("total_purchases")
+        .select("timestamp")
+        .order("timestamp", { ascending: false });
 
       if (error) throw error;
 
       // Get unique dates and format them
       const uniqueDates = Array.from(new Set(
-        data.map(purchase => format(new Date(purchase.Timestamp), 'yyyy-MM-dd'))
+        data.map(purchase => format(new Date(purchase.timestamp), 'yyyy-MM-dd'))
       ));
 
       console.log("Found sales dates:", uniqueDates);

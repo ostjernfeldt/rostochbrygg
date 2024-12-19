@@ -42,6 +42,7 @@ export interface StaffMemberStats {
   averageAmount: number;
   daysActive: number;
   salesCount: number;
+  totalSales?: number; // Added for Staff.tsx
   sales: TotalPurchase[];
   shifts: {
     id: string;
@@ -49,11 +50,4 @@ export interface StaffMemberStats {
     totalSales: number;
     sales: TotalPurchase[];
   }[];
-}
-
-export interface PaymentMethodStat {
-  method: string;
-  count: number;
-  amount: number;
-  percentage: string;
 }

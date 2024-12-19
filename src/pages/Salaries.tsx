@@ -23,50 +23,42 @@ const Salaries = () => {
     
     const periodSales = sales.filter(sale => 
       sale["User Display Name"] === userName &&
-      new Date(sale.Timestamp!) >= new Date(startDate) &&
-      new Date(sale.Timestamp!) <= new Date(endDate)
+      new Date(sale.timestamp) >= new Date(startDate) &&
+      new Date(sale.timestamp) <= new Date(endDate)
     );
-    
-    return periodSales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
+
+    return periodSales.reduce((sum, sale) => sum + (Number(sale.amount) || 0), 0);
   };
 
-  // Filter salaries based on period, custom date range, and search query
   const filteredSalaries = salaries?.filter(salary => {
-    // Filter by seller name if search query exists
     if (searchQuery && !salary.user_display_name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
 
-    // Filter by actual sellers
     if (!actualSellers?.includes(salary.user_display_name)) {
       return false;
     }
 
-    // Calculate total sales for the period
     const totalSales = calculateTotalSales(
       salary.user_display_name,
       salary.period_start,
       salary.period_end
     );
 
-    // Filter out sellers with zero sales
     if (totalSales === 0) {
       return false;
     }
 
-    // Filter by custom date range if selected
     if (selectedPeriod === "custom" && dateRange) {
       const salaryStart = new Date(salary.period_start);
       const salaryEnd = new Date(salary.period_end);
       const rangeStart = dateRange.from ? new Date(dateRange.from) : null;
       const rangeEnd = dateRange.to ? new Date(dateRange.to) : null;
 
-      // Check if the salary period overlaps with the selected date range
       return (!rangeStart || salaryEnd >= rangeStart) && 
              (!rangeEnd || salaryStart <= rangeEnd);
     }
 
-    // Filter by selected period
     return selectedPeriod === "all" || 
            format(new Date(salary.period_start), 'yyyy-MM') === selectedPeriod;
   });
@@ -74,15 +66,14 @@ const Salaries = () => {
   const calculateShiftsCount = (userName: string, startDate: string, endDate: string) => {
     if (!sales) return 0;
     
-    // Get unique dates where the user had sales
     const uniqueDates = new Set(
       sales
         .filter(sale => 
           sale["User Display Name"] === userName &&
-          new Date(sale.Timestamp!) >= new Date(startDate) &&
-          new Date(sale.Timestamp!) <= new Date(endDate)
+          new Date(sale.timestamp) >= new Date(startDate) &&
+          new Date(sale.timestamp) <= new Date(endDate)
         )
-        .map(sale => new Date(sale.Timestamp!).toDateString())
+        .map(sale => new Date(sale.timestamp).toDateString())
     );
     
     return uniqueDates.size;

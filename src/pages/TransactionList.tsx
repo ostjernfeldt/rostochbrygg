@@ -27,10 +27,10 @@ const TransactionList = () => {
       
       // First try to get today's transactions
       const todayResult = await supabase
-        .from("purchases")
+        .from("total_purchases")
         .select("*")
-        .gte("Timestamp", today.toISOString())
-        .order("Timestamp", { ascending: false });
+        .gte("timestamp", today.toISOString())
+        .order("timestamp", { ascending: false });
 
       if (todayResult.error) {
         console.error("Error fetching today's transactions:", todayResult.error);
@@ -49,9 +49,9 @@ const TransactionList = () => {
 
       // If no transactions today, find the latest date with transactions
       const latestDateResult = await supabase
-        .from("purchases")
-        .select("Timestamp")
-        .order("Timestamp", { ascending: false })
+        .from("total_purchases")
+        .select("timestamp")
+        .order("timestamp", { ascending: false })
         .limit(1);
 
       if (latestDateResult.error) {
@@ -66,16 +66,16 @@ const TransactionList = () => {
         };
       }
 
-      const latestDate = new Date(latestDateResult.data[0].Timestamp);
+      const latestDate = new Date(latestDateResult.data[0].timestamp);
       latestDate.setHours(0, 0, 0, 0);
       
       // Get all transactions for the latest date
       const latestTransactions = await supabase
-        .from("purchases")
+        .from("total_purchases")
         .select("*")
-        .gte("Timestamp", latestDate.toISOString())
-        .lt("Timestamp", new Date(latestDate.getTime() + 24 * 60 * 60 * 1000).toISOString())
-        .order("Timestamp", { ascending: false });
+        .gte("timestamp", latestDate.toISOString())
+        .lt("timestamp", new Date(latestDate.getTime() + 24 * 60 * 60 * 1000).toISOString())
+        .order("timestamp", { ascending: false });
 
       if (latestTransactions.error) {
         console.error("Error fetching latest transactions:", latestTransactions.error);
@@ -92,19 +92,19 @@ const TransactionList = () => {
 
   // Get unique user display names from transactions
   const uniqueUsers = transactions?.transactions 
-    ? Array.from(new Set(transactions.transactions.map(t => t["User Display Name"])))
+    ? Array.from(new Set(transactions.transactions.map(t => t["user_display_name"])))
     : [];
 
   // Filter transactions based on selected user
   const filteredTransactions = transactions?.transactions
     ? selectedUser === 'all'
       ? transactions.transactions
-      : transactions.transactions.filter(t => t["User Display Name"] === selectedUser)
+      : transactions.transactions.filter(t => t["user_display_name"] === selectedUser)
     : [];
 
   // Calculate total amount for selected user
   const selectedUserTotal = filteredTransactions.reduce((sum, transaction) => 
-    sum + (transaction.Amount || 0), 0
+    sum + (Number(transaction.amount) || 0), 0
   );
 
   return (
@@ -170,22 +170,22 @@ const TransactionList = () => {
       ) : filteredTransactions.length > 0 ? (
         <div className="space-y-4">
           {filteredTransactions.map((transaction) => (
-            <div key={transaction.id} className="bg-card rounded-xl p-4 hover:scale-[1.02] transition-transform duration-200">
+            <div key={transaction.purchase_uuid} className="bg-card rounded-xl p-4 hover:scale-[1.02] transition-transform duration-200">
               <div className="flex justify-between items-start mb-2">
                 <span className="text-gray-400">
-                  {format(new Date(transaction.Timestamp), "HH:mm")}
+                  {format(new Date(transaction.timestamp), "HH:mm")}
                 </span>
                 <span className="text-xl font-bold">
-                  SEK {transaction.Amount?.toLocaleString()}
+                  SEK {Number(transaction.amount)?.toLocaleString()}
                 </span>
               </div>
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between items-center">
-                  <span className="text-primary">{transaction["User Display Name"]}</span>
-                  <span className="text-gray-400">{transaction["Payment Type"] || "Okänd betalningsmetod"}</span>
+                  <span className="text-primary">{transaction["user_display_name"]}</span>
+                  <span className="text-gray-400">{transaction["payment_type"] || "Okänd betalningsmetod"}</span>
                 </div>
                 <div className="text-sm text-gray-400">
-                  Produkt: {transaction["Product Name"] || "Okänd produkt"}
+                  Produkt: {transaction["product_name"] || "Okänd produkt"}
                 </div>
               </div>
             </div>
