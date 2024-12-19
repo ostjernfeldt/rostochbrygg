@@ -19,3 +19,18 @@ export const mapDatabaseToLegacyFormat = (purchase: DatabasePurchase | TotalPurc
 export const mapPurchaseArray = (purchases: (DatabasePurchase | TotalPurchase)[]): LegacyPurchaseFormat[] => {
   return purchases.map(mapDatabaseToLegacyFormat);
 };
+
+export const mapToTotalPurchase = (purchase: DatabasePurchase): TotalPurchase => {
+  return {
+    id: purchase.id || purchase.purchase_uuid,
+    purchase_uuid: purchase.purchase_uuid,
+    timestamp: purchase.timestamp,
+    amount: typeof purchase.amount === 'number' ? purchase.amount : parseFloat(purchase.amount),
+    user_display_name: purchase.user_display_name,
+    payment_type: purchase.payment_type || null,
+    product_name: purchase.product_name || null,
+    source: purchase.source || 'new',
+    created_at: purchase.created_at,
+    updated_at: purchase.updated_at
+  };
+};

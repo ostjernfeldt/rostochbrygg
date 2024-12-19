@@ -6,7 +6,8 @@ import { PageLayout } from "@/components/PageLayout";
 import { StaffStats } from "@/components/staff/StaffStats";
 import { SalesChartSection } from "@/components/staff/SalesChartSection";
 import { ShiftsList } from "@/components/staff/ShiftsList";
-import { DatabasePurchase, StaffMemberStats } from "@/types/purchase";
+import { DatabasePurchase, StaffMemberStats, TotalPurchase } from "@/types/purchase";
+import { mapToTotalPurchase } from "@/utils/purchaseMappers";
 
 const StaffMember = () => {
   const navigate = useNavigate();
@@ -28,7 +29,9 @@ const StaffMember = () => {
       if (salesError) throw salesError;
       if (!sales || sales.length === 0) return null;
 
-      const salesByDate = (sales as DatabasePurchase[]).reduce((acc: { [key: string]: DatabasePurchase[] }, sale) => {
+      const totalPurchases = sales.map(mapToTotalPurchase);
+
+      const salesByDate = totalPurchases.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
         const dateStr = new Date(sale.timestamp).toDateString();
         if (!acc[dateStr]) {
           acc[dateStr] = [];
@@ -50,7 +53,7 @@ const StaffMember = () => {
       const worstDay = sortedDays[sortedDays.length - 1];
 
       const firstSale = new Date(sales[0].timestamp);
-      const totalAmount = (sales as DatabasePurchase[]).reduce((sum, sale) => sum + (Number(sale.amount) || 0), 0);
+      const totalAmount = totalPurchases.reduce((sum, sale) => sum + (Number(sale.amount) || 0), 0);
       const averageAmount = totalAmount / sales.length;
       const uniqueDays = new Set(sales.map(s => new Date(s.timestamp).toDateString()));
 
@@ -61,7 +64,7 @@ const StaffMember = () => {
         averageAmount,
         salesCount: sales.length,
         daysActive: uniqueDays.size,
-        sales: sales as DatabasePurchase[],
+        sales: totalPurchases,
         shifts: Object.entries(salesByDate).map(([dateStr, dateSales]) => ({
           id: new Date(dateStr).toISOString(),
           presence_start: new Date(dateStr).toISOString(),

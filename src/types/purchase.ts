@@ -1,5 +1,6 @@
 export interface DatabasePurchase {
-  amount: string;
+  id?: string;
+  amount: string | number;
   country: string | null;
   created_at: string | null;
   currency: string | null;
@@ -12,11 +13,12 @@ export interface DatabasePurchase {
   vat_amount: string | null;
   payment_type?: string | null;
   product_name?: string | null;
+  source?: string;
 }
 
 export interface TotalPurchase {
   id: string;
-  purchase_uuid: string | null;
+  purchase_uuid: string;
   timestamp: string;
   amount: number;
   user_display_name: string | null;
@@ -42,7 +44,7 @@ export interface StaffMemberStats {
   averageAmount: number;
   daysActive: number;
   salesCount: number;
-  totalSales?: number; // Added for Staff.tsx
+  totalSales?: number;
   sales: TotalPurchase[];
   shifts: {
     id: string;
