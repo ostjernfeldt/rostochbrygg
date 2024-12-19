@@ -111,11 +111,17 @@ const StaffMember = () => {
 
   const statsData = {
     salesCount: memberData.salesCount,
-    averageValue: memberData.averageAmount,
+    averageValue: memberData.averageAmount / 100,
     activeDays: memberData.daysActive,
     firstSaleDate: memberData.firstSale.toISOString(),
-    bestDay: memberData.bestDay,
-    worstDay: memberData.worstDay
+    bestDay: {
+      ...memberData.bestDay,
+      amount: memberData.bestDay.amount / 100
+    },
+    worstDay: {
+      ...memberData.worstDay,
+      amount: memberData.worstDay.amount / 100
+    }
   };
 
   return (
@@ -132,7 +138,7 @@ const StaffMember = () => {
 
       <div className="space-y-4">
         <StaffStats stats={statsData} />
-        <SalesChartSection sales={memberData.sales} />
+        <SalesChartSection sales={memberData.sales.map(sale => ({ ...sale, amount: sale.amount / 100 }))} />
         <ShiftsList shifts={memberData.shifts} />
       </div>
     </PageLayout>
