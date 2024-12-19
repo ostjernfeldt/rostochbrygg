@@ -176,7 +176,7 @@ export type Database = {
       }
       payments: {
         Row: {
-          amount: number | null
+          amount: string | null
           created_at: string | null
           id: string
           payment_uuid: string | null
@@ -185,7 +185,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          amount?: number | null
+          amount?: string | null
           created_at?: string | null
           id?: string
           payment_uuid?: string | null
@@ -194,7 +194,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          amount?: number | null
+          amount?: string | null
           created_at?: string | null
           id?: string
           payment_uuid?: string | null
@@ -219,10 +219,10 @@ export type Database = {
           name: string | null
           product_uuid: string | null
           purchase_uuid: string | null
-          quantity: number | null
-          unit_price: number | null
+          quantity: string | null
+          unit_price: string | null
           updated_at: string | null
-          vat_percentage: number | null
+          vat_percentage: string | null
         }
         Insert: {
           created_at?: string | null
@@ -230,10 +230,10 @@ export type Database = {
           name?: string | null
           product_uuid?: string | null
           purchase_uuid?: string | null
-          quantity?: number | null
-          unit_price?: number | null
+          quantity?: string | null
+          unit_price?: string | null
           updated_at?: string | null
-          vat_percentage?: number | null
+          vat_percentage?: string | null
         }
         Update: {
           created_at?: string | null
@@ -241,10 +241,10 @@ export type Database = {
           name?: string | null
           product_uuid?: string | null
           purchase_uuid?: string | null
-          quantity?: number | null
-          unit_price?: number | null
+          quantity?: string | null
+          unit_price?: string | null
           updated_at?: string | null
-          vat_percentage?: number | null
+          vat_percentage?: string | null
         }
         Relationships: [
           {
@@ -276,43 +276,43 @@ export type Database = {
       }
       purchases: {
         Row: {
-          amount: number | null
+          amount: string
           country: string | null
           created_at: string | null
           currency: string | null
           purchase_number: string | null
           purchase_uuid: string
-          timestamp: string | null
+          timestamp: string
           updated_at: string | null
           user_display_name: string | null
           user_uuid: string | null
-          vat_amount: number | null
+          vat_amount: string | null
         }
         Insert: {
-          amount?: number | null
+          amount: string
           country?: string | null
           created_at?: string | null
           currency?: string | null
           purchase_number?: string | null
           purchase_uuid: string
-          timestamp?: string | null
+          timestamp: string
           updated_at?: string | null
           user_display_name?: string | null
           user_uuid?: string | null
-          vat_amount?: number | null
+          vat_amount?: string | null
         }
         Update: {
-          amount?: number | null
+          amount?: string
           country?: string | null
           created_at?: string | null
           currency?: string | null
           purchase_number?: string | null
           purchase_uuid?: string
-          timestamp?: string | null
+          timestamp?: string
           updated_at?: string | null
           user_display_name?: string | null
           user_uuid?: string | null
-          vat_amount?: number | null
+          vat_amount?: string | null
         }
         Relationships: []
       }
