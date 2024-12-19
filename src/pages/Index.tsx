@@ -9,7 +9,7 @@ const Index = () => {
     queryFn: async () => {
       console.log("Fetching latest day sales...");
       
-      // First get the latest date with sales
+      // First get the latest date with sales, now explicitly sorted by timestamp
       const { data: dateData, error: dateError } = await supabase
         .from("total_purchases")
         .select("timestamp")
@@ -29,7 +29,7 @@ const Index = () => {
       const latestDate = new Date(dateData[0].timestamp);
       console.log("Latest date:", latestDate);
 
-      // Get all sales for that date
+      // Get all sales for that date, sorted by timestamp descending
       const startOfDay = new Date(latestDate);
       startOfDay.setHours(0, 0, 0, 0);
       
@@ -40,7 +40,8 @@ const Index = () => {
         .from("total_purchases")
         .select("amount")
         .gte("timestamp", startOfDay.toISOString())
-        .lte("timestamp", endOfDay.toISOString());
+        .lte("timestamp", endOfDay.toISOString())
+        .order("timestamp", { ascending: false });  // Added explicit sorting
 
       if (salesError) {
         console.error("Error fetching sales:", salesError);
