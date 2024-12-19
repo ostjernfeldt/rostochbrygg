@@ -44,7 +44,9 @@ serve(async (req) => {
     // Format numeric values properly
     const formatNumeric = (value: any) => {
       if (!value) return "0";
-      return value.toString().replace(',', '.');
+      // Convert comma to dot for decimal numbers and ensure it's a valid number
+      const normalizedValue = value.toString().replace(',', '.');
+      return isNaN(parseFloat(normalizedValue)) ? "0" : normalizedValue;
     };
 
     const mappedData = {
@@ -57,6 +59,8 @@ serve(async (req) => {
       country: purchaseData.country || null,
       currency: purchaseData.currency || null,
       user_display_name: purchaseData.userDisplayName || null,
+      payment_type: purchaseData.paymentType || null,
+      product_name: purchaseData.productName || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
@@ -65,7 +69,7 @@ serve(async (req) => {
 
     if (mappedData.purchase_uuid) {
       const { data: purchaseInsert, error: purchaseError } = await supabase
-        .from('total_purchases')
+        .from('purchases')
         .insert([mappedData])
 
       if (purchaseError) {

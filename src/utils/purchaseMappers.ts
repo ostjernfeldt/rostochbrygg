@@ -1,17 +1,10 @@
-import { TotalPurchase } from "@/types/database";
+import { DatabasePurchase, LegacyPurchaseFormat } from "@/types/purchase";
 
-export interface LegacyPurchaseFormat {
-  Timestamp: string;
-  Amount: number;
-  "User Display Name": string;
-  "Payment Type"?: string;
-  "Product Name"?: string;
-}
-
-export const mapDatabaseToLegacyFormat = (purchase: TotalPurchase): LegacyPurchaseFormat => {
+export const mapDatabaseToLegacyFormat = (purchase: DatabasePurchase): LegacyPurchaseFormat => {
   const normalizeNumeric = (value: string | null) => {
     if (!value) return 0;
-    return Number(value.replace(',', '.'));
+    const normalized = value.toString().replace(',', '.');
+    return isNaN(parseFloat(normalized)) ? 0 : parseFloat(normalized);
   };
 
   return {
@@ -23,6 +16,6 @@ export const mapDatabaseToLegacyFormat = (purchase: TotalPurchase): LegacyPurcha
   };
 };
 
-export const mapPurchaseArray = (purchases: TotalPurchase[]): LegacyPurchaseFormat[] => {
+export const mapPurchaseArray = (purchases: DatabasePurchase[]): LegacyPurchaseFormat[] => {
   return purchases.map(mapDatabaseToLegacyFormat);
 };

@@ -14,6 +14,14 @@ export interface DatabasePurchase {
   product_name?: string | null;
 }
 
+export interface LegacyPurchaseFormat {
+  Timestamp: string;
+  Amount: number;
+  "User Display Name": string;
+  "Payment Type"?: string;
+  "Product Name"?: string;
+}
+
 export interface StaffMemberStats {
   displayName: string;
   firstSale: Date;
