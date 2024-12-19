@@ -49,7 +49,8 @@ serve(async (req) => {
       return isNaN(parseFloat(normalizedValue)) ? "0" : normalizedValue;
     };
 
-    const mappedData = {
+    // Only include fields that exist in the purchases table
+    const purchaseRecord = {
       purchase_uuid: purchaseData.purchaseUuid || purchaseData.uuid || null,
       timestamp: purchaseData.timestamp || new Date().toISOString(),
       amount: formatNumeric(purchaseData.amount),
@@ -59,19 +60,17 @@ serve(async (req) => {
       country: purchaseData.country || null,
       currency: purchaseData.currency || null,
       user_display_name: purchaseData.userDisplayName || null,
-      payment_type: purchaseData.paymentType || null,
-      product_name: purchaseData.productName || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
 
-    console.log('Mapped data for insert:', mappedData)
+    console.log('Mapped data for purchases table:', purchaseRecord)
 
-    if (mappedData.purchase_uuid) {
+    if (purchaseRecord.purchase_uuid) {
       // Insert into purchases table
-      const { data: purchaseInsert, error: purchaseError } = await supabase
+      const { error: purchaseError } = await supabase
         .from('purchases')
-        .insert([mappedData])
+        .insert([purchaseRecord])
 
       if (purchaseError) {
         console.error('Error inserting purchase:', purchaseError)
@@ -90,23 +89,25 @@ serve(async (req) => {
         )
       }
 
-      console.log('Purchase inserted successfully:', purchaseInsert)
+      console.log('Purchase inserted successfully')
 
       // Also insert into total_purchases table
       const { error: totalPurchaseError } = await supabase
         .from('total_purchases')
         .insert([{
-          purchase_uuid: mappedData.purchase_uuid,
-          timestamp: mappedData.timestamp,
-          amount: parseFloat(mappedData.amount),
-          user_display_name: mappedData.user_display_name,
-          payment_type: mappedData.payment_type,
-          product_name: mappedData.product_name,
+          purchase_uuid: purchaseRecord.purchase_uuid,
+          timestamp: purchaseRecord.timestamp,
+          amount: parseFloat(purchaseRecord.amount),
+          user_display_name: purchaseRecord.user_display_name,
+          payment_type: purchaseData.paymentType || null,
+          product_name: purchaseData.productName || null,
           source: 'new'
         }])
 
       if (totalPurchaseError) {
         console.error('Error inserting into total_purchases:', totalPurchaseError)
+      } else {
+        console.log('Successfully inserted into total_purchases')
       }
     }
 
