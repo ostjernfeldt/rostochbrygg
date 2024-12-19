@@ -8,6 +8,24 @@ interface UserSales {
   salesCount: number;
 }
 
+interface TotalPurchase {
+  id: string;
+  purchase_uuid: string | null;
+  timestamp: string;
+  amount: number;
+  user_display_name: string | null;
+  payment_type: string | null;
+  product_name: string | null;
+  source: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+interface UserTotals {
+  totalAmount: number;
+  salesCount: number;
+}
+
 export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selectedDate: string) => {
   return useQuery({
     queryKey: ["challengeLeaders", type, selectedDate],
@@ -83,10 +101,10 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
 
         console.log(`Sales data for ${type}:`, sales);
 
-        const calculateLeaders = (sales: any[]) => {
+        const calculateLeaders = (sales: TotalPurchase[] | null): UserSales[] => {
           if (!sales || sales.length === 0) return [];
           
-          const userTotals = sales.reduce((acc: Record<string, { totalAmount: number; salesCount: number }>, sale) => {
+          const userTotals = sales.reduce<Record<string, UserTotals>>((acc, sale) => {
             const name = sale.user_display_name;
             if (!name) return acc;
             
