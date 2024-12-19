@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { format, startOfWeek, startOfDay, addDays, isSameDay, parseISO, isValid } from "date-fns";
 import { sv } from "date-fns/locale";
-import { LegacyPurchaseFormat } from "@/utils/purchaseMappers";
+import type { LegacyPurchaseFormat } from "@/types/purchase";
 
 interface SalesChartProps {
   transactions: LegacyPurchaseFormat[];

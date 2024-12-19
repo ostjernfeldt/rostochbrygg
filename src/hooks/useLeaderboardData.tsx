@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { mapPurchaseArray } from "@/utils/purchaseMappers";
 import type { Database } from "@/types/database";
+import type { LegacyPurchaseFormat } from "@/types/purchase";
 
 interface UserSales {
   "User Display Name": string;

@@ -34,3 +34,6 @@ export const mapToTotalPurchase = (purchase: any): TotalPurchase => {
     updated_at: purchase.updated_at
   };
 };
+
+// Re-export the type from types/purchase
+export type { LegacyPurchaseFormat } from "@/types/purchase";
