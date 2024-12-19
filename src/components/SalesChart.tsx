@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { format, startOfWeek, startOfDay, addDays, isSameDay, parseISO } from "date-fns";
+import { format, startOfWeek, startOfDay, addDays, isSameDay, parseISO, isValid } from "date-fns";
 import { sv } from "date-fns/locale";
 import { LegacyPurchaseFormat } from "@/utils/purchaseMappers";
 
@@ -15,17 +15,39 @@ export const SalesChart = ({
   transactions, 
   groupByWeek = false, 
   selectedPeriod,
-  showAccumulatedPerTransaction = false // Default to false to maintain existing behavior
+  showAccumulatedPerTransaction = false
 }: SalesChartProps) => {
   const chartData = useMemo(() => {
     if (transactions.length === 0) return [];
 
     console.log("Raw transactions:", transactions);
 
-    // Sort transactions by timestamp
-    const sortedTransactions = [...transactions].sort(
-      (a, b) => new Date(a.Timestamp).getTime() - new Date(b.Timestamp).getTime()
-    );
+    // Helper function to safely parse dates
+    const safeParseDate = (dateString: string) => {
+      try {
+        const parsedDate = parseISO(dateString);
+        return isValid(parsedDate) ? parsedDate : null;
+      } catch (error) {
+        console.error("Error parsing date:", dateString, error);
+        return null;
+      }
+    };
+
+    // Sort transactions by timestamp, filtering out invalid dates
+    const sortedTransactions = [...transactions]
+      .filter(t => {
+        const date = safeParseDate(t.Timestamp);
+        if (!date) {
+          console.warn("Invalid timestamp found:", t.Timestamp);
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const dateA = safeParseDate(a.Timestamp)!;
+        const dateB = safeParseDate(b.Timestamp)!;
+        return dateA.getTime() - dateB.getTime();
+      });
     
     console.log("Sorted transactions:", sortedTransactions);
 
@@ -33,37 +55,45 @@ export const SalesChart = ({
     if (showAccumulatedPerTransaction) {
       let cumulativeAmount = 0;
       return sortedTransactions.map(transaction => {
+        const date = safeParseDate(transaction.Timestamp);
+        if (!date) return null;
+        
         if (transaction.Amount) {
           cumulativeAmount += transaction.Amount;
         }
         return {
-          timestamp: transaction.Timestamp,
+          timestamp: date.toISOString(),
           amount: cumulativeAmount,
-          time: format(parseISO(transaction.Timestamp), 'HH:mm')
+          time: format(date, 'HH:mm')
         };
-      });
+      }).filter(Boolean);
     }
 
     // Handle daily view differently
     if (selectedPeriod === "day") {
       let cumulativeAmount = 0;
       return sortedTransactions.map(transaction => {
+        const date = safeParseDate(transaction.Timestamp);
+        if (!date) return null;
+        
         if (transaction.Amount) {
           cumulativeAmount += transaction.Amount;
         }
         return {
-          timestamp: transaction.Timestamp,
+          timestamp: date.toISOString(),
           amount: cumulativeAmount,
-          time: format(parseISO(transaction.Timestamp), 'HH:mm')
+          time: format(date, 'HH:mm')
         };
-      });
+      }).filter(Boolean);
     }
 
     if (groupByWeek) {
       // Group transactions by week and calculate cumulative amount for each week
       let cumulativeAmount = 0;
       const weeklyData = sortedTransactions.reduce((acc, transaction) => {
-        const date = new Date(transaction.Timestamp);
+        const date = safeParseDate(transaction.Timestamp);
+        if (!date) return acc;
+        
         const weekStart = startOfWeek(date, { locale: sv });
         const weekKey = format(weekStart, "yyyy-MM-dd");
         
@@ -91,7 +121,9 @@ export const SalesChart = ({
     } else {
       // For a specific week view, create data points for all days of the week
       if (sortedTransactions.length > 0) {
-        const firstDate = new Date(sortedTransactions[0].Timestamp);
+        const firstDate = safeParseDate(sortedTransactions[0].Timestamp);
+        if (!firstDate) return [];
+        
         const weekStart = startOfWeek(firstDate, { locale: sv });
         let cumulativeAmount = 0;
         
@@ -101,8 +133,8 @@ export const SalesChart = ({
           
           // Find transactions for this day and update cumulative amount
           sortedTransactions.forEach(transaction => {
-            const transactionDate = new Date(transaction.Timestamp);
-            if (isSameDay(transactionDate, currentDay) && transaction.Amount) {
+            const transactionDate = safeParseDate(transaction.Timestamp);
+            if (transactionDate && isSameDay(transactionDate, currentDay) && transaction.Amount) {
               cumulativeAmount += transaction.Amount;
             }
           });
@@ -118,10 +150,16 @@ export const SalesChart = ({
         return result;
       }
       
-      return sortedTransactions.map(transaction => ({
-        timestamp: transaction.Timestamp,
-        amount: Number(transaction.Amount) || 0
-      }));
+      return sortedTransactions
+        .map(transaction => {
+          const date = safeParseDate(transaction.Timestamp);
+          if (!date) return null;
+          return {
+            timestamp: date.toISOString(),
+            amount: Number(transaction.Amount) || 0
+          };
+        })
+        .filter(Boolean);
     }
   }, [transactions, groupByWeek, selectedPeriod, showAccumulatedPerTransaction]);
 
@@ -141,15 +179,25 @@ export const SalesChart = ({
             dataKey="timestamp" 
             stroke="#666"
             tickFormatter={(value) => {
-              if (showAccumulatedPerTransaction || selectedPeriod === "day") {
-                return format(new Date(value), 'HH:mm');
-              }
-              if (!groupByWeek) {
+              try {
                 const date = new Date(value);
-                const weekday = format(date, 'EEEEEE', { locale: sv }).toUpperCase();
-                return weekday === 'L' ? 'LÖ' : weekday === 'S' ? 'SÖ' : weekday;
+                if (!isValid(date)) {
+                  console.warn("Invalid date in XAxis:", value);
+                  return "";
+                }
+                
+                if (showAccumulatedPerTransaction || selectedPeriod === "day") {
+                  return format(date, 'HH:mm');
+                }
+                if (!groupByWeek) {
+                  const weekday = format(date, 'EEEEEE', { locale: sv }).toUpperCase();
+                  return weekday === 'L' ? 'LÖ' : weekday === 'S' ? 'SÖ' : weekday;
+                }
+                return `v.${format(date, 'w', { locale: sv })}`;
+              } catch (error) {
+                console.error("Error formatting date in XAxis:", error);
+                return "";
               }
-              return `v.${format(new Date(value), 'w', { locale: sv })}`;
             }}
           />
           <YAxis 
@@ -168,13 +216,23 @@ export const SalesChart = ({
               'Total försäljning'
             ]}
             labelFormatter={(label) => {
-              const date = new Date(label);
-              if (showAccumulatedPerTransaction || selectedPeriod === "day") {
-                return format(date, 'HH:mm');
+              try {
+                const date = new Date(label);
+                if (!isValid(date)) {
+                  console.warn("Invalid date in Tooltip:", label);
+                  return "";
+                }
+                
+                if (showAccumulatedPerTransaction || selectedPeriod === "day") {
+                  return format(date, 'HH:mm');
+                }
+                return groupByWeek 
+                  ? `Vecka ${format(date, 'w', { locale: sv })}`
+                  : format(date, 'EEEE d MMMM', { locale: sv });
+              } catch (error) {
+                console.error("Error formatting date in Tooltip:", error);
+                return "";
               }
-              return groupByWeek 
-                ? `Vecka ${format(date, 'w', { locale: sv })}`
-                : format(date, 'EEEE d MMMM', { locale: sv });
             }}
           />
           <Area 
