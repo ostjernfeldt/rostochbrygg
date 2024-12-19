@@ -49,10 +49,33 @@ serve(async (req) => {
       return isNaN(parseFloat(normalizedValue)) ? "0" : normalizedValue;
     };
 
+    // Format timestamp properly
+    const formatTimestamp = (timestamp: any) => {
+      if (!timestamp) return new Date().toISOString();
+      
+      // If timestamp is a number (unix timestamp), convert it to ISO string
+      if (typeof timestamp === 'number') {
+        // Check if timestamp is in milliseconds (13 digits) or seconds (10 digits)
+        const date = timestamp.toString().length > 10 
+          ? new Date(timestamp) 
+          : new Date(timestamp * 1000);
+        return date.toISOString();
+      }
+      
+      // If timestamp is already a string, ensure it's in ISO format
+      try {
+        const date = new Date(timestamp);
+        return date.toISOString();
+      } catch (error) {
+        console.error('Error formatting timestamp:', error);
+        return new Date().toISOString();
+      }
+    };
+
     // Only include fields that exist in the purchases table
     const purchaseRecord = {
       purchase_uuid: purchaseData.purchaseUuid || purchaseData.uuid || null,
-      timestamp: purchaseData.timestamp || new Date().toISOString(),
+      timestamp: formatTimestamp(purchaseData.timestamp),
       amount: formatNumeric(purchaseData.amount),
       user_uuid: purchaseData.userUuid || null,
       purchase_number: purchaseData.purchaseNumber || null,
