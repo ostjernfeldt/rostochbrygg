@@ -6,21 +6,21 @@ export const useSalaryData = () => {
   const { data: actualSellers, isLoading: sellersLoading } = useQuery({
     queryKey: ["actualSellers"],
     queryFn: async () => {
-      console.log("Fetching actual sellers from purchases...");
+      console.log("Fetching actual sellers from total_purchases...");
       const { data, error } = await supabase
-        .from("purchases")
-        .select('"User Display Name"')
-        .not("User Display Name", "is", null)
-        .not("User Display Name", "eq", "")
-        .not("User Display Name", "ilike", '%test%')
-        .not("User Display Name", "ilike", '%another%');
+        .from("total_purchases")
+        .select("user_display_name")
+        .not("user_display_name", "is", null)
+        .not("user_display_name", "eq", "")
+        .not("user_display_name", "ilike", '%test%')
+        .not("user_display_name", "ilike", '%another%');
 
       if (error) {
         console.error("Error fetching sellers:", error);
         throw error;
       }
 
-      const uniqueSellers = [...new Set(data.map(sale => sale["User Display Name"]))];
+      const uniqueSellers = [...new Set(data.map(sale => sale.user_display_name))];
       console.log("Unique sellers found:", uniqueSellers);
       return uniqueSellers;
     }
@@ -69,7 +69,7 @@ export const useSalaryData = () => {
     queryFn: async () => {
       console.log("Fetching sales...");
       const { data, error } = await supabase
-        .from("purchases")
+        .from("total_purchases")
         .select("*");
 
       if (error) {
