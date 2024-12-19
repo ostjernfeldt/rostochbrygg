@@ -27,37 +27,40 @@ export const LeaderboardItem = ({
     }
   };
 
-  const getPercentageChangeElement = () => {
-    if (percentageChange === 0) return null;
-    
-    const isPositive = percentageChange > 0;
-    return (
-      <span className={`percentage-change ${isPositive ? 'positive' : 'negative'}`}>
-        {isPositive ? '+' : ''}{percentageChange}%
-      </span>
-    );
+  const getRankColor = () => {
+    switch (rank) {
+      case 1:
+        return 'text-yellow-500'; // Gold
+      case 2:
+        return 'text-gray-400'; // Silver
+      case 3:
+        return 'text-amber-700'; // Bronze
+      default:
+        return 'text-gray-500';
+    }
   };
 
   return (
     <div 
-      className={`leaderboard-item hover:bg-gray-800/50 transition-colors cursor-pointer`}
+      className="bg-gray-900 p-4 rounded-xl hover:bg-gray-800/50 transition-colors cursor-pointer"
       onClick={handleClick}
     >
-      <div className="flex items-center gap-4">
-        <span className={`leaderboard-rank ${
-          rank === 1 ? 'gold' : 
-          rank === 2 ? 'silver' : 
-          rank === 3 ? 'bronze' : ''
-        }`}>#{rank}</span>
-        <div className="text-left">
-          <h3 className="font-bold text-lg">{displayName}</h3>
-          <p className="leaderboard-sales">
-            {salesCount} sälj
-            {getPercentageChangeElement()}
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className={`text-xl font-bold ${getRankColor()}`}>
+            #{rank}
+          </span>
+          <div>
+            <h3 className="font-semibold text-white">{displayName}</h3>
+            <p className="text-gray-400 text-sm">
+              {salesCount} sälj
+            </p>
+          </div>
         </div>
+        <span className="text-cyan-400 font-semibold">
+          SEK {totalAmount.toLocaleString()}
+        </span>
       </div>
-      <span className="leaderboard-amount">SEK {totalAmount.toLocaleString()}</span>
     </div>
   );
 };
