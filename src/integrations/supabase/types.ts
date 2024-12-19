@@ -426,7 +426,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      sync_total_purchases: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       article_category: "Kaffekunskap" | "Säljutbildning"

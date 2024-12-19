@@ -30,7 +30,7 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
   return useQuery({
     queryKey: ["challengeLeaders", type, selectedDate],
     queryFn: async () => {
-      console.log(`Fetching ${type} challenge leaders...`);
+      console.log(`Fetching ${type} challenge leaders from total_purchases...`);
       
       try {
         const { data: latestSale, error: latestError } = await supabase
