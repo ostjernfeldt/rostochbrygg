@@ -9,14 +9,14 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
       console.log("Fetching dates with sales activity...");
       const { data, error } = await supabase
         .from("purchases")
-        .select("Timestamp")
-        .order("Timestamp", { ascending: false });
+        .select("timestamp")
+        .order("timestamp", { ascending: false });
 
       if (error) throw error;
 
       // Get unique dates and format them
       const uniqueDates = Array.from(new Set(
-        data.map(purchase => format(new Date(purchase.Timestamp), 'yyyy-MM-dd'))
+        data.map(purchase => format(new Date(purchase.timestamp), 'yyyy-MM-dd'))
       ));
 
       console.log("Found sales dates:", uniqueDates);
