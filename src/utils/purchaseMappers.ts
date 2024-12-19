@@ -21,11 +21,17 @@ export const mapPurchaseArray = (purchases: (DatabasePurchase | TotalPurchase)[]
 };
 
 export const mapToTotalPurchase = (purchase: any): TotalPurchase => {
+  const normalizeAmount = (amount: number | string | null): number => {
+    if (!amount) return 0;
+    const numericAmount = typeof amount === 'number' ? amount : parseFloat(amount.toString().replace(',', '.'));
+    return isNaN(numericAmount) ? 0 : numericAmount;
+  };
+
   return {
     id: purchase.id || purchase.purchase_uuid,
     purchase_uuid: purchase.purchase_uuid,
     timestamp: purchase.timestamp,
-    amount: typeof purchase.amount === 'number' ? purchase.amount : parseFloat(purchase.amount),
+    amount: normalizeAmount(purchase.amount),
     user_display_name: purchase.user_display_name,
     payment_type: purchase.payment_type || null,
     product_name: purchase.product_name || null,
