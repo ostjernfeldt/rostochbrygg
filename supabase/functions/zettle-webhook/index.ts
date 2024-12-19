@@ -46,7 +46,10 @@ serve(async (req) => {
       if (!value) return "0";
       // Convert comma to dot for decimal numbers and ensure it's a valid number
       const normalizedValue = value.toString().replace(',', '.');
-      return isNaN(parseFloat(normalizedValue)) ? "0" : normalizedValue;
+      // Convert from minor units (cents) to major units
+      const numericValue = parseFloat(normalizedValue);
+      if (isNaN(numericValue)) return "0";
+      return (numericValue / 100).toString();
     };
 
     // Format timestamp properly
