@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { mapPurchaseArray } from "@/utils/purchaseMappers";
 
 interface SalesData {
   totalAmount: number;
@@ -18,11 +19,10 @@ export const useSalesData = () => {
     queryFn: async (): Promise<SalesData> => {
       console.log("Fetching latest sales data...");
       
-      // First, get the two latest distinct dates
       const { data: dateData, error: dateError } = await supabase
-        .from("purchases")
-        .select("Timestamp")
-        .order("Timestamp", { ascending: false });
+        .from("total_purchases")
+        .select("timestamp")
+        .order("timestamp", { ascending: false });
 
       if (dateError) {
         console.error("Error fetching dates:", dateError);
@@ -43,12 +43,10 @@ export const useSalesData = () => {
         };
       }
 
-      // Get unique dates
       const uniqueDates = Array.from(new Set(
-        dateData.map(d => new Date(d.Timestamp).toDateString())
+        dateData.map(d => new Date(d.timestamp).toDateString())
       )).map(dateStr => new Date(dateStr));
 
-      // Sort dates in descending order
       uniqueDates.sort((a, b) => b.getTime() - a.getTime());
 
       const latestDate = uniqueDates[0];
@@ -57,7 +55,6 @@ export const useSalesData = () => {
       console.log("Latest date:", latestDate);
       console.log("Previous date:", previousDate);
 
-      // Function to get sales data for a specific date
       const getSalesForDate = async (date: Date) => {
         const startOfDay = new Date(date);
         startOfDay.setHours(0, 0, 0, 0);
@@ -66,32 +63,28 @@ export const useSalesData = () => {
         endOfDay.setHours(23, 59, 59, 999);
 
         const { data: salesData, error: salesError } = await supabase
-          .from("purchases")
-          .select("Amount")
-          .gte("Timestamp", startOfDay.toISOString())
-          .lte("Timestamp", endOfDay.toISOString());
+          .from("total_purchases")
+          .select("*")
+          .gte("timestamp", startOfDay.toISOString())
+          .lte("timestamp", endOfDay.toISOString());
 
         if (salesError) {
           console.error("Error fetching sales data:", salesError);
           throw salesError;
         }
 
-        const totalAmount = salesData.reduce((sum, sale) => {
-          const amount = sale.Amount ? Number(sale.Amount) : 0;
-          return sum + amount;
-        }, 0);
-
-        const salesCount = salesData.length;
+        const mappedSales = mapPurchaseArray(salesData || []);
+        
+        const totalAmount = mappedSales.reduce((sum, sale) => sum + sale.Amount, 0);
+        const salesCount = mappedSales.length;
         const averageValue = salesCount > 0 ? totalAmount / salesCount : 0;
 
         return { totalAmount, salesCount, averageValue };
       };
 
-      // Get data for both days
       const latestData = await getSalesForDate(latestDate);
       const previousData = previousDate ? await getSalesForDate(previousDate) : null;
 
-      // Calculate percentage changes
       const calculatePercentageChange = (current: number, previous: number) => {
         if (!previous) return 0;
         return ((current - previous) / previous) * 100;

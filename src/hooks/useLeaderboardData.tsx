@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
-import { mapPurchaseArray } from "@/utils/purchaseMappers";
+import { mapPurchaseArray, LegacyPurchaseFormat } from "@/utils/purchaseMappers";
 
 interface UserSales {
   "User Display Name": string;
@@ -23,9 +23,8 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
       console.log(`Fetching ${type} challenge leaders...`);
       
       try {
-        // First, get the latest date with sales
         const { data: latestSale, error: latestError } = await supabase
-          .from("purchases")
+          .from("total_purchases")
           .select("timestamp")
           .order("timestamp", { ascending: false })
           .limit(1)
@@ -82,10 +81,8 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
             break;
         }
 
-        console.log("Fetching sales between:", startDate, "and", endDate);
-
         const { data: sales, error: salesError } = await supabase
-          .from("purchases")
+          .from("total_purchases")
           .select("*")
           .gte("timestamp", startDate.toISOString())
           .lte("timestamp", endDate.toISOString());
@@ -123,8 +120,6 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
         };
 
         const leaders = calculateLeaders(mappedSales);
-        console.log(`${type} leaders calculated:`, leaders);
-        console.log("Using latest date:", useLatestDate);
 
         return {
           dailyLeaders: type === 'daily' ? leaders : [],
