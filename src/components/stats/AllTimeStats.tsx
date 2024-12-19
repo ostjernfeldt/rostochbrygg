@@ -18,8 +18,8 @@ export const AllTimeStats = () => {
       const { data: sales, error: salesError } = await supabase
         .from("purchases")
         .select()
-        .not("User Display Name", "is", null)
-        .not("Amount", "is", null);
+        .not("user_display_name", "is", null)
+        .not("amount", "is", null);
 
       if (salesError) throw salesError;
       if (!sales || sales.length === 0) return null;
@@ -58,14 +58,14 @@ export const AllTimeStats = () => {
       <StatCard
         className="hall-of-fame-card hover:scale-[1.02] transition-all duration-300"
         title="Högst ackumulerad försäljning"
-        userName={stats.topAccumulatedSeller["User Display Name"]}
+        userName={stats.topAccumulatedSeller.user_display_name}
         value={`SEK ${Math.round(stats.topAccumulatedSeller.value).toLocaleString()}`}
       />
 
       <StatCard
         className="hall-of-fame-card hover:scale-[1.02] transition-all duration-300"
         title="Högsta registrerade sälj"
-        userName={stats.highestSale["User Display Name"]}
+        userName={stats.highestSale.user_display_name}
         value={`SEK ${Math.round(stats.highestSale.value).toLocaleString()}`}
         animationDelay="200ms"
       />
@@ -73,7 +73,7 @@ export const AllTimeStats = () => {
       <StatCard
         className="hall-of-fame-card hover:scale-[1.02] transition-all duration-300"
         title="Högsta snittordervärde"
-        userName={stats.topAverageValue["User Display Name"]}
+        userName={stats.topAverageValue.user_display_name}
         value={`SEK ${Math.round(stats.topAverageValue.value).toLocaleString()}`}
         animationDelay="400ms"
       />
@@ -81,7 +81,7 @@ export const AllTimeStats = () => {
       <StatCard
         className="hall-of-fame-card hover:scale-[1.02] transition-all duration-300"
         title="Högst närvaro senaste 30 dagarna"
-        userName={stats.topPresence["User Display Name"]}
+        userName={stats.topPresence.user_display_name}
         value={`${Math.round(stats.topPresence.value)} dagar`}
         animationDelay="600ms"
       />
