@@ -280,6 +280,7 @@ export type Database = {
           country: string | null
           created_at: string | null
           currency: string | null
+          payment_type: string | null
           purchase_number: string | null
           purchase_uuid: string
           timestamp: string
@@ -293,6 +294,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           currency?: string | null
+          payment_type?: string | null
           purchase_number?: string | null
           purchase_uuid: string
           timestamp: string
@@ -306,6 +308,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           currency?: string | null
+          payment_type?: string | null
           purchase_number?: string | null
           purchase_uuid?: string
           timestamp?: string
