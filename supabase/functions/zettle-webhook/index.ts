@@ -68,6 +68,7 @@ serve(async (req) => {
     console.log('Mapped data for insert:', mappedData)
 
     if (mappedData.purchase_uuid) {
+      // Insert into purchases table
       const { data: purchaseInsert, error: purchaseError } = await supabase
         .from('purchases')
         .insert([mappedData])
@@ -90,6 +91,23 @@ serve(async (req) => {
       }
 
       console.log('Purchase inserted successfully:', purchaseInsert)
+
+      // Also insert into total_purchases table
+      const { error: totalPurchaseError } = await supabase
+        .from('total_purchases')
+        .insert([{
+          purchase_uuid: mappedData.purchase_uuid,
+          timestamp: mappedData.timestamp,
+          amount: parseFloat(mappedData.amount),
+          user_display_name: mappedData.user_display_name,
+          payment_type: mappedData.payment_type,
+          product_name: mappedData.product_name,
+          source: 'new'
+        }])
+
+      if (totalPurchaseError) {
+        console.error('Error inserting into total_purchases:', totalPurchaseError)
+      }
     }
 
     return new Response(
