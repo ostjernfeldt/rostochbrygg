@@ -104,73 +104,73 @@ export type Database = {
       }
       legacy_purchases: {
         Row: {
-          Amount: number | null
-          Cost: number | null
+          Amount: string | null
+          Cost: string | null
           created_at: string | null
           Currency: string | null
-          "Discount Amount": number | null
-          "Discount Quantity": number | null
-          "Discount Value": number | null
-          "Gross Tax": number | null
-          "Gross Value": number | null
+          "Discount Amount": string | null
+          "Discount Quantity": string | null
+          "Discount Value": string | null
+          "Gross Tax": string | null
+          "Gross Value": string | null
           id: string
           "Payment Type": string | null
           "Product Name": string | null
           "Purchase Number": string | null
           "Purchase UUID": string | null
           Refunded: string | null
-          "Tax Amount": number | null
+          "Tax Amount": string | null
           Timestamp: string | null
-          "Unit Price": number | null
+          "Unit Price": string | null
           updated_at: string | null
           "User Display Name": string | null
-          "VAT Amount": number | null
+          "VAT Amount": string | null
         }
         Insert: {
-          Amount?: number | null
-          Cost?: number | null
+          Amount?: string | null
+          Cost?: string | null
           created_at?: string | null
           Currency?: string | null
-          "Discount Amount"?: number | null
-          "Discount Quantity"?: number | null
-          "Discount Value"?: number | null
-          "Gross Tax"?: number | null
-          "Gross Value"?: number | null
+          "Discount Amount"?: string | null
+          "Discount Quantity"?: string | null
+          "Discount Value"?: string | null
+          "Gross Tax"?: string | null
+          "Gross Value"?: string | null
           id?: string
           "Payment Type"?: string | null
           "Product Name"?: string | null
           "Purchase Number"?: string | null
           "Purchase UUID"?: string | null
           Refunded?: string | null
-          "Tax Amount"?: number | null
+          "Tax Amount"?: string | null
           Timestamp?: string | null
-          "Unit Price"?: number | null
+          "Unit Price"?: string | null
           updated_at?: string | null
           "User Display Name"?: string | null
-          "VAT Amount"?: number | null
+          "VAT Amount"?: string | null
         }
         Update: {
-          Amount?: number | null
-          Cost?: number | null
+          Amount?: string | null
+          Cost?: string | null
           created_at?: string | null
           Currency?: string | null
-          "Discount Amount"?: number | null
-          "Discount Quantity"?: number | null
-          "Discount Value"?: number | null
-          "Gross Tax"?: number | null
-          "Gross Value"?: number | null
+          "Discount Amount"?: string | null
+          "Discount Quantity"?: string | null
+          "Discount Value"?: string | null
+          "Gross Tax"?: string | null
+          "Gross Value"?: string | null
           id?: string
           "Payment Type"?: string | null
           "Product Name"?: string | null
           "Purchase Number"?: string | null
           "Purchase UUID"?: string | null
           Refunded?: string | null
-          "Tax Amount"?: number | null
+          "Tax Amount"?: string | null
           Timestamp?: string | null
-          "Unit Price"?: number | null
+          "Unit Price"?: string | null
           updated_at?: string | null
           "User Display Name"?: string | null
-          "VAT Amount"?: number | null
+          "VAT Amount"?: string | null
         }
         Relationships: []
       }
