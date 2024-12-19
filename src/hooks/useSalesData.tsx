@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mapPurchaseArray } from "@/utils/purchaseMappers";
+import { TotalPurchase } from "@/types/purchase";
 
 interface SalesData {
   totalAmount: number;
@@ -73,10 +74,8 @@ export const useSalesData = () => {
           throw salesError;
         }
 
-        const mappedSales = mapPurchaseArray(salesData || []);
-        
-        const totalAmount = mappedSales.reduce((sum, sale) => sum + sale.Amount, 0);
-        const salesCount = mappedSales.length;
+        const totalAmount = (salesData || []).reduce((sum, sale) => sum + (sale.amount || 0), 0);
+        const salesCount = salesData?.length || 0;
         const averageValue = salesCount > 0 ? totalAmount / salesCount : 0;
 
         return { totalAmount, salesCount, averageValue };

@@ -14,6 +14,19 @@ export interface DatabasePurchase {
   product_name?: string | null;
 }
 
+export interface TotalPurchase {
+  id: string;
+  purchase_uuid: string | null;
+  timestamp: string;
+  amount: number;
+  user_display_name: string | null;
+  payment_type: string | null;
+  product_name: string | null;
+  source: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 export interface LegacyPurchaseFormat {
   Timestamp: string;
   Amount: number;
@@ -29,12 +42,12 @@ export interface StaffMemberStats {
   averageAmount: number;
   daysActive: number;
   salesCount: number;
-  sales: DatabasePurchase[];
+  sales: TotalPurchase[];
   shifts: {
     id: string;
     presence_start: string;
     totalSales: number;
-    sales: DatabasePurchase[];
+    sales: TotalPurchase[];
   }[];
 }
 
