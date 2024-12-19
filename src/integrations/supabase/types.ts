@@ -355,6 +355,45 @@ export type Database = {
         }
         Relationships: []
       }
+      total_purchases: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          payment_type: string | null
+          product_name: string | null
+          purchase_uuid: string | null
+          source: string
+          timestamp: string
+          updated_at: string | null
+          user_display_name: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          payment_type?: string | null
+          product_name?: string | null
+          purchase_uuid?: string | null
+          source?: string
+          timestamp: string
+          updated_at?: string | null
+          user_display_name?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          payment_type?: string | null
+          product_name?: string | null
+          purchase_uuid?: string | null
+          source?: string
+          timestamp?: string
+          updated_at?: string | null
+          user_display_name?: string | null
+        }
+        Relationships: []
+      }
       user_presence: {
         Row: {
           created_at: string | null
