@@ -56,16 +56,19 @@ const Leaderboard = () => {
   const { data: weeklyLeaderboard, isLoading: isWeeklyLoading } = useLeaderboardData('weekly', selectedWeek);
   const { data: monthlyLeaderboard, isLoading: isMonthlyLoading } = useLeaderboardData('monthly', selectedMonth);
 
-  const handleUserClick = (userName: string) => {
-    navigate(`/staff/${encodeURIComponent(userName)}`);
+  const getLeaderboardTitle = () => {
+    if (dailyLeaderboard?.latestDate && dailyLeaderboard.latestDate !== selectedDay) {
+      return `Senaste försäljning ${format(new Date(dailyLeaderboard.latestDate), 'd MMMM')}`;
+    }
+    return "Dagens topplista";
   };
 
   return (
     <PageLayout>
       <div className="space-y-8">
         <LeaderboardSection
-          title="Dagens topplista"
-          data={dailyLeaderboard?.dailyLeaders || []}
+          title={getLeaderboardTitle()}
+          data={dailyLeaderboard?.dailyLeaders}
           isLoading={isDailyLoading}
           filter={{
             options: dayOptions,
@@ -73,12 +76,12 @@ const Leaderboard = () => {
             onValueChange: setSelectedDay,
             placeholder: "Välj datum"
           }}
-          onUserClick={handleUserClick}
+          onUserClick={(userName) => navigate(`/staff/${encodeURIComponent(userName)}`)}
         />
 
         <LeaderboardSection
           title="Veckans topplista"
-          data={weeklyLeaderboard?.weeklyLeaders || []}
+          data={weeklyLeaderboard?.weeklyLeaders}
           isLoading={isWeeklyLoading}
           filter={{
             options: weekOptions,
@@ -86,12 +89,12 @@ const Leaderboard = () => {
             onValueChange: setSelectedWeek,
             placeholder: "Välj vecka"
           }}
-          onUserClick={handleUserClick}
+          onUserClick={(userName) => navigate(`/staff/${encodeURIComponent(userName)}`)}
         />
 
         <LeaderboardSection
           title="Månadens topplista"
-          data={monthlyLeaderboard?.monthlyLeaders || []}
+          data={monthlyLeaderboard?.monthlyLeaders}
           isLoading={isMonthlyLoading}
           filter={{
             options: monthOptions,
@@ -99,7 +102,7 @@ const Leaderboard = () => {
             onValueChange: setSelectedMonth,
             placeholder: "Välj månad"
           }}
-          onUserClick={handleUserClick}
+          onUserClick={(userName) => navigate(`/staff/${encodeURIComponent(userName)}`)}
         />
       </div>
     </PageLayout>
