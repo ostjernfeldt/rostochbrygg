@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PageLayout } from "@/components/PageLayout";
+import { StaffMemberStats } from "@/types/purchase";
 import {
   Select,
   SelectContent,
@@ -13,16 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
-
-interface StaffMember {
-  displayName: string;
-  firstSale: Date;
-  totalSales: number;
-  averageAmount: number;
-  totalAmount: number;
-  daysActive: number;
-  salesCount: number;
-}
 
 type SortField = 'totalAmount' | 'salesCount' | 'averageAmount' | 'daysActive' | 'firstSale';
 
@@ -38,18 +29,18 @@ const Staff = () => {
       console.log("Fetching staff members data...");
       
       const { data: sales, error } = await supabase
-        .from("purchases")
+        .from("total_purchases")
         .select("*")
-        .not("User Display Name", "is", null)
-        .order("Timestamp", { ascending: true });
+        .not("user_display_name", "is", null)
+        .order("timestamp", { ascending: true });
 
       if (error) throw error;
       if (!sales || sales.length === 0) return [];
 
-      const staffStats = sales.reduce((acc: { [key: string]: StaffMember }, sale) => {
-        const displayName = sale["User Display Name"] as string;
-        const saleDate = new Date(sale.Timestamp as string);
-        const amount = Number(sale.Amount) || 0;
+      const staffStats = sales.reduce((acc: { [key: string]: StaffMemberStats }, sale) => {
+        const displayName = sale.user_display_name as string;
+        const saleDate = new Date(sale.timestamp);
+        const amount = Number(sale.amount) || 0;
 
         if (!acc[displayName]) {
           acc[displayName] = {
@@ -59,19 +50,22 @@ const Staff = () => {
             averageAmount: 0,
             totalAmount: 0,
             daysActive: 0,
-            salesCount: 0
+            salesCount: 0,
+            sales: [],
+            shifts: []
           };
         }
 
         acc[displayName].totalAmount += amount;
         acc[displayName].salesCount += 1;
         acc[displayName].averageAmount = acc[displayName].totalAmount / acc[displayName].salesCount;
+        acc[displayName].sales.push(sale);
 
         // Calculate unique days
         const uniqueDays = new Set(
           sales
-            .filter(s => s["User Display Name"] === displayName)
-            .map(s => new Date(s.Timestamp as string).toDateString())
+            .filter(s => s.user_display_name === displayName)
+            .map(s => new Date(s.timestamp).toDateString())
         );
         acc[displayName].daysActive = uniqueDays.size;
 
@@ -98,10 +92,10 @@ const Staff = () => {
       const multiplier = sortDirection === 'asc' ? 1 : -1;
       
       if (sortField === 'firstSale') {
-        return multiplier * (new Date(a.firstSale).getTime() - new Date(b.firstSale).getTime());
+        return multiplier * (a.firstSale.getTime() - b.firstSale.getTime());
       }
       
-      return multiplier * (a[sortField] - b[sortField]);
+      return multiplier * ((a[sortField] as number) - (b[sortField] as number));
     });
 
   if (isLoading) {

@@ -6,6 +6,7 @@ import { PageLayout } from "@/components/PageLayout";
 import { StaffStats } from "@/components/staff/StaffStats";
 import { SalesChartSection } from "@/components/staff/SalesChartSection";
 import { ShiftsList } from "@/components/staff/ShiftsList";
+import { DatabasePurchase, StaffMemberStats } from "@/types/purchase";
 
 const StaffMember = () => {
   const navigate = useNavigate();
@@ -18,20 +19,17 @@ const StaffMember = () => {
       
       if (!name) throw new Error("No name provided");
       
-      // Fetch sales data
       const { data: sales, error: salesError } = await supabase
-        .from("purchases")
+        .from("total_purchases")
         .select("*")
-        .eq("User Display Name", decodeURIComponent(name))
-        .order("Timestamp", { ascending: true });
+        .eq("user_display_name", decodeURIComponent(name))
+        .order("timestamp", { ascending: true });
 
       if (salesError) throw salesError;
-
       if (!sales || sales.length === 0) return null;
 
-      // Process sales data by date
-      const salesByDate = sales.reduce((acc: { [key: string]: any[] }, sale) => {
-        const dateStr = new Date(sale.Timestamp as string).toDateString();
+      const salesByDate = (sales as DatabasePurchase[]).reduce((acc: { [key: string]: DatabasePurchase[] }, sale) => {
+        const dateStr = new Date(sale.timestamp).toDateString();
         if (!acc[dateStr]) {
           acc[dateStr] = [];
         }
@@ -39,9 +37,8 @@ const StaffMember = () => {
         return acc;
       }, {});
 
-      // Calculate daily totals and find best/worst days
       const dailyTotals = Object.entries(salesByDate).map(([dateStr, dateSales]) => {
-        const totalAmount = dateSales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
+        const totalAmount = dateSales.reduce((sum, sale) => sum + (Number(sale.amount) || 0), 0);
         return {
           date: new Date(dateStr).toISOString(),
           amount: totalAmount
@@ -52,26 +49,29 @@ const StaffMember = () => {
       const bestDay = sortedDays[0];
       const worstDay = sortedDays[sortedDays.length - 1];
 
-      // Calculate overall stats
-      const firstSale = new Date(sales[0].Timestamp as string);
-      const totalAmount = sales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
+      const firstSale = new Date(sales[0].timestamp);
+      const totalAmount = (sales as DatabasePurchase[]).reduce((sum, sale) => sum + (Number(sale.amount) || 0), 0);
       const averageAmount = totalAmount / sales.length;
-      const uniqueDays = new Set(sales.map(s => new Date(s.Timestamp as string).toDateString()));
+      const uniqueDays = new Set(sales.map(s => new Date(s.timestamp).toDateString()));
 
-      return {
+      const memberStats: StaffMemberStats = {
         displayName: name,
         firstSale,
         totalAmount,
         averageAmount,
         salesCount: sales.length,
         daysActive: uniqueDays.size,
-        sales,
+        sales: sales as DatabasePurchase[],
         shifts: Object.entries(salesByDate).map(([dateStr, dateSales]) => ({
           id: new Date(dateStr).toISOString(),
           presence_start: new Date(dateStr).toISOString(),
-          totalSales: dateSales.reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0),
+          totalSales: dateSales.reduce((sum, sale) => sum + (Number(sale.amount) || 0), 0),
           sales: dateSales
-        })),
+        }))
+      };
+
+      return {
+        ...memberStats,
         bestDay,
         worstDay
       };

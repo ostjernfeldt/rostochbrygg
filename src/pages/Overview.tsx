@@ -10,7 +10,7 @@ import { DateFilterSection } from "@/components/overview/DateFilterSection";
 import { StatsSection } from "@/components/overview/StatsSection";
 
 export default function Overview() {
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("all"); // Changed default to "all"
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
@@ -65,25 +65,25 @@ export default function Overview() {
       const { data: sales, error } = await supabase
         .from("purchases")
         .select("*")
-        .gte("Timestamp", range.start.toISOString())
-        .lte("Timestamp", range.end.toISOString());
+        .gte("timestamp", range.start.toISOString())
+        .lte("timestamp", range.end.toISOString());
 
       if (error) throw error;
 
       // Get unique dates to count selling days
       const uniqueDates = new Set(
-        sales.map((sale) => format(new Date(sale.Timestamp), "yyyy-MM-dd"))
+        sales.map((sale) => format(new Date(sale.timestamp), "yyyy-MM-dd"))
       );
 
       // Get unique sellers
       const uniqueSellers = new Set(
-        sales.map((sale) => sale["User Display Name"])
+        sales.map((sale) => sale.user_display_name)
       );
 
       // Calculate payment method statistics with amounts
-      const paymentMethodStats = sales.reduce((acc, sale) => {
-        const method = sale["Payment Type"] || "Okänd";
-        const amount = Number(sale.Amount) || 0;
+      const paymentMethodStats = sales.reduce((acc: { [key: string]: { count: number; amount: number } }, sale) => {
+        const method = sale.payment_type || "Okänd";
+        const amount = Number(sale.amount) || 0;
         
         if (!acc[method]) {
           acc[method] = { count: 0, amount: 0 };
@@ -91,7 +91,7 @@ export default function Overview() {
         acc[method].count += 1;
         acc[method].amount += amount;
         return acc;
-      }, {} as Record<string, { count: number; amount: number }>);
+      }, {});
 
       const totalSales = sales.length;
       const paymentMethodStatsArray = Object.entries(paymentMethodStats).map(([method, { count, amount }]) => ({
@@ -104,7 +104,7 @@ export default function Overview() {
       console.log("Payment method stats:", paymentMethodStatsArray);
 
       const totalAmount = sales.reduce(
-        (sum, sale) => sum + (Number(sale.Amount) || 0),
+        (sum, sale) => sum + (Number(sale.amount) || 0),
         0
       );
 

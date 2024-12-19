@@ -1,16 +1,14 @@
-import { Database } from "@/integrations/supabase/types";
-
-type Purchase = Database["public"]["Tables"]["purchases"]["Row"];
+import { DatabasePurchase } from "@/types/purchase";
 
 interface TopPerformer {
   "User Display Name": string;
   value: number;
 }
 
-export const calculateTopSeller = (sales: Purchase[]): TopPerformer => {
+export const calculateTopSeller = (sales: DatabasePurchase[]): TopPerformer => {
   const accumulatedSales = sales.reduce((acc: { [key: string]: number }, sale) => {
-    const userName = sale["User Display Name"] as string;
-    acc[userName] = (acc[userName] || 0) + Number(sale.Amount);
+    const userName = sale.user_display_name as string;
+    acc[userName] = (acc[userName] || 0) + Number(sale.amount);
     return acc;
   }, {});
 
@@ -19,23 +17,23 @@ export const calculateTopSeller = (sales: Purchase[]): TopPerformer => {
     .sort((a, b) => b.value - a.value)[0];
 };
 
-export const calculateHighestSale = (sales: Purchase[]): TopPerformer => {
+export const calculateHighestSale = (sales: DatabasePurchase[]): TopPerformer => {
   const highestSale = sales
-    .sort((a, b) => Number(b.Amount) - Number(a.Amount))[0];
+    .sort((a, b) => Number(b.amount) - Number(a.amount))[0];
 
   return {
-    "User Display Name": highestSale["User Display Name"] as string,
-    value: Number(highestSale.Amount)
+    "User Display Name": highestSale.user_display_name as string,
+    value: Number(highestSale.amount)
   };
 };
 
-export const calculateTopAverageValue = (sales: Purchase[]): TopPerformer => {
+export const calculateTopAverageValue = (sales: DatabasePurchase[]): TopPerformer => {
   const userSales = sales.reduce((acc: { [key: string]: { total: number; count: number } }, sale) => {
-    const userName = sale["User Display Name"] as string;
+    const userName = sale.user_display_name as string;
     if (!acc[userName]) {
       acc[userName] = { total: 0, count: 0 };
     }
-    acc[userName].total += Number(sale.Amount);
+    acc[userName].total += Number(sale.amount);
     acc[userName].count += 1;
     return acc;
   }, {});
@@ -48,10 +46,9 @@ export const calculateTopAverageValue = (sales: Purchase[]): TopPerformer => {
   return averageValues.sort((a, b) => b.value - a.value)[0];
 };
 
-export const calculateTopPresence = (sales: Purchase[]): TopPerformer => {
+export const calculateTopPresence = (sales: DatabasePurchase[]): TopPerformer => {
   console.log("Calculating top presence from sales data...");
   
-  // Get current date and date 30 days ago
   const now = new Date();
   const thirtyDaysAgo = new Date(now);
   thirtyDaysAgo.setDate(now.getDate() - 30);
@@ -61,18 +58,16 @@ export const calculateTopPresence = (sales: Purchase[]): TopPerformer => {
     to: now.toISOString()
   });
 
-  // Filter sales to last 30 days and get unique dates per seller
   const recentSales = sales.filter(sale => {
-    const saleDate = new Date(sale.Timestamp as string);
+    const saleDate = new Date(sale.timestamp);
     return saleDate >= thirtyDaysAgo && saleDate <= now;
   });
 
   console.log("Found recent sales:", recentSales.length);
 
-  // Count unique dates per seller
   const presenceCounts = recentSales.reduce((acc: { [key: string]: Set<string> }, sale) => {
-    const userName = sale["User Display Name"] as string;
-    const dateKey = new Date(sale.Timestamp as string).toISOString().split('T')[0];
+    const userName = sale.user_display_name as string;
+    const dateKey = new Date(sale.timestamp).toISOString().split('T')[0];
     
     if (!acc[userName]) {
       acc[userName] = new Set<string>();
@@ -82,7 +77,6 @@ export const calculateTopPresence = (sales: Purchase[]): TopPerformer => {
     return acc;
   }, {});
 
-  // Convert to array and find seller with most unique dates
   const presenceArray = Object.entries(presenceCounts).map(([name, dates]) => ({
     "User Display Name": name,
     value: dates.size
