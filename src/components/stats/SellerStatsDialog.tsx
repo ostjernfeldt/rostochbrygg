@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { mapPurchaseArray } from "@/utils/purchaseMappers";
 
 interface SellerStatsDialogProps {
   isOpen: boolean;
@@ -24,8 +25,8 @@ export const SellerStatsDialog = ({ isOpen, onClose, type }: SellerStatsDialogPr
       // First, get the latest date with sales
       const { data: dateData, error: dateError } = await supabase
         .from("purchases")
-        .select("Timestamp")
-        .order("Timestamp", { ascending: false });
+        .select("timestamp")
+        .order("timestamp", { ascending: false });
 
       if (dateError) {
         console.error("Error fetching dates:", dateError);
@@ -38,7 +39,7 @@ export const SellerStatsDialog = ({ isOpen, onClose, type }: SellerStatsDialogPr
       }
 
       // Get the latest date
-      const latestDate = new Date(dateData[0].Timestamp as string);
+      const latestDate = new Date(dateData[0].timestamp);
       console.log("Latest date:", latestDate);
 
       // Set up time range for the latest date
@@ -50,23 +51,24 @@ export const SellerStatsDialog = ({ isOpen, onClose, type }: SellerStatsDialogPr
       // Get sales for the latest date
       const { data: sales, error } = await supabase
         .from("purchases")
-        .select('"User Display Name", Amount')
-        .gte("Timestamp", startOfDay.toISOString())
-        .lte("Timestamp", endOfDay.toISOString())
-        .not("User Display Name", "is", null)
-        .not("Amount", "is", null);
+        .select("*")
+        .gte("timestamp", startOfDay.toISOString())
+        .lte("timestamp", endOfDay.toISOString())
+        .not("user_display_name", "is", null);
 
       if (error) throw error;
       if (!sales || sales.length === 0) return [];
 
+      const mappedSales = mapPurchaseArray(sales);
+
       // Group sales by seller
-      const sellerStats = sales.reduce<Record<string, { total: number; count: number }>>(
+      const sellerStats = mappedSales.reduce<Record<string, { total: number; count: number }>>(
         (acc, sale) => {
           const sellerName = sale["User Display Name"];
           if (!acc[sellerName]) {
             acc[sellerName] = { total: 0, count: 0 };
           }
-          acc[sellerName].total += Number(sale.Amount);
+          acc[sellerName].total += sale.Amount;
           acc[sellerName].count += 1;
           return acc;
         },

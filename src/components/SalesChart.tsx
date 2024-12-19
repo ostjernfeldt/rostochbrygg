@@ -2,15 +2,13 @@ import { useMemo } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { format, startOfWeek, startOfDay, addDays, isSameDay, parseISO } from "date-fns";
 import { sv } from "date-fns/locale";
+import { LegacyPurchaseFormat } from "@/utils/purchaseMappers";
 
 interface SalesChartProps {
-  transactions: Array<{
-    Timestamp: string;
-    Amount: number | null;
-  }>;
+  transactions: LegacyPurchaseFormat[];
   groupByWeek?: boolean;
   selectedPeriod?: string;
-  showAccumulatedPerTransaction?: boolean; // New prop
+  showAccumulatedPerTransaction?: boolean;
 }
 
 export const SalesChart = ({ 

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { mapPurchaseArray } from "@/utils/purchaseMappers";
 
 interface UserSales {
   "User Display Name": string;
@@ -25,8 +26,8 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
         // First, get the latest date with sales
         const { data: latestSale, error: latestError } = await supabase
           .from("purchases")
-          .select("Timestamp")
-          .order("Timestamp", { ascending: false })
+          .select("timestamp")
+          .order("timestamp", { ascending: false })
           .limit(1)
           .single();
 
@@ -55,15 +56,15 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
             // Check if there are any sales for the selected date
             const { data: checkSales } = await supabase
               .from("purchases")
-              .select("id")
-              .gte("Timestamp", startDate.toISOString())
-              .lte("Timestamp", endDate.toISOString())
+              .select("purchase_uuid")
+              .gte("timestamp", startDate.toISOString())
+              .lte("timestamp", endDate.toISOString())
               .limit(1);
 
             // If no sales found for selected date, use the latest date with sales
             if (!checkSales || checkSales.length === 0) {
-              console.log("No sales for selected date, using latest date:", latestSale.Timestamp);
-              startDate = new Date(latestSale.Timestamp);
+              console.log("No sales for selected date, using latest date:", latestSale.timestamp);
+              startDate = new Date(latestSale.timestamp);
               startDate.setHours(0, 0, 0, 0);
               endDate = new Date(startDate);
               endDate.setHours(23, 59, 59, 999);
@@ -85,19 +86,21 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
 
         const { data: sales, error: salesError } = await supabase
           .from("purchases")
-          .select('"User Display Name", Amount, Timestamp')
-          .gte("Timestamp", startDate.toISOString())
-          .lte("Timestamp", endDate.toISOString());
+          .select("*")
+          .gte("timestamp", startDate.toISOString())
+          .lte("timestamp", endDate.toISOString());
 
         if (salesError) throw salesError;
 
-        const calculateLeaders = (sales: any[] | null) => {
+        const mappedSales = sales ? mapPurchaseArray(sales) : [];
+
+        const calculateLeaders = (sales: LegacyPurchaseFormat[]) => {
           if (!sales || sales.length === 0) return [];
           
           // Group sales by user and calculate total amount and count
           const userTotals = sales.reduce<UserTotals>((acc, sale) => {
             const name = sale["User Display Name"];
-            const amount = Number(sale.Amount || 0);
+            const amount = sale.Amount;
             
             if (!acc[name]) {
               acc[name] = { totalAmount: 0, salesCount: 0 };
@@ -119,7 +122,7 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
             .sort((a, b) => b.totalAmount - a.totalAmount);
         };
 
-        const leaders = calculateLeaders(sales || []);
+        const leaders = calculateLeaders(mappedSales);
         console.log(`${type} leaders calculated:`, leaders);
         console.log("Using latest date:", useLatestDate);
 
