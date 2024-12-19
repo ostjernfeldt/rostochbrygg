@@ -47,7 +47,7 @@ export const ShiftsList = ({ shifts }: ShiftsListProps) => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold">SEK {Math.round(shift.totalSales / 100).toLocaleString()}</div>
+                  <div className="font-bold">SEK {Math.round(shift.totalSales).toLocaleString()}</div>
                 </div>
               </div>
             </div>
