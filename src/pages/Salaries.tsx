@@ -22,7 +22,7 @@ const Salaries = () => {
     if (!sales) return 0;
     
     const periodSales = sales.filter(sale => 
-      sale["User Display Name"] === userName &&
+      sale.user_display_name === userName &&
       new Date(sale.timestamp) >= new Date(startDate) &&
       new Date(sale.timestamp) <= new Date(endDate)
     );
@@ -69,7 +69,7 @@ const Salaries = () => {
     const uniqueDates = new Set(
       sales
         .filter(sale => 
-          sale["User Display Name"] === userName &&
+          sale.user_display_name === userName &&
           new Date(sale.timestamp) >= new Date(startDate) &&
           new Date(sale.timestamp) <= new Date(endDate)
         )
