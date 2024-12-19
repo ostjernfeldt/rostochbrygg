@@ -1,11 +1,11 @@
-import { DatabasePurchase } from "@/types/purchase";
+import { TotalPurchase } from "@/types/database";
 
 interface TopPerformer {
   "User Display Name": string;
   value: number;
 }
 
-export const calculateTopSeller = (sales: DatabasePurchase[]): TopPerformer => {
+export const calculateTopSeller = (sales: TotalPurchase[]): TopPerformer => {
   const accumulatedSales = sales.reduce((acc: { [key: string]: number }, sale) => {
     const userName = sale.user_display_name as string;
     acc[userName] = (acc[userName] || 0) + Number(sale.amount);
@@ -17,7 +17,7 @@ export const calculateTopSeller = (sales: DatabasePurchase[]): TopPerformer => {
     .sort((a, b) => b.value - a.value)[0];
 };
 
-export const calculateHighestSale = (sales: DatabasePurchase[]): TopPerformer => {
+export const calculateHighestSale = (sales: TotalPurchase[]): TopPerformer => {
   const highestSale = sales
     .sort((a, b) => Number(b.amount) - Number(a.amount))[0];
 
@@ -27,7 +27,7 @@ export const calculateHighestSale = (sales: DatabasePurchase[]): TopPerformer =>
   };
 };
 
-export const calculateTopAverageValue = (sales: DatabasePurchase[]): TopPerformer => {
+export const calculateTopAverageValue = (sales: TotalPurchase[]): TopPerformer => {
   const userSales = sales.reduce((acc: { [key: string]: { total: number; count: number } }, sale) => {
     const userName = sale.user_display_name as string;
     if (!acc[userName]) {
@@ -46,7 +46,7 @@ export const calculateTopAverageValue = (sales: DatabasePurchase[]): TopPerforme
   return averageValues.sort((a, b) => b.value - a.value)[0];
 };
 
-export const calculateTopPresence = (sales: DatabasePurchase[]): TopPerformer => {
+export const calculateTopPresence = (sales: TotalPurchase[]): TopPerformer => {
   console.log("Calculating top presence from sales data...");
   
   const now = new Date();

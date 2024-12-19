@@ -1,19 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
-import { mapPurchaseArray, LegacyPurchaseFormat } from "@/utils/purchaseMappers";
+import { mapPurchaseArray } from "@/utils/purchaseMappers";
+import type { Database } from "@/types/database";
 
 interface UserSales {
   "User Display Name": string;
   totalAmount: number;
   salesCount: number;
-}
-
-interface UserTotals {
-  [key: string]: {
-    totalAmount: number;
-    salesCount: number;
-  };
 }
 
 export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selectedDate: string) => {
@@ -24,7 +18,7 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
       
       try {
         const { data: latestSale, error: latestError } = await supabase
-          .from("total_purchases")
+          .from("purchases")
           .select("timestamp")
           .order("timestamp", { ascending: false })
           .limit(1)
@@ -82,7 +76,7 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
         }
 
         const { data: sales, error: salesError } = await supabase
-          .from("total_purchases")
+          .from("purchases")
           .select("*")
           .gte("timestamp", startDate.toISOString())
           .lte("timestamp", endDate.toISOString());
@@ -94,8 +88,7 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
         const calculateLeaders = (sales: LegacyPurchaseFormat[]) => {
           if (!sales || sales.length === 0) return [];
           
-          // Group sales by user and calculate total amount and count
-          const userTotals = sales.reduce<UserTotals>((acc, sale) => {
+          const userTotals = sales.reduce<Record<string, { totalAmount: number; salesCount: number }>>((acc, sale) => {
             const name = sale["User Display Name"];
             const amount = sale.Amount;
             
@@ -109,7 +102,6 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
             return acc;
           }, {});
 
-          // Convert to array and sort by total amount
           return Object.entries(userTotals)
             .map(([name, { totalAmount, salesCount }]) => ({
               "User Display Name": name,
