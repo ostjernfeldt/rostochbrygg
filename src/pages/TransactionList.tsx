@@ -13,6 +13,7 @@ import {
 import { useState } from "react";
 import { SalesChart } from "@/components/SalesChart";
 import { PageLayout } from "@/components/PageLayout";
+import type { LegacyPurchaseFormat } from "@/types/purchase";
 
 const TransactionList = () => {
   const navigate = useNavigate();
@@ -92,15 +93,24 @@ const TransactionList = () => {
 
   // Get unique user display names from transactions
   const uniqueUsers = transactions?.transactions 
-    ? Array.from(new Set(transactions.transactions.map(t => t["user_display_name"])))
+    ? Array.from(new Set(transactions.transactions.map(t => t.user_display_name)))
     : [];
 
   // Filter transactions based on selected user
   const filteredTransactions = transactions?.transactions
     ? selectedUser === 'all'
       ? transactions.transactions
-      : transactions.transactions.filter(t => t["user_display_name"] === selectedUser)
+      : transactions.transactions.filter(t => t.user_display_name === selectedUser)
     : [];
+
+  // Map the transactions to LegacyPurchaseFormat for the SalesChart
+  const legacyFormattedTransactions: LegacyPurchaseFormat[] = filteredTransactions.map(t => ({
+    Timestamp: t.timestamp,
+    Amount: Number(t.amount),
+    "User Display Name": t.user_display_name || '',
+    "Payment Type": t.payment_type || undefined,
+    "Product Name": t.product_name || undefined
+  }));
 
   // Calculate total amount for selected user
   const selectedUserTotal = filteredTransactions.reduce((sum, transaction) => 
@@ -125,7 +135,7 @@ const TransactionList = () => {
       {transactions?.transactions && (
         <div className="mb-6">
           <SalesChart 
-            transactions={transactions.transactions} 
+            transactions={legacyFormattedTransactions} 
             showAccumulatedPerTransaction={true}
           />
         </div>
@@ -181,11 +191,11 @@ const TransactionList = () => {
               </div>
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between items-center">
-                  <span className="text-primary">{transaction["user_display_name"]}</span>
-                  <span className="text-gray-400">{transaction["payment_type"] || "Okänd betalningsmetod"}</span>
+                  <span className="text-primary">{transaction.user_display_name}</span>
+                  <span className="text-gray-400">{transaction.payment_type || "Okänd betalningsmetod"}</span>
                 </div>
                 <div className="text-sm text-gray-400">
-                  Produkt: {transaction["product_name"] || "Okänd produkt"}
+                  Produkt: {transaction.product_name || "Okänd produkt"}
                 </div>
               </div>
             </div>
