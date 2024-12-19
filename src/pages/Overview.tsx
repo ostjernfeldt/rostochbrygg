@@ -8,6 +8,7 @@ import { DateRange } from "react-day-picker";
 import { useLeaderboardDates } from "@/hooks/useLeaderboardDates";
 import { DateFilterSection } from "@/components/overview/DateFilterSection";
 import { StatsSection } from "@/components/overview/StatsSection";
+import { TotalPurchase } from "@/types/purchase";
 
 export default function Overview() {
   const [selectedPeriod, setSelectedPeriod] = useState<string>("all");
@@ -63,7 +64,7 @@ export default function Overview() {
       console.log("Fetching overview stats for period:", range);
 
       const { data: sales, error } = await supabase
-        .from("purchases")
+        .from("total_purchases")
         .select("*")
         .gte("timestamp", range.start.toISOString())
         .lte("timestamp", range.end.toISOString());
@@ -81,7 +82,7 @@ export default function Overview() {
       );
 
       // Calculate payment method statistics with amounts
-      const paymentMethodStats = sales.reduce((acc: { [key: string]: { count: number; amount: number } }, sale) => {
+      const paymentMethodStats = (sales as TotalPurchase[]).reduce((acc: { [key: string]: { count: number; amount: number } }, sale) => {
         const method = sale.payment_type || "Okänd";
         const amount = Number(sale.amount) || 0;
         
