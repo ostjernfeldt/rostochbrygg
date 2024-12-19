@@ -1,9 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
-import { mapPurchaseArray } from "@/utils/purchaseMappers";
-import type { Database } from "@/types/database";
-import type { LegacyPurchaseFormat } from "@/types/purchase";
 
 interface UserSales {
   "User Display Name": string;
@@ -19,7 +16,7 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
       
       try {
         const { data: latestSale, error: latestError } = await supabase
-          .from("purchases")
+          .from("total_purchases")
           .select("timestamp")
           .order("timestamp", { ascending: false })
           .limit(1)
@@ -49,8 +46,8 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
 
             // Check if there are any sales for the selected date
             const { data: checkSales } = await supabase
-              .from("purchases")
-              .select("purchase_uuid")
+              .from("total_purchases")
+              .select("id")
               .gte("timestamp", startDate.toISOString())
               .lte("timestamp", endDate.toISOString())
               .limit(1);
@@ -77,27 +74,27 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
         }
 
         const { data: sales, error: salesError } = await supabase
-          .from("purchases")
+          .from("total_purchases")
           .select("*")
           .gte("timestamp", startDate.toISOString())
           .lte("timestamp", endDate.toISOString());
 
         if (salesError) throw salesError;
 
-        const mappedSales = sales ? mapPurchaseArray(sales) : [];
+        console.log(`Sales data for ${type}:`, sales);
 
-        const calculateLeaders = (sales: LegacyPurchaseFormat[]) => {
+        const calculateLeaders = (sales: any[]) => {
           if (!sales || sales.length === 0) return [];
           
-          const userTotals = sales.reduce<Record<string, { totalAmount: number; salesCount: number }>>((acc, sale) => {
-            const name = sale["User Display Name"];
-            const amount = sale.Amount;
+          const userTotals = sales.reduce((acc: Record<string, { totalAmount: number; salesCount: number }>, sale) => {
+            const name = sale.user_display_name;
+            if (!name) return acc;
             
             if (!acc[name]) {
               acc[name] = { totalAmount: 0, salesCount: 0 };
             }
             
-            acc[name].totalAmount += amount;
+            acc[name].totalAmount += Number(sale.amount) || 0;
             acc[name].salesCount += 1;
             
             return acc;
@@ -112,7 +109,8 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
             .sort((a, b) => b.totalAmount - a.totalAmount);
         };
 
-        const leaders = calculateLeaders(mappedSales);
+        const leaders = calculateLeaders(sales);
+        console.log(`${type} leaders:`, leaders);
 
         return {
           dailyLeaders: type === 'daily' ? leaders : [],
