@@ -1,7 +1,7 @@
 import { TotalPurchase } from "@/types/database";
 
 interface TopPerformer {
-  "User Display Name": string;
+  user_display_name: string;
   value: number;
 }
 
@@ -13,7 +13,7 @@ export const calculateTopSeller = (sales: TotalPurchase[]): TopPerformer => {
   }, {});
 
   return Object.entries(accumulatedSales)
-    .map(([name, total]) => ({ "User Display Name": name, value: total }))
+    .map(([name, total]) => ({ user_display_name: name, value: total }))
     .sort((a, b) => b.value - a.value)[0];
 };
 
@@ -22,7 +22,7 @@ export const calculateHighestSale = (sales: TotalPurchase[]): TopPerformer => {
     .sort((a, b) => Number(b.amount) - Number(a.amount))[0];
 
   return {
-    "User Display Name": highestSale.user_display_name as string,
+    user_display_name: highestSale.user_display_name as string,
     value: Number(highestSale.amount)
   };
 };
@@ -39,7 +39,7 @@ export const calculateTopAverageValue = (sales: TotalPurchase[]): TopPerformer =
   }, {});
 
   const averageValues = Object.entries(userSales).map(([name, { total, count }]) => ({
-    "User Display Name": name,
+    user_display_name: name,
     value: total / count
   }));
 
@@ -78,14 +78,14 @@ export const calculateTopPresence = (sales: TotalPurchase[]): TopPerformer => {
   }, {});
 
   const presenceArray = Object.entries(presenceCounts).map(([name, dates]) => ({
-    "User Display Name": name,
+    user_display_name: name,
     value: dates.size
   }));
 
   console.log("Presence counts:", presenceArray);
 
   if (presenceArray.length === 0) {
-    return { "User Display Name": "Ingen data", value: 0 };
+    return { user_display_name: "Ingen data", value: 0 };
   }
 
   return presenceArray.sort((a, b) => b.value - a.value)[0];
