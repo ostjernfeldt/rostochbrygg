@@ -6,7 +6,7 @@ import { PageLayout } from "@/components/PageLayout";
 import { StaffStats } from "@/components/staff/StaffStats";
 import { SalesChartSection } from "@/components/staff/SalesChartSection";
 import { ShiftsList } from "@/components/staff/ShiftsList";
-import { DatabasePurchase, StaffMemberStats, TotalPurchase } from "@/types/purchase";
+import { StaffMemberStats, TotalPurchase } from "@/types/purchase";
 import { mapToTotalPurchase } from "@/utils/purchaseMappers";
 
 const StaffMember = () => {

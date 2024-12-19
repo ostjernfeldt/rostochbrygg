@@ -20,7 +20,7 @@ export const mapPurchaseArray = (purchases: (DatabasePurchase | TotalPurchase)[]
   return purchases.map(mapDatabaseToLegacyFormat);
 };
 
-export const mapToTotalPurchase = (purchase: DatabasePurchase): TotalPurchase => {
+export const mapToTotalPurchase = (purchase: any): TotalPurchase => {
   return {
     id: purchase.id || purchase.purchase_uuid,
     purchase_uuid: purchase.purchase_uuid,
