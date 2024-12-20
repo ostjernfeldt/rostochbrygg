@@ -75,67 +75,41 @@ serve(async (req) => {
       }
     };
 
-    // Only include fields that exist in the purchases table
-    const purchaseRecord = {
-      purchase_uuid: purchaseData.purchaseUuid || purchaseData.uuid || null,
-      timestamp: formatTimestamp(purchaseData.timestamp),
-      amount: formatNumeric(purchaseData.amount),
-      user_uuid: purchaseData.userUuid || null,
-      purchase_number: purchaseData.purchaseNumber || null,
-      vat_amount: formatNumeric(purchaseData.vatAmount),
-      country: purchaseData.country || null,
-      currency: purchaseData.currency || null,
-      user_display_name: purchaseData.userDisplayName || null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+    const formattedTimestamp = formatTimestamp(purchaseData.timestamp);
+    const formattedAmount = formatNumeric(purchaseData.amount);
+    const formattedVatAmount = formatNumeric(purchaseData.vatAmount);
+
+    // Insert directly into total_purchases
+    const { error: totalPurchaseError } = await supabase
+      .from('total_purchases')
+      .insert([{
+        purchase_uuid: purchaseData.purchaseUuid || purchaseData.uuid,
+        timestamp: formattedTimestamp,
+        amount: parseFloat(formattedAmount),
+        user_display_name: purchaseData.userDisplayName,
+        payment_type: purchaseData.paymentType,
+        product_name: purchaseData.productName,
+        source: 'new'
+      }]);
+
+    if (totalPurchaseError) {
+      console.error('Error inserting into total_purchases:', totalPurchaseError);
+      return new Response(
+        JSON.stringify({
+          message: 'Failed to insert purchase data',
+          error: totalPurchaseError.message
+        }),
+        { 
+          status: 200,
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
     }
 
-    console.log('Mapped data for purchases table:', purchaseRecord)
-
-    if (purchaseRecord.purchase_uuid) {
-      // Insert into purchases table
-      const { error: purchaseError } = await supabase
-        .from('purchases')
-        .insert([purchaseRecord])
-
-      if (purchaseError) {
-        console.error('Error inserting purchase:', purchaseError)
-        return new Response(
-          JSON.stringify({
-            message: 'Processed but failed to insert purchase data',
-            error: purchaseError.message
-          }),
-          { 
-            status: 200,
-            headers: { 
-              ...corsHeaders,
-              'Content-Type': 'application/json' 
-            } 
-          }
-        )
-      }
-
-      console.log('Purchase inserted successfully')
-
-      // Also insert into total_purchases table
-      const { error: totalPurchaseError } = await supabase
-        .from('total_purchases')
-        .insert([{
-          purchase_uuid: purchaseRecord.purchase_uuid,
-          timestamp: purchaseRecord.timestamp,
-          amount: parseFloat(purchaseRecord.amount),
-          user_display_name: purchaseRecord.user_display_name,
-          payment_type: purchaseData.paymentType || null,
-          product_name: purchaseData.productName || null,
-          source: 'new'
-        }])
-
-      if (totalPurchaseError) {
-        console.error('Error inserting into total_purchases:', totalPurchaseError)
-      } else {
-        console.log('Successfully inserted into total_purchases')
-      }
-    }
+    console.log('Successfully inserted into total_purchases');
 
     return new Response(
       JSON.stringify({
@@ -149,10 +123,10 @@ serve(async (req) => {
           'Content-Type': 'application/json' 
         } 
       }
-    )
+    );
 
   } catch (err) {
-    console.error('Unexpected error:', err)
+    console.error('Unexpected error:', err);
     return new Response(
       JSON.stringify({
         message: 'Webhook received but encountered an error',
@@ -165,6 +139,6 @@ serve(async (req) => {
           'Content-Type': 'application/json' 
         } 
       }
-    )
+    );
   }
-})
+});
