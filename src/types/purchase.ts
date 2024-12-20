@@ -29,6 +29,7 @@ export interface TotalPurchase {
   updated_at: string | null;
   refunded: boolean | null;
   refund_uuid: string | null;
+  refund_timestamp?: string;
 }
 
 export interface LegacyPurchaseFormat {

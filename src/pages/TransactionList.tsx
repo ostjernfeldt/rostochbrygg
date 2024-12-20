@@ -22,7 +22,6 @@ const TransactionList = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      // First try to get today's transactions
       const todayResult = await supabase
         .from("total_purchases")
         .select()
@@ -36,15 +35,13 @@ const TransactionList = () => {
 
       console.log("Today's transactions:", todayResult.data);
 
-      // If we have transactions for today, return them
       if (todayResult.data && todayResult.data.length > 0) {
         return {
-          transactions: todayResult.data,
+          transactions: processTransactions(todayResult.data),
           date: today
         };
       }
 
-      // If no transactions today, find the latest date with transactions
       const latestDateResult = await supabase
         .from("total_purchases")
         .select("timestamp")
@@ -66,7 +63,6 @@ const TransactionList = () => {
       const latestDate = new Date(latestDateResult.data[0].timestamp);
       latestDate.setHours(0, 0, 0, 0);
       
-      // Get all transactions for the latest date
       const latestTransactions = await supabase
         .from("total_purchases")
         .select()
@@ -81,11 +77,43 @@ const TransactionList = () => {
 
       console.log("Latest transactions:", latestTransactions.data);
       return {
-        transactions: latestTransactions.data,
+        transactions: processTransactions(latestTransactions.data),
         date: latestDate
       };
     }
   });
+
+  // Process transactions to group refunds with their original transactions
+  const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurchase[] => {
+    const processedTransactions: TotalPurchase[] = [];
+    const refundMap = new Map<string, TotalPurchase>();
+
+    // First pass: collect all refunds
+    rawTransactions.forEach(transaction => {
+      if (transaction.refund_uuid) {
+        refundMap.set(transaction.refund_uuid, transaction);
+      }
+    });
+
+    // Second pass: process transactions
+    rawTransactions.forEach(transaction => {
+      if (transaction.purchase_uuid && refundMap.has(transaction.purchase_uuid)) {
+        // This is an original transaction that was refunded
+        const refundTransaction = refundMap.get(transaction.purchase_uuid)!;
+        processedTransactions.push({
+          ...transaction,
+          refunded: true,
+          refund_timestamp: refundTransaction.timestamp
+        });
+      } else if (!transaction.refund_uuid) {
+        // This is either a non-refunded transaction or a refund transaction
+        processedTransactions.push(transaction);
+      }
+      // Skip refund transactions as they're handled with their original transaction
+    });
+
+    return processedTransactions;
+  };
 
   // Filter transactions based on selected user
   const filteredTransactions = transactions?.transactions

@@ -15,9 +15,16 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
       }`}
     >
       <div className="flex justify-between items-start mb-2">
-        <span className="text-gray-400">
-          {format(new Date(transaction.timestamp), "HH:mm")}
-        </span>
+        <div className="flex flex-col">
+          <span className="text-gray-400">
+            Köp: {format(new Date(transaction.timestamp), "HH:mm")}
+          </span>
+          {isRefunded && transaction.refund_timestamp && (
+            <span className="text-red-500 text-sm">
+              Återbetald: {format(new Date(transaction.refund_timestamp), "HH:mm")}
+            </span>
+          )}
+        </div>
         <div className="flex flex-col items-end">
           <span className={`text-xl font-bold ${isRefunded ? 'text-red-500' : ''}`}>
             SEK {Math.abs(Number(transaction.amount))?.toLocaleString()}

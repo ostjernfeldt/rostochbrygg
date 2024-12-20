@@ -39,7 +39,8 @@ export const mapToTotalPurchase = (purchase: any): TotalPurchase => {
     created_at: purchase.created_at,
     updated_at: purchase.updated_at,
     refunded: purchase.refunded || false,
-    refund_uuid: purchase.refund_uuid || null
+    refund_uuid: purchase.refund_uuid || null,
+    refund_timestamp: purchase.refund_timestamp || null
   };
 };
 
