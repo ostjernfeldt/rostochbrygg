@@ -366,6 +366,8 @@ export type Database = {
           payment_type: string | null
           product_name: string | null
           purchase_uuid: string | null
+          refund_uuid: string | null
+          refunded: boolean | null
           source: string
           timestamp: string
           updated_at: string | null
@@ -378,6 +380,8 @@ export type Database = {
           payment_type?: string | null
           product_name?: string | null
           purchase_uuid?: string | null
+          refund_uuid?: string | null
+          refunded?: boolean | null
           source?: string
           timestamp: string
           updated_at?: string | null
@@ -390,6 +394,8 @@ export type Database = {
           payment_type?: string | null
           product_name?: string | null
           purchase_uuid?: string | null
+          refund_uuid?: string | null
+          refunded?: boolean | null
           source?: string
           timestamp?: string
           updated_at?: string | null

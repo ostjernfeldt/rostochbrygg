@@ -3,17 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useState } from "react";
 import { SalesChart } from "@/components/SalesChart";
 import { PageLayout } from "@/components/PageLayout";
-import type { LegacyPurchaseFormat } from "@/types/purchase";
+import { TransactionCard } from "@/components/transactions/TransactionCard";
+import { UserFilter } from "@/components/transactions/UserFilter";
+import { TransactionStats } from "@/components/transactions/TransactionStats";
+import type { LegacyPurchaseFormat, TotalPurchase } from "@/types/purchase";
 
 const TransactionList = () => {
   const navigate = useNavigate();
@@ -29,7 +25,7 @@ const TransactionList = () => {
       // First try to get today's transactions
       const todayResult = await supabase
         .from("total_purchases")
-        .select("*")
+        .select()
         .gte("timestamp", today.toISOString())
         .order("timestamp", { ascending: false });
 
@@ -73,7 +69,7 @@ const TransactionList = () => {
       // Get all transactions for the latest date
       const latestTransactions = await supabase
         .from("total_purchases")
-        .select("*")
+        .select()
         .gte("timestamp", latestDate.toISOString())
         .lt("timestamp", new Date(latestDate.getTime() + 24 * 60 * 60 * 1000).toISOString())
         .order("timestamp", { ascending: false });
@@ -91,11 +87,6 @@ const TransactionList = () => {
     }
   });
 
-  // Get unique user display names from transactions
-  const uniqueUsers = transactions?.transactions 
-    ? Array.from(new Set(transactions.transactions.map(t => t.user_display_name)))
-    : [];
-
   // Filter transactions based on selected user
   const filteredTransactions = transactions?.transactions
     ? selectedUser === 'all'
@@ -104,18 +95,15 @@ const TransactionList = () => {
     : [];
 
   // Map the transactions to LegacyPurchaseFormat for the SalesChart
-  const legacyFormattedTransactions: LegacyPurchaseFormat[] = filteredTransactions.map(t => ({
+  // Only include non-refunded transactions with positive amounts
+  const validTransactions = filteredTransactions.filter(t => !t.refunded && t.amount > 0);
+  const legacyFormattedTransactions: LegacyPurchaseFormat[] = validTransactions.map(t => ({
     Timestamp: t.timestamp,
     Amount: Number(t.amount),
     "User Display Name": t.user_display_name || '',
     "Payment Type": t.payment_type || undefined,
     "Product Name": t.product_name || undefined
   }));
-
-  // Calculate total amount for selected user
-  const selectedUserTotal = filteredTransactions.reduce((sum, transaction) => 
-    sum + (Number(transaction.amount) || 0), 0
-  );
 
   return (
     <PageLayout>
@@ -131,7 +119,6 @@ const TransactionList = () => {
         </h1>
       </div>
 
-      {/* Sales Chart */}
       {transactions?.transactions && (
         <div className="mb-6">
           <SalesChart 
@@ -141,31 +128,17 @@ const TransactionList = () => {
         </div>
       )}
 
-      {/* User filter dropdown */}
       <div className="mb-4 space-y-2">
-        <Select
-          value={selectedUser}
-          onValueChange={(value) => setSelectedUser(value)}
-        >
-          <SelectTrigger className="w-full bg-card border-primary/20">
-            <SelectValue placeholder="Filtrera på säljare" />
-          </SelectTrigger>
-          <SelectContent className="bg-card border-primary/20">
-            <SelectItem value="all">Alla säljare</SelectItem>
-            {uniqueUsers.map((user) => (
-              <SelectItem key={user} value={user || ''}>
-                {user || 'Okänd säljare'}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <UserFilter 
+          transactions={transactions?.transactions || []}
+          selectedUser={selectedUser}
+          onUserChange={setSelectedUser}
+        />
         
-        {selectedUser !== 'all' && (
-          <div className="p-4 bg-card rounded-xl border border-primary/20">
-            <span className="text-gray-400">Total försäljning:</span>
-            <span className="ml-2 text-xl font-bold">SEK {selectedUserTotal.toLocaleString()}</span>
-          </div>
-        )}
+        <TransactionStats 
+          transactions={filteredTransactions}
+          selectedUser={selectedUser}
+        />
       </div>
 
       {isLoading ? (
@@ -180,25 +153,10 @@ const TransactionList = () => {
       ) : filteredTransactions.length > 0 ? (
         <div className="space-y-4">
           {filteredTransactions.map((transaction) => (
-            <div key={transaction.purchase_uuid} className="bg-card rounded-xl p-4 hover:scale-[1.02] transition-transform duration-200">
-              <div className="flex justify-between items-start mb-2">
-                <span className="text-gray-400">
-                  {format(new Date(transaction.timestamp), "HH:mm")}
-                </span>
-                <span className="text-xl font-bold">
-                  SEK {Number(transaction.amount)?.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <div className="flex justify-between items-center">
-                  <span className="text-primary">{transaction.user_display_name}</span>
-                  <span className="text-gray-400">{transaction.payment_type || "Okänd betalningsmetod"}</span>
-                </div>
-                <div className="text-sm text-gray-400">
-                  Produkt: {transaction.product_name || "Okänd produkt"}
-                </div>
-              </div>
-            </div>
+            <TransactionCard 
+              key={transaction.purchase_uuid} 
+              transaction={transaction}
+            />
           ))}
         </div>
       ) : (
