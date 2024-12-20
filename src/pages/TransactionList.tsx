@@ -83,34 +83,65 @@ const TransactionList = () => {
     }
   });
 
-  // Process transactions to group refunds with their original transactions
+  // Process transactions to identify refunds based on matching amounts and user names
   const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurchase[] => {
     const processedTransactions: TotalPurchase[] = [];
-    const refundMap = new Map<string, TotalPurchase>();
+    const sortedTransactions = [...rawTransactions].sort((a, b) => 
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
 
-    // First pass: collect all refunds
-    rawTransactions.forEach(transaction => {
-      if (transaction.refund_uuid) {
-        refundMap.set(transaction.refund_uuid, transaction);
+    // Keep track of processed negative transactions to avoid duplicates
+    const processedNegativeTransactions = new Set<string>();
+
+    for (let i = 0; i < sortedTransactions.length; i++) {
+      const currentTransaction = sortedTransactions[i];
+      
+      // Skip if this negative transaction has already been processed
+      if (processedNegativeTransactions.has(currentTransaction.id)) {
+        continue;
       }
-    });
 
-    // Second pass: process transactions
-    rawTransactions.forEach(transaction => {
-      if (transaction.purchase_uuid && refundMap.has(transaction.purchase_uuid)) {
-        // This is an original transaction that was refunded
-        const refundTransaction = refundMap.get(transaction.purchase_uuid)!;
+      if (currentTransaction.amount > 0) {
+        // Look ahead for a matching refund
+        let isRefunded = false;
+        let refundTimestamp = null;
+        let refundId = null;
+
+        for (let j = i + 1; j < sortedTransactions.length; j++) {
+          const potentialRefund = sortedTransactions[j];
+          
+          // Check if this is a matching refund (same amount but negative, same user)
+          if (
+            potentialRefund.amount === -currentTransaction.amount &&
+            potentialRefund.user_display_name === currentTransaction.user_display_name
+          ) {
+            // Check if there are any other transactions by the same user between these timestamps
+            const transactionsBetween = sortedTransactions.slice(i + 1, j).filter(t => 
+              t.user_display_name === currentTransaction.user_display_name &&
+              t.id !== potentialRefund.id
+            );
+
+            if (transactionsBetween.length === 0) {
+              isRefunded = true;
+              refundTimestamp = potentialRefund.timestamp;
+              refundId = potentialRefund.id;
+              processedNegativeTransactions.add(potentialRefund.id);
+              break;
+            }
+          }
+        }
+
         processedTransactions.push({
-          ...transaction,
-          refunded: true,
-          refund_timestamp: refundTransaction.timestamp
+          ...currentTransaction,
+          refunded: isRefunded,
+          refund_timestamp: refundTimestamp,
+          refund_uuid: refundId
         });
-      } else if (!transaction.refund_uuid) {
-        // This is either a non-refunded transaction or a refund transaction
-        processedTransactions.push(transaction);
+      } else if (currentTransaction.amount < 0 && !processedNegativeTransactions.has(currentTransaction.id)) {
+        // If it's a negative amount that hasn't been matched to a purchase, add it separately
+        processedTransactions.push(currentTransaction);
       }
-      // Skip refund transactions as they're handled with their original transaction
-    });
+    }
 
     return processedTransactions;
   };
