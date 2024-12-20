@@ -6,7 +6,7 @@ interface TransactionCardProps {
 }
 
 export const TransactionCard = ({ transaction }: TransactionCardProps) => {
-  const isRefunded = transaction.refunded || transaction.amount < 0;
+  const isRefunded = transaction.refunded;
   
   return (
     <div 

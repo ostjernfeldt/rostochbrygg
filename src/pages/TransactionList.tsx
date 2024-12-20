@@ -87,11 +87,35 @@ const TransactionList = () => {
     }
   });
 
+  // Group related transactions (original purchase and refund)
+  const groupTransactions = (transactions: TotalPurchase[]) => {
+    const grouped = new Map<string, TotalPurchase>();
+    
+    transactions.forEach(transaction => {
+      const purchaseId = transaction.refund_uuid || transaction.purchase_uuid;
+      
+      if (transaction.refund_uuid) {
+        // This is a refund, mark the original transaction as refunded
+        const originalTransaction = grouped.get(transaction.refund_uuid);
+        if (originalTransaction) {
+          originalTransaction.refunded = true;
+        }
+      } else {
+        // This is an original transaction
+        if (!grouped.has(transaction.purchase_uuid)) {
+          grouped.set(transaction.purchase_uuid, transaction);
+        }
+      }
+    });
+    
+    return Array.from(grouped.values());
+  };
+
   // Filter transactions based on selected user
   const filteredTransactions = transactions?.transactions
     ? selectedUser === 'all'
-      ? transactions.transactions
-      : transactions.transactions.filter(t => t.user_display_name === selectedUser)
+      ? groupTransactions(transactions.transactions)
+      : groupTransactions(transactions.transactions.filter(t => t.user_display_name === selectedUser))
     : [];
 
   // Map the transactions to LegacyPurchaseFormat for the SalesChart
