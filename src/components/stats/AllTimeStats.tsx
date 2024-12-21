@@ -8,15 +8,16 @@ import {
   calculateTopAverageValue,
   calculateTopPresence
 } from "@/utils/statsCalculations";
+import { processTransactions, getValidTransactions } from "@/components/transactions/TransactionProcessor";
 
 export const AllTimeStats = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["allTimeStats"],
     queryFn: async () => {
-      console.log("Fetching all-time stats...");
+      console.log("Fetching all-time stats from total_purchases...");
       
       const { data: sales, error: salesError } = await supabase
-        .from("purchases")
+        .from("total_purchases")
         .select()
         .not("user_display_name", "is", null)
         .not("amount", "is", null);
@@ -24,11 +25,18 @@ export const AllTimeStats = () => {
       if (salesError) throw salesError;
       if (!sales || sales.length === 0) return null;
 
+      // Process transactions to handle refunds
+      const processedSales = processTransactions(sales);
+      const validSales = getValidTransactions(processedSales);
+
+      console.log("Processed sales:", processedSales);
+      console.log("Valid sales:", validSales);
+
       return {
-        topAccumulatedSeller: calculateTopSeller(sales),
-        highestSale: calculateHighestSale(sales),
-        topAverageValue: calculateTopAverageValue(sales),
-        topPresence: calculateTopPresence(sales)
+        topAccumulatedSeller: calculateTopSeller(validSales),
+        highestSale: calculateHighestSale(validSales),
+        topAverageValue: calculateTopAverageValue(validSales),
+        topPresence: calculateTopPresence(validSales)
       };
     }
   });

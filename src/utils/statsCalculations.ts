@@ -1,111 +1,81 @@
-import { TotalPurchase } from "@/types/database";
+import { TotalPurchase } from "@/types/purchase";
+import { subDays } from "date-fns";
 
-interface TopPerformer {
+interface StatsResult {
   user_display_name: string;
   value: number;
 }
 
-export const calculateTopSeller = (sales: TotalPurchase[]): TopPerformer => {
-  const accumulatedSales = sales.reduce((acc: { [key: string]: number }, sale) => {
-    const userName = sale.user_display_name as string;
-    if (!userName) return acc;
-    acc[userName] = (acc[userName] || 0) + Number(sale.amount);
-    return acc;
-  }, {});
-
-  const sortedSellers = Object.entries(accumulatedSales)
-    .map(([name, total]) => ({ user_display_name: name, value: total }))
-    .sort((a, b) => b.value - a.value);
-
-  return sortedSellers[0] || { user_display_name: "Ingen data", value: 0 };
-};
-
-export const calculateHighestSale = (sales: TotalPurchase[]): TopPerformer => {
-  if (!sales || sales.length === 0) {
-    return { user_display_name: "Ingen data", value: 0 };
-  }
-
-  const highestSale = sales
-    .sort((a, b) => Number(b.amount) - Number(a.amount))[0];
-
-  return {
-    user_display_name: highestSale.user_display_name || "Okänd",
-    value: Number(highestSale.amount)
-  };
-};
-
-export const calculateTopAverageValue = (sales: TotalPurchase[]): TopPerformer => {
-  if (!sales || sales.length === 0) {
-    return { user_display_name: "Ingen data", value: 0 };
-  }
-
-  const userSales = sales.reduce((acc: { [key: string]: { total: number; count: number } }, sale) => {
-    const userName = sale.user_display_name;
-    if (!userName) return acc;
+export const calculateTopSeller = (sales: TotalPurchase[]): StatsResult => {
+  const userTotals = sales.reduce<Record<string, number>>((acc, sale) => {
+    const name = sale.user_display_name;
+    if (!name) return acc;
     
-    if (!acc[userName]) {
-      acc[userName] = { total: 0, count: 0 };
-    }
-    acc[userName].total += Number(sale.amount);
-    acc[userName].count += 1;
+    acc[name] = (acc[name] || 0) + Number(sale.amount);
     return acc;
   }, {});
 
-  const averageValues = Object.entries(userSales)
+  return Object.entries(userTotals)
+    .map(([name, total]) => ({
+      user_display_name: name,
+      value: total
+    }))
+    .sort((a, b) => b.value - a.value)[0] || { user_display_name: '-', value: 0 };
+};
+
+export const calculateHighestSale = (sales: TotalPurchase[]): StatsResult => {
+  const highestSale = sales
+    .reduce((highest, sale) => {
+      const amount = Number(sale.amount);
+      return amount > highest.value ? { user_display_name: sale.user_display_name || '-', value: amount } : highest;
+    }, { user_display_name: '-', value: 0 });
+
+  return highestSale;
+};
+
+export const calculateTopAverageValue = (sales: TotalPurchase[]): StatsResult => {
+  const userSales = sales.reduce<Record<string, { total: number; count: number }>>((acc, sale) => {
+    const name = sale.user_display_name;
+    if (!name) return acc;
+    
+    if (!acc[name]) {
+      acc[name] = { total: 0, count: 0 };
+    }
+    acc[name].total += Number(sale.amount);
+    acc[name].count += 1;
+    return acc;
+  }, {});
+
+  return Object.entries(userSales)
     .map(([name, { total, count }]) => ({
       user_display_name: name,
       value: total / count
     }))
-    .sort((a, b) => b.value - a.value);
-
-  return averageValues[0] || { user_display_name: "Ingen data", value: 0 };
+    .sort((a, b) => b.value - a.value)[0] || { user_display_name: '-', value: 0 };
 };
 
-export const calculateTopPresence = (sales: TotalPurchase[]): TopPerformer => {
-  console.log("Calculating top presence from sales data...");
+export const calculateTopPresence = (sales: TotalPurchase[]): StatsResult => {
+  const thirtyDaysAgo = subDays(new Date(), 30);
   
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now);
-  thirtyDaysAgo.setDate(now.getDate() - 30);
-  
-  console.log("Date range:", {
-    from: thirtyDaysAgo.toISOString(),
-    to: now.toISOString()
-  });
+  const recentSales = sales.filter(sale => 
+    new Date(sale.timestamp) >= thirtyDaysAgo
+  );
 
-  const recentSales = sales.filter(sale => {
-    const saleDate = new Date(sale.timestamp);
-    return saleDate >= thirtyDaysAgo && saleDate <= now;
-  });
-
-  console.log("Found recent sales:", recentSales.length);
-
-  const presenceCounts = recentSales.reduce((acc: { [key: string]: Set<string> }, sale) => {
-    const userName = sale.user_display_name;
-    if (!userName) return acc;
+  const userDays = recentSales.reduce<Record<string, Set<string>>>((acc, sale) => {
+    const name = sale.user_display_name;
+    if (!name) return acc;
     
-    const dateKey = new Date(sale.timestamp).toISOString().split('T')[0];
-    
-    if (!acc[userName]) {
-      acc[userName] = new Set<string>();
+    if (!acc[name]) {
+      acc[name] = new Set();
     }
-    acc[userName].add(dateKey);
-    
+    acc[name].add(new Date(sale.timestamp).toDateString());
     return acc;
   }, {});
 
-  const presenceArray = Object.entries(presenceCounts)
-    .map(([name, dates]) => ({
+  return Object.entries(userDays)
+    .map(([name, days]) => ({
       user_display_name: name,
-      value: dates.size
+      value: days.size
     }))
-    .sort((a, b) => b.value - a.value);
-
-  console.log("Presence counts:", presenceArray);
-
-  if (presenceArray.length === 0) {
-    return { user_display_name: "Ingen data", value: 0 };
-  }
-
-  return presenceArray[0];
+    .sort((a, b) => b.value - a.value)[0] || { user_display_name: '-', value: 0 };
 };
