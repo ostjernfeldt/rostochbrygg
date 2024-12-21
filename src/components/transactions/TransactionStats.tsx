@@ -1,4 +1,5 @@
 import { TotalPurchase } from "@/types/purchase";
+import { getValidTotalAmount } from "./TransactionProcessor";
 
 interface TransactionStatsProps {
   transactions: TotalPurchase[];
@@ -6,12 +7,7 @@ interface TransactionStatsProps {
 }
 
 export const TransactionStats = ({ transactions, selectedUser }: TransactionStatsProps) => {
-  // Filter out refunded transactions and negative amounts (refunds)
-  const validTransactions = transactions.filter(t => !t.refunded && t.amount > 0);
-  
-  const selectedUserTotal = validTransactions.reduce((sum, transaction) => 
-    sum + (Number(transaction.amount) || 0), 0
-  );
+  const selectedUserTotal = getValidTotalAmount(transactions);
 
   if (selectedUser === 'all') return null;
 

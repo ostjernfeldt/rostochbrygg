@@ -60,6 +60,17 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
   return processedTransactions;
 };
 
+// Helper function to get only valid (non-refunded, positive amount) transactions
 export const getValidTransactions = (transactions: TotalPurchase[]): TotalPurchase[] => {
   return transactions.filter(t => !t.refunded && t.amount > 0);
+};
+
+// Helper function to count valid sales (excluding refunds)
+export const getValidSalesCount = (transactions: TotalPurchase[]): number => {
+  return getValidTransactions(transactions).length;
+};
+
+// Helper function to calculate total valid amount
+export const getValidTotalAmount = (transactions: TotalPurchase[]): number => {
+  return getValidTransactions(transactions).reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 };
