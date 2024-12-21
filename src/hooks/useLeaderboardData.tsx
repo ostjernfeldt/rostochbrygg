@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { processTransactions, getValidSalesCount, getValidTotalAmount } from "@/components/transactions/TransactionProcessor";
 
 interface UserSales {
   "User Display Name": string;
@@ -104,25 +105,23 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
         const calculateLeaders = (sales: TotalPurchase[] | null): UserSales[] => {
           if (!sales || sales.length === 0) return [];
           
-          const userTotals = sales.reduce<Record<string, UserTotals>>((acc, sale) => {
+          const processedSales = processTransactions(sales);
+          const userTotals = processedSales.reduce<Record<string, TotalPurchase[]>>((acc, sale) => {
             const name = sale.user_display_name;
             if (!name) return acc;
             
             if (!acc[name]) {
-              acc[name] = { totalAmount: 0, salesCount: 0 };
+              acc[name] = [];
             }
-            
-            acc[name].totalAmount += Number(sale.amount) || 0;
-            acc[name].salesCount += 1;
-            
+            acc[name].push(sale);
             return acc;
           }, {});
 
           return Object.entries(userTotals)
-            .map(([name, { totalAmount, salesCount }]) => ({
+            .map(([name, userSales]) => ({
               "User Display Name": name,
-              totalAmount,
-              salesCount
+              totalAmount: getValidTotalAmount(userSales),
+              salesCount: getValidSalesCount(userSales)
             }))
             .sort((a, b) => b.totalAmount - a.totalAmount);
         };
