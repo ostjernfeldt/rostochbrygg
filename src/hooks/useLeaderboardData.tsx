@@ -2,24 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { processTransactions, getValidSalesCount, getValidTotalAmount } from "@/components/transactions/TransactionProcessor";
+import { TotalPurchase } from "@/types/purchase";
 
 interface UserSales {
   "User Display Name": string;
   totalAmount: number;
   salesCount: number;
-}
-
-interface TotalPurchase {
-  id: string;
-  purchase_uuid: string | null;
-  timestamp: string;
-  amount: number;
-  user_display_name: string | null;
-  payment_type: string | null;
-  product_name: string | null;
-  source: string;
-  created_at: string | null;
-  updated_at: string | null;
 }
 
 interface UserTotals {
