@@ -34,12 +34,25 @@ export const LeaderboardSection = ({
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
+  const getRankEmoji = (index: number) => {
+    switch (index) {
+      case 0:
+        return "🥇";
+      case 1:
+        return "🥈";
+      case 2:
+        return "🥉";
+      default:
+        return `${index + 1}.`;
+    }
+  };
+
   const copyToClipboard = (data: UserSales[] | undefined) => {
     if (!data) return;
 
     const formattedData = data
       .map((user, index) => 
-        `${index + 1}. ${user["User Display Name"]}: ${user.totalAmount.toLocaleString()} kr`
+        `${getRankEmoji(index)} ${user["User Display Name"]}: ${user.totalAmount.toLocaleString()} kr`
       )
       .join('\n');
 
