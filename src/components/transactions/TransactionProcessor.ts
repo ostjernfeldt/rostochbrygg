@@ -1,5 +1,36 @@
 import { TotalPurchase } from "@/types/purchase";
 import { mapToTotalPurchase } from "@/utils/purchaseMappers";
+import { Json } from "@/types/json";
+
+interface PaymentReference {
+  refundsPayment?: string;
+}
+
+interface Payment {
+  uuid: string;
+  amount: number;
+  type: string;
+  references?: PaymentReference;
+}
+
+const parsePayment = (payment: Json | Payment): Payment | null => {
+  if (typeof payment === 'string') return null;
+  if (!payment || typeof payment !== 'object') return null;
+  
+  return {
+    uuid: (payment as any).uuid || '',
+    amount: Number((payment as any).amount) || 0,
+    type: (payment as any).type || '',
+    references: (payment as any).references
+  };
+};
+
+const parsePayments = (payments: Json | Payment[] | null): Payment[] => {
+  if (!payments) return [];
+  if (!Array.isArray(payments)) return [];
+  
+  return payments.map(parsePayment).filter((p): p is Payment => p !== null);
+};
 
 export const processTransactions = (rawTransactions: any[]): TotalPurchase[] => {
   const mappedTransactions = rawTransactions.map(mapToTotalPurchase);
@@ -13,11 +44,10 @@ export const processTransactions = (rawTransactions: any[]): TotalPurchase[] => 
 
   // First pass: collect all refunded payment UUIDs
   for (const transaction of sortedTransactions) {
-    if (transaction.payments && Array.isArray(transaction.payments)) {
-      for (const payment of transaction.payments) {
-        if (payment.references?.refundsPayment) {
-          refundedPaymentUuids.add(payment.references.refundsPayment);
-        }
+    const payments = parsePayments(transaction.payments);
+    for (const payment of payments) {
+      if (payment.references?.refundsPayment) {
+        refundedPaymentUuids.add(payment.references.refundsPayment);
       }
     }
   }
@@ -25,14 +55,13 @@ export const processTransactions = (rawTransactions: any[]): TotalPurchase[] => 
   // Second pass: process transactions
   for (const transaction of sortedTransactions) {
     let isRefunded = false;
+    const payments = parsePayments(transaction.payments);
 
     // Check if any of this transaction's payments have been refunded
-    if (transaction.payments && Array.isArray(transaction.payments)) {
-      for (const payment of transaction.payments) {
-        if (refundedPaymentUuids.has(payment.uuid)) {
-          isRefunded = true;
-          break;
-        }
+    for (const payment of payments) {
+      if (refundedPaymentUuids.has(payment.uuid)) {
+        isRefunded = true;
+        break;
       }
     }
 
