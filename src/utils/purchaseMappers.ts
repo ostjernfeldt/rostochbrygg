@@ -34,9 +34,9 @@ const parseJsonField = (field: Json | null): any => {
   return field;
 };
 
-const parsePayments = (paymentsJson: Json | null): Payment[] => {
+const parsePayments = (paymentsJson: Json | null): Payment[] | null => {
   const parsed = parseJsonField(paymentsJson);
-  if (!Array.isArray(parsed)) return [];
+  if (!Array.isArray(parsed)) return null;
   
   return parsed.map(payment => ({
     uuid: payment.uuid || '',
@@ -67,16 +67,15 @@ export const mapToTotalPurchase = (purchase: any): TotalPurchase => {
     refunded: purchase.refunded || false,
     refund_uuid: purchase.refund_uuid || null,
     refund_timestamp: purchase.refund_timestamp || null,
-    payments: parsePayments(purchase.payments),
+    payments: purchase.payments,
     cost_price: purchase.cost_price,
     currency: purchase.currency,
     country: purchase.country,
     purchase_number: purchase.purchase_number,
-    gps_coordinates: parseJsonField(purchase.gps_coordinates),
-    products: parseJsonField(purchase.products),
+    gps_coordinates: purchase.gps_coordinates,
+    products: purchase.products,
     vat_amount: purchase.vat_amount
   };
 };
 
-// Re-export the type from types/purchase
 export type { LegacyPurchaseFormat } from "@/types/purchase";

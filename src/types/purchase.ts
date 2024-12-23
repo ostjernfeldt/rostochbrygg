@@ -43,7 +43,7 @@ export interface TotalPurchase {
   refunded: boolean | null;
   refund_uuid: string | null;
   refund_timestamp?: string | null;
-  payments?: Payment[] | null;
+  payments?: Json | Payment[] | null;
   cost_price?: number | null;
   currency?: string | null;
   country?: string | null;
