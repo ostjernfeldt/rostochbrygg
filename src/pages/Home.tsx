@@ -23,20 +23,21 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { TransactionCard } from "@/components/transactions/TransactionCard";
 import { useQuery } from "@tanstack/react-query";
 import { TotalPurchase } from "@/types/purchase";
+import { SellerFilter } from "@/components/filters/SellerFilter";
+import { DailyTransactions } from "@/components/transactions/DailyTransactions";
 
 const Home = () => {
   const navigate = useNavigate();
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [username, setUsername] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+  const [selectedSeller, setSelectedSeller] = useState("all");
   
+  const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
   const { data: leaderboardData, isLoading: isLeaderboardLoading } = useLeaderboardData('daily', formattedDate);
 
-  // Add query for transactions
   const { data: transactions = [], isLoading: isTransactionsLoading } = useQuery({
     queryKey: ['transactions', formattedDate],
     queryFn: async () => {
@@ -60,6 +61,9 @@ const Home = () => {
       return data as TotalPurchase[];
     },
   });
+
+  // Get unique sellers from transactions
+  const activeSellers = Array.from(new Set(transactions.map(t => t.user_display_name).filter(Boolean))) as string[];
   
   useEffect(() => {
     const getUser = async () => {
@@ -103,6 +107,7 @@ const Home = () => {
 
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
+    setSelectedSeller("all"); // Reset seller filter when date changes
     if (date) {
       toast({
         title: "Datum valt",
@@ -189,30 +194,21 @@ const Home = () => {
           />
         </div>
 
-        {/* Add Transactions Section */}
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">Transaktioner</h2>
-          <div className="space-y-4">
-            {isTransactionsLoading ? (
-              <div className="animate-pulse space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-24 bg-card rounded-xl" />
-                ))}
-              </div>
-            ) : transactions.length === 0 ? (
-              <div className="text-center text-gray-400 py-8">
-                Inga transaktioner för detta datum
-              </div>
-            ) : (
-              transactions.map((transaction) => (
-                <TransactionCard
-                  key={transaction.purchase_uuid}
-                  transaction={transaction}
-                />
-              ))
-            )}
+        {activeSellers.length > 0 && (
+          <div className="mt-8">
+            <SellerFilter
+              sellers={activeSellers}
+              selectedSeller={selectedSeller}
+              onSellerChange={setSelectedSeller}
+            />
           </div>
-        </div>
+        )}
+
+        <DailyTransactions
+          transactions={transactions}
+          isLoading={isTransactionsLoading}
+          selectedSeller={selectedSeller}
+        />
       </div>
     </PageLayout>
   );
