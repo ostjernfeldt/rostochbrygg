@@ -71,10 +71,15 @@ export default function Overview() {
 
       if (error) throw error;
 
-      // Get unique dates to count selling days
-      const uniqueDates = new Set(
-        sales.map((sale) => format(new Date(sale.timestamp), "yyyy-MM-dd"))
-      );
+      // Calculate daily sales totals
+      const dailySales = (sales as TotalPurchase[]).reduce((acc: { [key: string]: number }, sale) => {
+        const date = format(new Date(sale.timestamp), "yyyy-MM-dd");
+        acc[date] = (acc[date] || 0) + Number(sale.amount);
+        return acc;
+      }, {});
+
+      // Count days with actual sales (total > 0)
+      const sellingDays = Object.values(dailySales).filter(total => total > 0).length;
 
       // Get unique sellers
       const uniqueSellers = new Set(
@@ -113,9 +118,9 @@ export default function Overview() {
         totalAmount,
         salesCount: sales.length,
         averageValue: sales.length > 0 ? totalAmount / sales.length : 0,
-        sellingDays: uniqueDates.size,
+        sellingDays,
         uniqueSellers: uniqueSellers.size,
-        dailyAverage: uniqueDates.size > 0 ? totalAmount / uniqueDates.size : 0,
+        dailyAverage: sellingDays > 0 ? totalAmount / sellingDays : 0,
         transactions: sales,
         paymentMethodStats: paymentMethodStatsArray
       };

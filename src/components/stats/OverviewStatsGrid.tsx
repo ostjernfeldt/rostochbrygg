@@ -1,3 +1,4 @@
+import React from 'react';
 import { StatCard } from "./StatCard";
 
 interface OverviewStats {
@@ -10,6 +11,10 @@ interface OverviewStats {
 }
 
 export const OverviewStatsGrid = ({ stats }: { stats: OverviewStats }) => {
+  // Only show selling days if there were actual sales
+  const effectiveSellingDays = stats.totalAmount > 0 ? stats.sellingDays : 0;
+  const effectiveDailyAverage = effectiveSellingDays > 0 ? stats.totalAmount / effectiveSellingDays : 0;
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <StatCard
@@ -29,7 +34,7 @@ export const OverviewStatsGrid = ({ stats }: { stats: OverviewStats }) => {
       />
       <StatCard
         title="Antal säljdagar"
-        value={stats.sellingDays.toLocaleString()}
+        value={effectiveSellingDays.toLocaleString()}
         userName=""
       />
       <StatCard
@@ -39,7 +44,7 @@ export const OverviewStatsGrid = ({ stats }: { stats: OverviewStats }) => {
       />
       <StatCard
         title="Snitt per dag"
-        value={`SEK ${Math.round(stats.dailyAverage).toLocaleString()}`}
+        value={`SEK ${Math.round(effectiveDailyAverage).toLocaleString()}`}
         userName=""
       />
     </div>
