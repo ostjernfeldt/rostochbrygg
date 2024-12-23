@@ -1,4 +1,4 @@
-import { Settings, UserRound } from "lucide-react";
+import { Settings, UserRound, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { useEffect, useState } from "react";
@@ -16,13 +16,22 @@ import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection"
 import { useLeaderboardData } from "@/hooks/useLeaderboardData";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 
 const Home = () => {
   const navigate = useNavigate();
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [username, setUsername] = useState<string>("");
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const { data: leaderboardData, isLoading: isLeaderboardLoading } = useLeaderboardData('daily', today);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+  
+  const { data: leaderboardData, isLoading: isLeaderboardLoading } = useLeaderboardData('daily', formattedDate);
   
   useEffect(() => {
     const getUser = async () => {
@@ -64,9 +73,21 @@ const Home = () => {
     navigate("/login");
   };
 
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    if (date) {
+      toast({
+        title: "Datum valt",
+        description: `Visar data för ${format(date, 'd MMMM yyyy', { locale: sv })}`,
+        className: "bg-primary text-white border-none",
+        duration: 2000,
+      });
+    }
+  };
+
   const getLeaderboardTitle = () => {
-    if (leaderboardData?.latestDate && leaderboardData.latestDate !== today) {
-      return `Topplista ${format(new Date(leaderboardData.latestDate), 'd MMMM', { locale: sv })}`;
+    if (selectedDate) {
+      return `Topplista ${format(selectedDate, 'd MMMM', { locale: sv })}`;
     }
     return "Dagens topplista";
   };
@@ -88,18 +109,40 @@ const Home = () => {
               <span>Inställningar för dagen</span>
             </button>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="mt-2">
-                <UserRound size={24} className="text-white hover:text-primary transition-colors" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-black text-white border-none">
-              <DropdownMenuItem onClick={handleSignOut} className="hover:bg-gray-900 focus:bg-gray-900">
-                Logga ut
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-3">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="bg-primary hover:bg-primary/80 border-none rounded-lg"
+                >
+                  <Filter className="h-4 w-4 text-white" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-card border-gray-800" align="end">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleDateSelect}
+                  initialFocus
+                  className="bg-card rounded-md"
+                />
+              </PopoverContent>
+            </Popover>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="mt-2">
+                  <UserRound size={24} className="text-white hover:text-primary transition-colors" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-black text-white border-none">
+                <DropdownMenuItem onClick={handleSignOut} className="hover:bg-gray-900 focus:bg-gray-900">
+                  Logga ut
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         <TimeLeftCard />
