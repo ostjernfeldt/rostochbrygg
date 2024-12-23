@@ -1,5 +1,5 @@
 import { DatabasePurchase, LegacyPurchaseFormat, TotalPurchase, Payment } from "@/types/purchase";
-import { Json } from "@/types/database";
+import { Json } from "@/types/json";
 
 export const mapDatabaseToLegacyFormat = (purchase: DatabasePurchase | TotalPurchase): LegacyPurchaseFormat => {
   const normalizeNumeric = (value: string | number | null) => {
