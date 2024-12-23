@@ -39,6 +39,10 @@ const StaffMember = () => {
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
 
+      // Get the first sale date
+      const firstSaleDate = new Date(sortedSales[0].timestamp);
+      console.log("First sale date:", firstSaleDate);
+
       // Group sales by date for daily totals
       const salesByDate = sortedSales.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
         const dateStr = new Date(sale.timestamp).toDateString();
@@ -59,15 +63,17 @@ const StaffMember = () => {
       const sortedDays = [...dailyTotals].sort((a, b) => b.amount - a.amount);
       const bestDay = sortedDays[0];
 
-      // First selling day is the date of the first sale
-      const firstSaleDate = new Date(sortedSales[0].timestamp);
-      const firstDay = dailyTotals.find(day => 
-        new Date(day.date).toDateString() === firstSaleDate.toDateString()
-      );
-      const worstDay = firstDay || dailyTotals[0]; // Use the first day's total as worst day
+      // Calculate total sales for the first day
+      const firstDayTotal = sortedSales
+        .filter(sale => new Date(sale.timestamp).toDateString() === firstSaleDate.toDateString())
+        .reduce((sum, sale) => sum + Number(sale.amount), 0);
 
-      // First sale is the earliest timestamp
-      const firstSale = new Date(sortedSales[0].timestamp);
+      console.log("First day's total sales:", firstDayTotal);
+
+      const firstDay = {
+        date: firstSaleDate.toISOString(),
+        amount: firstDayTotal
+      };
 
       const totalAmount = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
       const averageAmount = totalAmount / validSales.length;
@@ -78,14 +84,14 @@ const StaffMember = () => {
         totalAmount,
         averageAmount,
         daysActive: uniqueDays.size,
-        firstSale,
+        firstSale: firstSaleDate,
         bestDay,
-        worstDay
+        firstDay
       });
 
       const memberStats: StaffMemberStats = {
         displayName: name,
-        firstSale,
+        firstSale: firstSaleDate,
         totalAmount,
         averageAmount,
         salesCount: validSales.length,
@@ -102,7 +108,7 @@ const StaffMember = () => {
       return {
         ...memberStats,
         bestDay,
-        worstDay
+        worstDay: firstDay // Now correctly showing the first day's total sales
       };
     }
   });
