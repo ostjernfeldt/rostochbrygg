@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PageLayout } from "@/components/PageLayout";
-import { format } from "date-fns";
+import { format, parseISO, startOfDay, endOfDay } from "date-fns";
 import { sv } from "date-fns/locale";
 import { SalaryList } from "@/components/salaries/SalaryList";
 import { DateRange } from "react-day-picker";
@@ -52,15 +52,26 @@ const Salaries = () => {
     if (selectedPeriod === "custom" && dateRange) {
       const salaryStart = new Date(salary.period_start);
       const salaryEnd = new Date(salary.period_end);
-      const rangeStart = dateRange.from ? new Date(dateRange.from) : null;
-      const rangeEnd = dateRange.to ? new Date(dateRange.to) : null;
+      const rangeStart = dateRange.from ? startOfDay(dateRange.from) : null;
+      const rangeEnd = dateRange.to ? endOfDay(dateRange.to) : null;
 
       return (!rangeStart || salaryEnd >= rangeStart) && 
              (!rangeEnd || salaryStart <= rangeEnd);
     }
 
-    return selectedPeriod === "all" || 
-           format(new Date(salary.period_start), 'yyyy-MM') === selectedPeriod;
+    if (selectedPeriod === "all") {
+      return true;
+    }
+
+    // Handle salary period format (yyyy-MM-dd)
+    const selectedDate = parseISO(selectedPeriod);
+    const salaryStart = new Date(salary.period_start);
+    
+    return (
+      salaryStart.getFullYear() === selectedDate.getFullYear() &&
+      salaryStart.getMonth() === selectedDate.getMonth() &&
+      salaryStart.getDate() === selectedDate.getDate()
+    );
   });
 
   const calculateShiftsCount = (userName: string, startDate: string, endDate: string) => {
@@ -105,6 +116,9 @@ const Salaries = () => {
       </PageLayout>
     );
   }
+
+  console.log('Selected period:', selectedPeriod);
+  console.log('Filtered salaries:', filteredSalaries);
 
   return (
     <PageLayout>
