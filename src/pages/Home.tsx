@@ -14,7 +14,7 @@ import { PageLayout } from "@/components/PageLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection";
 import { useLeaderboardData } from "@/hooks/useLeaderboardData";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { sv } from "date-fns/locale";
 import {
   Popover,
@@ -23,6 +23,9 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { TransactionCard } from "@/components/transactions/TransactionCard";
+import { useQuery } from "@tanstack/react-query";
+import { TotalPurchase } from "@/types/purchase";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -32,6 +35,31 @@ const Home = () => {
   const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
   
   const { data: leaderboardData, isLoading: isLeaderboardLoading } = useLeaderboardData('daily', formattedDate);
+
+  // Add query for transactions
+  const { data: transactions = [], isLoading: isTransactionsLoading } = useQuery({
+    queryKey: ['transactions', formattedDate],
+    queryFn: async () => {
+      console.log('Fetching transactions for date:', formattedDate);
+      const start = startOfDay(new Date(formattedDate));
+      const end = endOfDay(new Date(formattedDate));
+
+      const { data, error } = await supabase
+        .from('total_purchases')
+        .select('*')
+        .gte('timestamp', start.toISOString())
+        .lte('timestamp', end.toISOString())
+        .order('timestamp', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        throw error;
+      }
+
+      console.log('Fetched transactions:', data);
+      return data as TotalPurchase[];
+    },
+  });
   
   useEffect(() => {
     const getUser = async () => {
@@ -159,6 +187,31 @@ const Home = () => {
             isLoading={isLeaderboardLoading}
             onUserClick={(userName) => navigate(`/staff/${encodeURIComponent(userName)}`)}
           />
+        </div>
+
+        {/* Add Transactions Section */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-4">Transaktioner</h2>
+          <div className="space-y-4">
+            {isTransactionsLoading ? (
+              <div className="animate-pulse space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-24 bg-card rounded-xl" />
+                ))}
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="text-center text-gray-400 py-8">
+                Inga transaktioner för detta datum
+              </div>
+            ) : (
+              transactions.map((transaction) => (
+                <TransactionCard
+                  key={transaction.purchase_uuid}
+                  transaction={transaction}
+                />
+              ))
+            )}
+          </div>
         </div>
       </div>
     </PageLayout>
