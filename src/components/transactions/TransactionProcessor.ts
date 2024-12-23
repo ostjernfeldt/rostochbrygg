@@ -41,13 +41,22 @@ export const processTransactions = (rawTransactions: any[]): TotalPurchase[] => 
 
   // Keep track of refunded payment UUIDs
   const refundedPaymentUuids = new Set<string>();
+  const refundedTransactionUuids = new Set<string>();
 
-  // First pass: collect all refunded payment UUIDs
+  // First pass: collect all refunded payment UUIDs and their transactions
   for (const transaction of sortedTransactions) {
     const payments = parsePayments(transaction.payments);
     for (const payment of payments) {
       if (payment.references?.refundsPayment) {
         refundedPaymentUuids.add(payment.references.refundsPayment);
+        // Find the original transaction that was refunded
+        const originalTransaction = sortedTransactions.find(t => {
+          const originalPayments = parsePayments(t.payments);
+          return originalPayments.some(p => p.uuid === payment.references?.refundsPayment);
+        });
+        if (originalTransaction) {
+          refundedTransactionUuids.add(originalTransaction.purchase_uuid);
+        }
       }
     }
   }
@@ -56,6 +65,11 @@ export const processTransactions = (rawTransactions: any[]): TotalPurchase[] => 
   for (const transaction of sortedTransactions) {
     let isRefunded = false;
     const payments = parsePayments(transaction.payments);
+
+    // Check if this transaction has been refunded
+    if (refundedTransactionUuids.has(transaction.purchase_uuid)) {
+      isRefunded = true;
+    }
 
     // Check if any of this transaction's payments have been refunded
     for (const payment of payments) {
