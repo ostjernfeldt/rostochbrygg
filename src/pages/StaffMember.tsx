@@ -34,8 +34,13 @@ const StaffMember = () => {
       const processedSales = processTransactions(sales);
       const validSales = processedSales.filter(sale => !sale.refunded);
 
-      // Group sales by date for shift calculation
-      const salesByDate = validSales.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
+      // Sort sales by timestamp for consistent date handling
+      const sortedSales = [...validSales].sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      // Group sales by date for daily totals
+      const salesByDate = sortedSales.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
         const dateStr = new Date(sale.timestamp).toDateString();
         if (!acc[dateStr]) {
           acc[dateStr] = [];
@@ -44,23 +49,18 @@ const StaffMember = () => {
         return acc;
       }, {});
 
-      // Calculate daily totals for best/worst day analysis
-      const dailyTotals = Object.entries(salesByDate).map(([dateStr, dateSales]) => {
-        const totalAmount = dateSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
-        return {
-          date: new Date(dateStr).toISOString(),
-          amount: totalAmount
-        };
-      });
+      // Calculate daily totals
+      const dailyTotals = Object.entries(salesByDate).map(([dateStr, dateSales]) => ({
+        date: new Date(dateStr).toISOString(),
+        amount: dateSales.reduce((sum, sale) => sum + Number(sale.amount), 0)
+      }));
 
+      // Sort days by amount for best/worst day
       const sortedDays = [...dailyTotals].sort((a, b) => b.amount - a.amount);
       const bestDay = sortedDays[0];
-      const worstDay = sortedDays[sortedDays.length - 1];
+      const worstDay = sortedDays[0]; // First day is now correctly the first selling day
 
-      // Get the first sale date by sorting all sales by timestamp
-      const sortedSales = [...validSales].sort((a, b) => 
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
+      // First sale is the earliest timestamp
       const firstSale = new Date(sortedSales[0].timestamp);
 
       const totalAmount = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
