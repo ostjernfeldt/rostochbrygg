@@ -9,12 +9,8 @@ interface StatsResult {
 export const calculateTopSeller = (sales: TotalPurchase[]): StatsResult => {
   console.log("Calculating top seller with total sales:", sales.length);
   
-  // Filter out refunded transactions and only include valid sales
-  const validSales = sales.filter(sale => 
-    !sale.refunded && // exclude refunded transactions
-    Number(sale.amount) > 0 && // only positive amounts
-    sale.user_display_name // must have a user name
-  );
+  // Only filter out sales without a user name, include all amounts (positive and negative)
+  const validSales = sales.filter(sale => sale.user_display_name);
 
   console.log("Valid sales after filtering:", validSales.length);
 
