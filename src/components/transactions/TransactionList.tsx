@@ -6,11 +6,12 @@ import { format } from "date-fns";
 import { useState } from "react";
 import { SalesChart } from "@/components/SalesChart";
 import { PageLayout } from "@/components/PageLayout";
-import { TransactionCard } from "@/components/transactions/TransactionCard";
 import { UserFilter } from "@/components/transactions/UserFilter";
 import { TransactionStats } from "@/components/transactions/TransactionStats";
-import { processTransactions, getValidTransactions } from "./TransactionProcessor";
-import type { LegacyPurchaseFormat, TotalPurchase } from "@/types/purchase";
+import { TransactionListHeader } from "@/components/transactions/TransactionListHeader";
+import { TransactionListContent } from "@/components/transactions/TransactionListContent";
+import { processTransactions } from "./TransactionProcessor";
+import type { TotalPurchase } from "@/types/purchase";
 
 const TransactionList = () => {
   const navigate = useNavigate();
@@ -23,11 +24,33 @@ const TransactionList = () => {
     queryFn: async () => {
       console.log("Fetching transactions for date:", dateParam);
       
-      const startOfDay = new Date(dateParam || new Date());
+      let startOfDay: Date;
+      let endOfDay: Date;
+
+      if (dateParam) {
+        startOfDay = new Date(dateParam);
+        endOfDay = new Date(dateParam);
+      } else {
+        startOfDay = new Date();
+        const latestDateResult = await supabase
+          .from("total_purchases")
+          .select("timestamp")
+          .order("timestamp", { ascending: false })
+          .limit(1);
+
+        if (latestDateResult.data && latestDateResult.data.length > 0) {
+          startOfDay = new Date(latestDateResult.data[0].timestamp);
+        }
+        endOfDay = new Date(startOfDay);
+      }
+
       startOfDay.setHours(0, 0, 0, 0);
-      
-      const endOfDay = new Date(dateParam || new Date());
       endOfDay.setHours(23, 59, 59, 999);
+
+      console.log("Fetching transactions between:", {
+        start: startOfDay.toISOString(),
+        end: endOfDay.toISOString()
+      });
 
       const { data: salesData, error: salesError } = await supabase
         .from("total_purchases")
@@ -56,36 +79,20 @@ const TransactionList = () => {
       : transactions.transactions.filter(t => t.user_display_name === selectedUser)
     : [];
 
-  // Get only valid transactions (non-refunded, positive amounts)
-  const validTransactions = getValidTransactions(filteredTransactions);
-
-  // Map the transactions to LegacyPurchaseFormat for the SalesChart
-  const legacyFormattedTransactions: LegacyPurchaseFormat[] = validTransactions.map(t => ({
-    Timestamp: t.timestamp,
-    Amount: Number(t.amount),
-    "User Display Name": t.user_display_name || '',
-    "Payment Type": t.payment_type || undefined,
-    "Product Name": t.product_name || undefined
-  }));
-
   return (
     <PageLayout>
-      <div className="flex items-center gap-2 mb-6">
-        <button 
-          onClick={() => navigate("/")}
-          className="text-gray-400 hover:text-primary transition-colors"
-        >
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-2xl font-bold">
-          {transactions?.date ? `${format(transactions.date, 'd MMMM yyyy')} transaktioner` : 'Transaktioner'}
-        </h1>
-      </div>
+      <TransactionListHeader date={transactions?.date || null} />
 
       {transactions?.transactions && (
         <div className="mb-6">
           <SalesChart 
-            transactions={legacyFormattedTransactions} 
+            transactions={filteredTransactions.map(t => ({
+              Timestamp: t.timestamp,
+              Amount: Number(t.amount),
+              "User Display Name": t.user_display_name || '',
+              "Payment Type": t.payment_type || undefined,
+              "Product Name": t.product_name || undefined
+            }))} 
             showAccumulatedPerTransaction={true}
           />
         </div>
@@ -99,34 +106,15 @@ const TransactionList = () => {
         />
         
         <TransactionStats 
-          transactions={validTransactions}
+          transactions={filteredTransactions}
           selectedUser={selectedUser}
         />
       </div>
 
-      {isLoading ? (
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="animate-pulse bg-card rounded-xl p-4">
-              <div className="h-4 bg-gray-700 rounded w-1/4 mb-2"></div>
-              <div className="h-6 bg-gray-700 rounded w-1/2"></div>
-            </div>
-          ))}
-        </div>
-      ) : filteredTransactions.length > 0 ? (
-        <div className="space-y-4">
-          {filteredTransactions.map((transaction) => (
-            <TransactionCard 
-              key={transaction.purchase_uuid} 
-              transaction={transaction}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center text-gray-400 mt-8">
-          Inga transaktioner hittades
-        </div>
-      )}
+      <TransactionListContent 
+        isLoading={isLoading}
+        transactions={filteredTransactions}
+      />
     </PageLayout>
   );
 };
