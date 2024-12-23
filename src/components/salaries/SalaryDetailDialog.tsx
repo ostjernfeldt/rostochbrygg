@@ -38,13 +38,15 @@ interface ShiftDetailProps {
 }
 
 export const ShiftDetail = ({ shifts, baseAmount }: ShiftDetailProps) => {
-  // Get unique dates from shifts
+  // Get unique dates from shifts using presence_start
   const uniqueDates = Array.from(new Set(
     shifts.map(shift => {
-      const date = new Date(shift.Timestamp);
+      const date = new Date(shift.presence_start);
       return isValid(date) ? date.toISOString().split('T')[0] : null;
     }).filter(Boolean)
   )).sort();
+
+  console.log('Unique shift dates:', uniqueDates);
 
   return (
     <div className="space-y-4">
