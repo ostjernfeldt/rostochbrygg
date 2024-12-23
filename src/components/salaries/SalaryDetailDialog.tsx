@@ -5,7 +5,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import { sv } from "date-fns/locale";
 
 export interface SalaryDetailProps {
@@ -40,7 +40,10 @@ interface ShiftDetailProps {
 export const ShiftDetail = ({ shifts, baseAmount }: ShiftDetailProps) => {
   // Get unique dates from shifts
   const uniqueDates = Array.from(new Set(
-    shifts.map(shift => new Date(shift.Timestamp).toISOString().split('T')[0])
+    shifts.map(shift => {
+      const date = new Date(shift.Timestamp);
+      return isValid(date) ? date.toISOString().split('T')[0] : null;
+    }).filter(Boolean)
   )).sort();
 
   return (
@@ -51,7 +54,7 @@ export const ShiftDetail = ({ shifts, baseAmount }: ShiftDetailProps) => {
       <div className="space-y-2">
         {uniqueDates.map((date, index) => (
           <div key={index} className="text-sm">
-            {format(new Date(date), 'd MMMM yyyy', { locale: sv })}
+            {format(parseISO(date), 'd MMMM yyyy', { locale: sv })}
           </div>
         ))}
       </div>
@@ -67,11 +70,17 @@ interface SalesDetailProps {
 export const SalesDetail = ({ sales, totalSales }: SalesDetailProps) => {
   // Group sales by date and calculate total for each date
   const salesByDate = sales.reduce((acc, sale) => {
-    const date = new Date(sale.Timestamp).toISOString().split('T')[0];
-    if (!acc[date]) {
-      acc[date] = 0;
+    const date = new Date(sale.timestamp);
+    if (!isValid(date)) {
+      console.warn('Invalid date found:', sale.timestamp);
+      return acc;
     }
-    acc[date] += Number(sale.Amount) || 0;
+    
+    const dateKey = date.toISOString().split('T')[0];
+    if (!acc[dateKey]) {
+      acc[dateKey] = 0;
+    }
+    acc[dateKey] += Number(sale.amount) || 0;
     return acc;
   }, {} as Record<string, number>);
 
@@ -86,7 +95,7 @@ export const SalesDetail = ({ sales, totalSales }: SalesDetailProps) => {
       <div className="space-y-2">
         {sortedDates.map((date) => (
           <div key={date} className="text-sm flex justify-between">
-            <span>{format(new Date(date), 'd MMMM yyyy', { locale: sv })}</span>
+            <span>{format(parseISO(date), 'd MMMM yyyy', { locale: sv })}</span>
             <span>{salesByDate[date].toLocaleString()} kr</span>
           </div>
         ))}
