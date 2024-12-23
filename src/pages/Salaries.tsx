@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PageLayout } from "@/components/PageLayout";
-import { format, parseISO, startOfDay, endOfDay } from "date-fns";
+import { format, parseISO, startOfDay, endOfDay, isEqual } from "date-fns";
 import { sv } from "date-fns/locale";
 import { SalaryList } from "@/components/salaries/SalaryList";
 import { DateRange } from "react-day-picker";
@@ -31,6 +31,13 @@ const Salaries = () => {
   };
 
   const filteredSalaries = salaries?.filter(salary => {
+    // Log the salary period for debugging
+    console.log('Checking salary:', {
+      salary_start: salary.period_start,
+      salary_end: salary.period_end,
+      selectedPeriod
+    });
+
     if (searchQuery && !salary.user_display_name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
@@ -67,11 +74,19 @@ const Salaries = () => {
     const selectedDate = parseISO(selectedPeriod);
     const salaryStart = new Date(salary.period_start);
     
-    return (
-      salaryStart.getFullYear() === selectedDate.getFullYear() &&
-      salaryStart.getMonth() === selectedDate.getMonth() &&
-      salaryStart.getDate() === selectedDate.getDate()
+    // Compare the dates by checking if the salary period starts on the selected date
+    const isMatchingPeriod = isEqual(
+      startOfDay(salaryStart),
+      startOfDay(selectedDate)
     );
+
+    console.log('Date comparison:', {
+      salaryStart: format(salaryStart, 'yyyy-MM-dd'),
+      selectedDate: format(selectedDate, 'yyyy-MM-dd'),
+      isMatchingPeriod
+    });
+
+    return isMatchingPeriod;
   });
 
   const calculateShiftsCount = (userName: string, startDate: string, endDate: string) => {
