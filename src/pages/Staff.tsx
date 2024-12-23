@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { Search } from "lucide-react";
+import { Search, Award } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PageLayout } from "@/components/PageLayout";
 import { StaffMemberStats } from "@/types/purchase";
@@ -16,6 +16,11 @@ import {
 import { useState } from "react";
 
 type SortField = 'totalAmount' | 'salesCount' | 'averageAmount' | 'daysActive' | 'firstSale';
+
+const getSalesRole = (totalAmount: number) => {
+  if (totalAmount >= 25000) return "Sales Associate";
+  return "Sales Intern";
+};
 
 const Staff = () => {
   const navigate = useNavigate();
@@ -75,14 +80,6 @@ const Staff = () => {
       return Object.values(staffStats);
     }
   });
-
-  const sortOptions: { value: SortField; label: string }[] = [
-    { value: 'totalAmount', label: 'Total försäljning' },
-    { value: 'salesCount', label: 'Antal sälj' },
-    { value: 'averageAmount', label: 'Snittförsäljning' },
-    { value: 'daysActive', label: 'Aktiva dagar' },
-    { value: 'firstSale', label: 'Första sälj' }
-  ];
 
   const filteredAndSortedStaff = staffMembers
     ?.filter(member => 
@@ -172,7 +169,13 @@ const Staff = () => {
             className="bg-card p-4 rounded-xl hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
           >
             <div className="flex justify-between items-start mb-2">
-              <h3 className="text-xl font-bold">{member.displayName}</h3>
+              <div>
+                <h3 className="text-xl font-bold">{member.displayName}</h3>
+                <div className="flex items-center gap-1 text-sm text-primary">
+                  <Award className="h-4 w-4" />
+                  <span>{getSalesRole(member.totalAmount)}</span>
+                </div>
+              </div>
               <span className="text-primary">
                 SEK {Math.round(member.totalAmount).toLocaleString()}
               </span>
@@ -189,5 +192,13 @@ const Staff = () => {
     </PageLayout>
   );
 };
+
+const sortOptions: { value: SortField; label: string }[] = [
+  { value: 'totalAmount', label: 'Total försäljning' },
+  { value: 'salesCount', label: 'Antal sälj' },
+  { value: 'averageAmount', label: 'Snittförsäljning' },
+  { value: 'daysActive', label: 'Aktiva dagar' },
+  { value: 'firstSale', label: 'Första sälj' }
+];
 
 export default Staff;
