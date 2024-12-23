@@ -55,10 +55,16 @@ const StaffMember = () => {
         amount: dateSales.reduce((sum, sale) => sum + Number(sale.amount), 0)
       }));
 
-      // Sort days by amount for best/worst day
+      // Sort days by amount for best day
       const sortedDays = [...dailyTotals].sort((a, b) => b.amount - a.amount);
       const bestDay = sortedDays[0];
-      const worstDay = sortedDays[0]; // First day is now correctly the first selling day
+
+      // First selling day is the date of the first sale
+      const firstSaleDate = new Date(sortedSales[0].timestamp);
+      const firstDay = dailyTotals.find(day => 
+        new Date(day.date).toDateString() === firstSaleDate.toDateString()
+      );
+      const worstDay = firstDay || dailyTotals[0]; // Use the first day's total as worst day
 
       // First sale is the earliest timestamp
       const firstSale = new Date(sortedSales[0].timestamp);
