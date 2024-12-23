@@ -40,13 +40,13 @@ interface ShiftDetailProps {
 export const ShiftDetail = ({ shifts, baseAmount }: ShiftDetailProps) => {
   console.log('Received shifts:', shifts); // Debug log to see the shifts data
 
-  // Get unique dates from shifts using presence_start
+  // Get unique dates from shifts using timestamp
   const uniqueDates = Array.from(new Set(
-    shifts.filter(shift => shift && shift.presence_start) // Ensure shift and presence_start exist
+    shifts.filter(shift => shift && shift.timestamp) // Ensure shift and timestamp exist
       .map(shift => {
-        const date = new Date(shift.presence_start);
+        const date = new Date(shift.timestamp);
         console.log('Processing shift date:', {
-          presence_start: shift.presence_start,
+          timestamp: shift.timestamp,
           parsed: date,
           isValid: isValid(date)
         });
