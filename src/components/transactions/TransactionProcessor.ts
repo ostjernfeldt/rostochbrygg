@@ -7,26 +7,14 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
   
   // First pass: collect all refunds
   rawTransactions.forEach(transaction => {
-    if (transaction.refund_uuid) {
-      refundMap.set(transaction.refund_uuid, transaction);
+    if (transaction.amount < 0) {
+      refundMap.set(transaction.payment_uuid || '', transaction);
     }
   });
 
   // Second pass: process all transactions
   rawTransactions.forEach(transaction => {
-    // If this is a refund (negative amount)
-    if (transaction.amount < 0) {
-      const refundedTransaction = processedTransactions.find(
-        t => t.payment_uuid === transaction.refund_uuid
-      );
-      if (refundedTransaction) {
-        refundedTransaction.refunded = true;
-        refundedTransaction.refund_timestamp = transaction.timestamp;
-        refundedTransaction.refund_uuid = transaction.purchase_uuid;
-      }
-    }
-    
-    // If this transaction has been refunded (matched by payment_uuid)
+    // If this transaction has been refunded
     if (refundMap.has(transaction.payment_uuid || '')) {
       const refund = refundMap.get(transaction.payment_uuid || '');
       transaction.refunded = true;
@@ -34,7 +22,11 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
       transaction.refund_uuid = refund?.purchase_uuid;
     }
     
-    processedTransactions.push(transaction);
+    // Only add non-refund transactions to the list
+    // Refunds will be shown as part of their original transaction
+    if (transaction.amount > 0) {
+      processedTransactions.push(transaction);
+    }
   });
 
   console.log("Processed transactions:", processedTransactions);
