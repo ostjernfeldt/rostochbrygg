@@ -57,7 +57,12 @@ const StaffMember = () => {
       const bestDay = sortedDays[0];
       const worstDay = sortedDays[sortedDays.length - 1];
 
-      const firstSale = new Date(validSales[0].timestamp);
+      // Get the first sale date by sorting all sales by timestamp
+      const sortedSales = [...validSales].sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+      const firstSale = new Date(sortedSales[0].timestamp);
+
       const totalAmount = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
       const averageAmount = totalAmount / validSales.length;
       const uniqueDays = new Set(validSales.map(s => new Date(s.timestamp).toDateString()));
@@ -67,6 +72,7 @@ const StaffMember = () => {
         totalAmount,
         averageAmount,
         daysActive: uniqueDays.size,
+        firstSale,
         bestDay,
         worstDay
       });
