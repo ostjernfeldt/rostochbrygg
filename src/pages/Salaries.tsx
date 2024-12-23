@@ -73,46 +73,40 @@ const Salaries = () => {
       return false;
     }
 
-    const totalSales = calculateTotalSales(
-      salary.user_display_name,
-      salary.period_start,
-      salary.period_end
-    );
-
-    if (totalSales === 0) {
-      return false;
-    }
+    // Adjust the salary period based on the selected period
+    let adjustedStartDate = salary.period_start;
+    let adjustedEndDate = salary.period_end;
 
     if (selectedPeriod === "custom" && dateRange) {
-      const salaryStart = startOfDay(new Date(salary.period_start));
-      const salaryEnd = endOfDay(new Date(salary.period_end));
       const rangeStart = dateRange.from ? startOfDay(dateRange.from) : null;
       const rangeEnd = dateRange.to ? endOfDay(dateRange.to) : null;
 
-      return (!rangeStart || salaryEnd >= rangeStart) && 
-             (!rangeEnd || salaryStart <= rangeEnd);
+      if (rangeStart && rangeEnd) {
+        adjustedStartDate = rangeStart.toISOString();
+        adjustedEndDate = rangeEnd.toISOString();
+      }
+    } else if (selectedPeriod !== "all") {
+      // For specific salary period selection (e.g., "2024-11-21")
+      const periodStart = new Date(selectedPeriod);
+      const periodEnd = new Date(periodStart);
+      periodEnd.setMonth(periodEnd.getMonth() + 1);
+      periodEnd.setDate(20);
+      
+      adjustedStartDate = periodStart.toISOString();
+      adjustedEndDate = periodEnd.toISOString();
     }
 
-    if (selectedPeriod === "all") {
-      return true;
-    }
+    const totalSales = calculateTotalSales(
+      salary.user_display_name,
+      adjustedStartDate,
+      adjustedEndDate
+    );
 
-    // Handle salary period format (yyyy-MM-dd)
-    const selectedDate = parseISO(selectedPeriod);
-    const salaryStart = startOfDay(new Date(salary.period_start));
-    const salaryEnd = endOfDay(new Date(salary.period_end));
-    
-    // For salary periods, we want to match if the selected date falls within the salary period
-    const isWithinPeriod = selectedDate >= salaryStart && selectedDate <= salaryEnd;
+    // Update the salary object with the adjusted period
+    salary.period_start = adjustedStartDate;
+    salary.period_end = adjustedEndDate;
 
-    console.log('Date comparison:', {
-      salaryStart: format(salaryStart, 'yyyy-MM-dd'),
-      salaryEnd: format(salaryEnd, 'yyyy-MM-dd'),
-      selectedDate: format(selectedDate, 'yyyy-MM-dd'),
-      isWithinPeriod
-    });
-
-    return isWithinPeriod;
+    return totalSales > 0;
   });
 
   const calculateShiftsCount = (userName: string, startDate: string, endDate: string) => {
