@@ -38,12 +38,21 @@ interface ShiftDetailProps {
 }
 
 export const ShiftDetail = ({ shifts, baseAmount }: ShiftDetailProps) => {
+  console.log('Received shifts:', shifts); // Debug log to see the shifts data
+
   // Get unique dates from shifts using presence_start
   const uniqueDates = Array.from(new Set(
-    shifts.map(shift => {
-      const date = new Date(shift.presence_start);
-      return isValid(date) ? date.toISOString().split('T')[0] : null;
-    }).filter(Boolean)
+    shifts.filter(shift => shift && shift.presence_start) // Ensure shift and presence_start exist
+      .map(shift => {
+        const date = new Date(shift.presence_start);
+        console.log('Processing shift date:', {
+          presence_start: shift.presence_start,
+          parsed: date,
+          isValid: isValid(date)
+        });
+        return isValid(date) ? date.toISOString().split('T')[0] : null;
+      })
+      .filter(Boolean)
   )).sort();
 
   console.log('Unique shift dates:', uniqueDates);
