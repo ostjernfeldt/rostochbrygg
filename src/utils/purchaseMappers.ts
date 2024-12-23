@@ -53,6 +53,9 @@ export const mapToTotalPurchase = (purchase: any): TotalPurchase => {
     return isNaN(numericAmount) ? 0 : numericAmount;
   };
 
+  const payments = parsePayments(purchase.payments);
+  const payment_uuid = payments && payments.length > 0 ? payments[0].uuid : null;
+
   return {
     id: purchase.id || purchase.purchase_uuid,
     purchase_uuid: purchase.purchase_uuid,
@@ -67,6 +70,7 @@ export const mapToTotalPurchase = (purchase: any): TotalPurchase => {
     refunded: purchase.refunded || false,
     refund_uuid: purchase.refund_uuid || null,
     refund_timestamp: purchase.refund_timestamp || null,
+    payment_uuid: purchase.payment_uuid || payment_uuid || null,
     payments: purchase.payments,
     cost_price: purchase.cost_price,
     currency: purchase.currency,
