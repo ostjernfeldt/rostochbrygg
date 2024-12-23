@@ -1,4 +1,4 @@
-import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, setDate } from "date-fns";
 import { sv } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ export const DateFilterSection = ({
     { value: "day", label: "Säljdag" },
     { value: "week", label: "Vecka" },
     { value: "month", label: "Månad" },
+    { value: "salary", label: "Löneperiod" },
     { value: "all", label: "All tid" },
     { value: "custom", label: "Anpassad period" }
   ];
@@ -65,6 +66,25 @@ export const DateFilterSection = ({
     return {
       value: format(date, 'yyyy-MM'),
       label: format(date, 'MMMM yyyy', { locale: sv })
+    };
+  });
+
+  // Generate salary period options (21st to 20th next month)
+  const salaryPeriodOptions = Array.from({ length: 12 }, (_, i) => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    
+    // Set to 21st of current month
+    const startDate = setDate(date, 21);
+    
+    // Set to 20th of next month
+    const endDate = new Date(date);
+    endDate.setMonth(endDate.getMonth() + 1);
+    endDate.setDate(20);
+
+    return {
+      value: format(startDate, 'yyyy-MM-dd'),
+      label: `${format(startDate, 'd MMM')} - ${format(endDate, 'd MMM yyyy', { locale: sv })}`
     };
   });
 
@@ -107,6 +127,15 @@ export const DateFilterSection = ({
           value={selectedDate || "none"}
           onValueChange={(value) => setSelectedDate(value === "none" ? "" : value)}
           placeholder="Välj månad"
+        />
+      )}
+
+      {selectedPeriod === "salary" && (
+        <LeaderboardFilter
+          options={salaryPeriodOptions}
+          value={selectedDate || "none"}
+          onValueChange={(value) => setSelectedDate(value === "none" ? "" : value)}
+          placeholder="Välj löneperiod"
         />
       )}
 
