@@ -28,6 +28,28 @@ interface PeriodFilterProps {
   setDateRange: (range: DateRange | undefined) => void;
 }
 
+// Helper function to generate salary period options
+const generateSalaryPeriods = () => {
+  return Array.from({ length: 12 }, (_, i) => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    
+    // Set to 21st of current month
+    const startDate = new Date(date);
+    startDate.setDate(21);
+    
+    // Set to 20th of next month
+    const endDate = new Date(date);
+    endDate.setMonth(endDate.getMonth() + 1);
+    endDate.setDate(20);
+
+    return {
+      value: format(startDate, 'yyyy-MM-dd'),
+      label: `${format(startDate, 'd MMM')} - ${format(endDate, 'd MMM yyyy', { locale: sv })}`
+    };
+  });
+};
+
 export const PeriodFilter = ({ 
   selectedPeriod, 
   setSelectedPeriod, 
@@ -37,6 +59,8 @@ export const PeriodFilter = ({
   dateRange,
   setDateRange
 }: PeriodFilterProps) => {
+  const salaryPeriods = generateSalaryPeriods();
+
   return (
     <div className="flex flex-col gap-4 w-full">
       <Select
@@ -49,20 +73,20 @@ export const PeriodFilter = ({
         }}
       >
         <SelectTrigger className="w-full bg-card border-gray-800">
-          <SelectValue placeholder="Välj period" />
+          <SelectValue placeholder="Välj löneperiod" />
         </SelectTrigger>
         <SelectContent className="bg-card border-gray-800">
-          <SelectItem value="custom" className="focus:bg-gray-800">Anpassad period</SelectItem>
-          <SelectItem value="all" className="focus:bg-gray-800">Alla perioder</SelectItem>
-          {uniquePeriods.map((period) => (
+          {salaryPeriods.map((period) => (
             <SelectItem 
-              key={period} 
-              value={period}
+              key={period.value} 
+              value={period.value}
               className="focus:bg-gray-800"
             >
-              {format(new Date(period), 'MMMM yyyy', { locale: sv })}
+              {period.label}
             </SelectItem>
           ))}
+          <SelectItem value="custom" className="focus:bg-gray-800">Anpassad period</SelectItem>
+          <SelectItem value="all" className="focus:bg-gray-800">Alla perioder</SelectItem>
         </SelectContent>
       </Select>
 
