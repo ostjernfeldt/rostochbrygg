@@ -9,74 +9,59 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
     new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
 
-  // First pass: collect all refunds and match them with original transactions
+  // First pass: mark transactions that have been refunded
   sortedTransactions.forEach(transaction => {
-    if (transaction.amount < 0) {
-      console.log("Processing refund:", {
+    // If this transaction has a refund_uuid, it means it's a refund transaction
+    if (transaction.refund_uuid) {
+      console.log("Found refund transaction:", {
+        timestamp: transaction.timestamp,
         amount: transaction.amount,
-        payment_uuid: transaction.payment_uuid,
-        refund_uuid: transaction.refund_uuid,
-        product: transaction.product_name,
+        refund_uuid: transaction.refund_uuid
+      });
+
+      // Find the original transaction that was refunded
+      const originalTransaction = sortedTransactions.find(t => 
+        t.payment_uuid === transaction.refund_uuid
+      );
+
+      if (originalTransaction) {
+        console.log("Marking original transaction as refunded:", {
+          originalTimestamp: originalTransaction.timestamp,
+          refundTimestamp: transaction.timestamp,
+          amount: originalTransaction.amount
+        });
+        
+        originalTransaction.refunded = true;
+        originalTransaction.refund_timestamp = transaction.timestamp;
+      }
+    }
+
+    // For historical transactions that don't have payment_uuid/refund_uuid
+    if (transaction.amount < 0) {
+      console.log("Processing negative amount transaction:", {
+        timestamp: transaction.timestamp,
+        amount: transaction.amount,
         user: transaction.user_display_name
       });
 
-      // Try to find the original transaction
-      const originalTransaction = sortedTransactions.find(t => {
-        // First try to match using payment_uuid and refund_uuid
-        if (transaction.refund_uuid && t.payment_uuid === transaction.refund_uuid) {
-          console.log("Found match by payment_uuid/refund_uuid");
-          return true;
-        }
-        
-        // For historical transactions or when UUIDs are not available,
-        // match based on amount, product name, and user
-        const amountMatch = Math.abs(Number(t.amount)) === Math.abs(Number(transaction.amount));
-        const productMatch = t.product_name === transaction.product_name;
-        const userMatch = t.user_display_name === transaction.user_display_name;
-        const timeMatch = new Date(t.timestamp).getTime() < new Date(transaction.timestamp).getTime();
-        const notRefunded = !t.refunded; // Make sure we haven't already marked this as refunded
+      // Try to find matching original transaction
+      const originalTransaction = sortedTransactions.find(t => 
+        !t.refunded && // not already marked as refunded
+        t.amount > 0 && // positive amount (original purchase)
+        Math.abs(Number(t.amount)) === Math.abs(Number(transaction.amount)) &&
+        t.user_display_name === transaction.user_display_name &&
+        new Date(t.timestamp).getTime() < new Date(transaction.timestamp).getTime()
+      );
 
-        if (amountMatch && productMatch && userMatch && timeMatch && notRefunded) {
-          console.log("Found match by amount/product/user:", {
-            originalTimestamp: t.timestamp,
-            refundTimestamp: transaction.timestamp,
-            amount: t.amount,
-            product: t.product_name,
-            user: t.user_display_name
-          });
-          return true;
-        }
-
-        return false;
-      });
-      
       if (originalTransaction) {
-        console.log("Marking transaction as refunded:", {
-          originalTransaction: {
-            timestamp: originalTransaction.timestamp,
-            amount: originalTransaction.amount,
-            payment_uuid: originalTransaction.payment_uuid
-          },
-          refund: {
-            timestamp: transaction.timestamp,
-            amount: transaction.amount,
-            refund_uuid: transaction.refund_uuid
-          }
+        console.log("Found matching original transaction for historical refund:", {
+          originalTimestamp: originalTransaction.timestamp,
+          refundTimestamp: transaction.timestamp,
+          amount: originalTransaction.amount
         });
         
-        // Mark the original transaction as refunded and store refund details
         originalTransaction.refunded = true;
         originalTransaction.refund_timestamp = transaction.timestamp;
-        originalTransaction.refund_uuid = transaction.purchase_uuid;
-      } else {
-        console.warn("No matching original transaction found for refund:", {
-          timestamp: transaction.timestamp,
-          amount: transaction.amount,
-          product: transaction.product_name,
-          user: transaction.user_display_name,
-          payment_uuid: transaction.payment_uuid,
-          refund_uuid: transaction.refund_uuid
-        });
       }
     }
   });
@@ -88,14 +73,14 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
     }
   });
 
-  // Log the final processed transactions for debugging
+  // Log final processed transactions for debugging
   console.log("Final processed transactions:", processedTransactions.map(t => ({
     timestamp: t.timestamp,
     amount: t.amount,
     refunded: t.refunded,
     refund_timestamp: t.refund_timestamp,
-    product: t.product_name,
-    user: t.user_display_name
+    payment_uuid: t.payment_uuid,
+    refund_uuid: t.refund_uuid
   })));
 
   return processedTransactions;
