@@ -14,7 +14,7 @@ import { PageLayout } from "@/components/PageLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection";
 import { useLeaderboardData } from "@/hooks/useLeaderboardData";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 import {
   Popover,
@@ -42,8 +42,11 @@ const Home = () => {
     queryKey: ['transactions', formattedDate],
     queryFn: async () => {
       console.log('Fetching transactions for date:', formattedDate);
-      const start = startOfDay(new Date(formattedDate));
-      const end = endOfDay(new Date(formattedDate));
+      const start = new Date(formattedDate);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(formattedDate);
+      end.setHours(23, 59, 59, 999);
 
       const { data, error } = await supabase
         .from('total_purchases')
@@ -208,6 +211,7 @@ const Home = () => {
           transactions={transactions}
           isLoading={isTransactionsLoading}
           selectedSeller={selectedSeller}
+          selectedDate={selectedDate}
         />
       </div>
     </PageLayout>
