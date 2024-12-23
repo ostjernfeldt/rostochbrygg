@@ -49,9 +49,7 @@ serve(async (req) => {
     // Format numeric values properly
     const formatNumeric = (value: any) => {
       if (!value) return "0";
-      // Convert comma to dot for decimal numbers and ensure it's a valid number
       const normalizedValue = value.toString().replace(',', '.');
-      // Convert from minor units (cents) to major units
       const numericValue = parseFloat(normalizedValue);
       if (isNaN(numericValue)) return "0";
       return (numericValue / 100).toString();
@@ -61,16 +59,13 @@ serve(async (req) => {
     const formatTimestamp = (timestamp: any) => {
       if (!timestamp) return new Date().toISOString();
       
-      // If timestamp is a number (unix timestamp), convert it to ISO string
       if (typeof timestamp === 'number') {
-        // Check if timestamp is in milliseconds (13 digits) or seconds (10 digits)
         const date = timestamp.toString().length > 10 
           ? new Date(timestamp) 
           : new Date(timestamp * 1000);
         return date.toISOString();
       }
       
-      // If timestamp is already a string, ensure it's in ISO format
       try {
         const date = new Date(timestamp);
         return date.toISOString();
@@ -83,6 +78,17 @@ serve(async (req) => {
     const formattedTimestamp = formatTimestamp(purchaseData.timestamp);
     const formattedAmount = formatNumeric(purchaseData.amount);
     const formattedVatAmount = formatNumeric(purchaseData.vatAmount);
+
+    // Find refund reference if this is a refund
+    let refundUuid = null;
+    if (purchaseData.payments && Array.isArray(purchaseData.payments)) {
+      for (const payment of purchaseData.payments) {
+        if (payment.references?.refundsPayment) {
+          refundUuid = payment.references.refundsPayment;
+          break;
+        }
+      }
+    }
 
     // Insert into total_purchases with all available data
     const { error: totalPurchaseError } = await supabase
@@ -102,7 +108,8 @@ serve(async (req) => {
         gps_coordinates: purchaseData.gpsCoordinates,
         products: purchaseData.products,
         payments: purchaseData.payments,
-        cost_price: costPrice ? parseFloat(formatNumeric(costPrice)) : null
+        cost_price: costPrice ? parseFloat(formatNumeric(costPrice)) : null,
+        refund_uuid: refundUuid
       }]);
 
     if (totalPurchaseError) {
