@@ -8,11 +8,23 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
   rawTransactions.forEach(transaction => {
     if (transaction.amount < 0) {
       // Try to find the original transaction by matching payment_uuid with refund_uuid
-      const originalTransaction = rawTransactions.find(t => 
-        t.payment_uuid === transaction.refund_uuid && 
-        t.amount > 0 &&
-        !t.refunded // Make sure we haven't already marked this as refunded
-      );
+      // or by matching amount, product, and user for historical transactions
+      const originalTransaction = rawTransactions.find(t => {
+        // First try to match using payment_uuid and refund_uuid
+        if (transaction.refund_uuid && t.payment_uuid === transaction.refund_uuid) {
+          return true;
+        }
+        
+        // For historical transactions or when UUIDs are not available,
+        // match based on amount, product name, and user
+        return (
+          Math.abs(Number(t.amount)) === Math.abs(Number(transaction.amount)) &&
+          t.product_name === transaction.product_name &&
+          t.user_display_name === transaction.user_display_name &&
+          new Date(t.timestamp).getTime() < new Date(transaction.timestamp).getTime() &&
+          !t.refunded // Make sure we haven't already marked this as refunded
+        );
+      });
       
       if (originalTransaction) {
         console.log("Found matching original transaction for refund:", {
@@ -20,7 +32,10 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
           refund: transaction,
           match: {
             originalPaymentUuid: originalTransaction.payment_uuid,
-            refundUuid: transaction.refund_uuid
+            refundUuid: transaction.refund_uuid,
+            matchedByAmount: Math.abs(Number(originalTransaction.amount)) === Math.abs(Number(transaction.amount)),
+            matchedByProduct: originalTransaction.product_name === transaction.product_name,
+            matchedByUser: originalTransaction.user_display_name === transaction.user_display_name
           }
         });
         
@@ -32,9 +47,18 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
         console.log("No matching original transaction found for refund:", {
           refund: transaction,
           refundUuid: transaction.refund_uuid,
-          availablePaymentUuids: rawTransactions
+          amount: Math.abs(Number(transaction.amount)),
+          product: transaction.product_name,
+          user: transaction.user_display_name,
+          availableTransactions: rawTransactions
             .filter(t => t.amount > 0)
-            .map(t => t.payment_uuid)
+            .map(t => ({
+              paymentUuid: t.payment_uuid,
+              amount: Number(t.amount),
+              product: t.product_name,
+              user: t.user_display_name,
+              timestamp: t.timestamp
+            }))
         });
       }
     }
