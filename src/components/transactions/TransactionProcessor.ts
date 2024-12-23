@@ -6,55 +6,39 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
     new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
 
-  // Keep track of processed negative transactions to avoid duplicates
-  const processedNegativeTransactions = new Set<string>();
+  // Keep track of refunded payment UUIDs
+  const refundedPaymentUuids = new Set<string>();
 
-  for (let i = 0; i < sortedTransactions.length; i++) {
-    const currentTransaction = sortedTransactions[i];
-    
-    if (processedNegativeTransactions.has(currentTransaction.id)) {
-      continue;
-    }
-
-    if (currentTransaction.amount > 0) {
-      // Look for a refund by checking payment references
-      let isRefunded = false;
-      let refundTimestamp = null;
-      let refundId = null;
-
-      // Get the payment UUID for the current transaction
-      const paymentUuid = currentTransaction.payments?.[0]?.uuid;
-
-      if (paymentUuid) {
-        // Look ahead for a refund that references this payment
-        for (let j = i + 1; j < sortedTransactions.length; j++) {
-          const potentialRefund = sortedTransactions[j];
-          
-          // Check if any payment in the potential refund references our payment UUID
-          const isRefundingThisPayment = potentialRefund.payments?.some(payment => 
-            payment.references?.refundsPayment === paymentUuid
-          );
-
-          if (isRefundingThisPayment) {
-            isRefunded = true;
-            refundTimestamp = potentialRefund.timestamp;
-            refundId = potentialRefund.id;
-            processedNegativeTransactions.add(potentialRefund.id);
-            break;
-          }
+  // First pass: collect all refunded payment UUIDs
+  for (const transaction of sortedTransactions) {
+    if (transaction.payments && Array.isArray(transaction.payments)) {
+      for (const payment of transaction.payments) {
+        if (payment.references?.refundsPayment) {
+          refundedPaymentUuids.add(payment.references.refundsPayment);
         }
       }
-
-      processedTransactions.push({
-        ...currentTransaction,
-        refunded: isRefunded,
-        refund_timestamp: refundTimestamp,
-        refund_uuid: refundId
-      });
-    } else if (currentTransaction.amount < 0 && !processedNegativeTransactions.has(currentTransaction.id)) {
-      // If it's a negative amount that hasn't been matched to a purchase, add it separately
-      processedTransactions.push(currentTransaction);
     }
+  }
+
+  // Second pass: process transactions
+  for (const transaction of sortedTransactions) {
+    let isRefunded = false;
+
+    // Check if any of this transaction's payments have been refunded
+    if (transaction.payments && Array.isArray(transaction.payments)) {
+      for (const payment of transaction.payments) {
+        if (refundedPaymentUuids.has(payment.uuid)) {
+          isRefunded = true;
+          break;
+        }
+      }
+    }
+
+    // Add the transaction with updated refund status
+    processedTransactions.push({
+      ...transaction,
+      refunded: isRefunded
+    });
   }
 
   return processedTransactions;
