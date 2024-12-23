@@ -7,19 +7,21 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
   // First pass: collect all refunds and match them with original transactions
   rawTransactions.forEach(transaction => {
     if (transaction.amount < 0) {
-      // Try to find the original transaction that this refund corresponds to
+      // Try to find the original transaction by matching payment_uuid with refund_uuid
       const originalTransaction = rawTransactions.find(t => 
-        t.amount > 0 && 
-        t.product_name === transaction.product_name &&
-        t.user_display_name === transaction.user_display_name &&
-        new Date(t.timestamp).getTime() < new Date(transaction.timestamp).getTime() &&
+        t.payment_uuid === transaction.refund_uuid && 
+        t.amount > 0 &&
         !t.refunded // Make sure we haven't already marked this as refunded
       );
       
       if (originalTransaction) {
         console.log("Found matching original transaction for refund:", {
           original: originalTransaction,
-          refund: transaction
+          refund: transaction,
+          match: {
+            originalPaymentUuid: originalTransaction.payment_uuid,
+            refundUuid: transaction.refund_uuid
+          }
         });
         
         // Mark the original transaction as refunded and store refund details
@@ -27,7 +29,13 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
         originalTransaction.refund_timestamp = transaction.timestamp;
         originalTransaction.refund_uuid = transaction.purchase_uuid;
       } else {
-        console.log("No matching original transaction found for refund:", transaction);
+        console.log("No matching original transaction found for refund:", {
+          refund: transaction,
+          refundUuid: transaction.refund_uuid,
+          availablePaymentUuids: rawTransactions
+            .filter(t => t.amount > 0)
+            .map(t => t.payment_uuid)
+        });
       }
     }
   });
