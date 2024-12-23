@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PageLayout } from "@/components/PageLayout";
-import { format, parseISO, startOfDay, endOfDay, isEqual } from "date-fns";
+import { format, parseISO, startOfDay, endOfDay } from "date-fns";
 import { sv } from "date-fns/locale";
 import { SalaryList } from "@/components/salaries/SalaryList";
 import { DateRange } from "react-day-picker";
@@ -21,23 +21,37 @@ const Salaries = () => {
   const calculateTotalSales = (userName: string, startDate: string, endDate: string) => {
     if (!sales) return 0;
     
-    const periodSales = sales.filter(sale => 
-      sale.user_display_name === userName &&
-      new Date(sale.timestamp) >= new Date(startDate) &&
-      new Date(sale.timestamp) <= new Date(endDate)
-    );
+    console.log('Calculating total sales for:', {
+      userName,
+      startDate,
+      endDate,
+      salesCount: sales.length
+    });
+    
+    const periodSales = sales.filter(sale => {
+      const saleDate = new Date(sale.timestamp);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      return sale.user_display_name === userName &&
+             saleDate >= start &&
+             saleDate <= end &&
+             !sale.refunded &&
+             sale.amount > 0;
+    });
 
-    return periodSales.reduce((sum, sale) => sum + (Number(sale.amount) || 0), 0);
+    const total = periodSales.reduce((sum, sale) => sum + (Number(sale.amount) || 0), 0);
+    
+    console.log('Period sales result:', {
+      userName,
+      periodSalesCount: periodSales.length,
+      total
+    });
+
+    return total;
   };
 
   const filteredSalaries = salaries?.filter(salary => {
-    // Log the salary period for debugging
-    console.log('Checking salary:', {
-      salary_start: salary.period_start,
-      salary_end: salary.period_end,
-      selectedPeriod
-    });
-
     if (searchQuery && !salary.user_display_name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
@@ -73,14 +87,16 @@ const Salaries = () => {
     // Handle salary period format (yyyy-MM-dd)
     const selectedDate = parseISO(selectedPeriod);
     const salaryStart = startOfDay(new Date(salary.period_start));
+    const salaryEnd = endOfDay(new Date(salary.period_end));
     
     // For salary periods, we want to match if the selected date falls within the salary period
     const isWithinPeriod = 
-      selectedDate >= startOfDay(new Date(salary.period_start)) &&
-      selectedDate <= endOfDay(new Date(salary.period_end));
+      selectedDate >= salaryStart &&
+      selectedDate <= salaryEnd;
 
     console.log('Date comparison:', {
       salaryStart: format(salaryStart, 'yyyy-MM-dd'),
+      salaryEnd: format(salaryEnd, 'yyyy-MM-dd'),
       selectedDate: format(selectedDate, 'yyyy-MM-dd'),
       isWithinPeriod
     });
@@ -96,7 +112,9 @@ const Salaries = () => {
         .filter(sale => 
           sale.user_display_name === userName &&
           new Date(sale.timestamp) >= new Date(startDate) &&
-          new Date(sale.timestamp) <= new Date(endDate)
+          new Date(sale.timestamp) <= new Date(endDate) &&
+          !sale.refunded &&
+          sale.amount > 0
         )
         .map(sale => new Date(sale.timestamp).toDateString())
     );

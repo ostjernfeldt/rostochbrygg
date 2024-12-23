@@ -77,7 +77,9 @@ export const SalaryList = ({
       bonus,
       subtotal,
       vacationPay,
-      totalSalary
+      totalSalary,
+      periodStart: salary.period_start,
+      periodEnd: salary.period_end
     });
 
     return {
@@ -111,9 +113,9 @@ export const SalaryList = ({
           );
 
           const periodShifts = sales.filter(sale => 
-            sale["User Display Name"] === salary.user_display_name &&
-            new Date(sale.Timestamp) >= new Date(salary.period_start) &&
-            new Date(sale.Timestamp) <= new Date(salary.period_end)
+            sale.user_display_name === salary.user_display_name &&
+            new Date(sale.timestamp) >= new Date(salary.period_start) &&
+            new Date(sale.timestamp) <= new Date(salary.period_end)
           );
 
           const periodBonuses = bonuses.filter(bonus => 
