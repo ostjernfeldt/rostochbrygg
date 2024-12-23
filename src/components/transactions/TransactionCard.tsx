@@ -17,7 +17,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
       <div className="flex justify-between items-start mb-2">
         <div className="flex flex-col">
           <span className="text-gray-400">
-            Köp: {format(new Date(transaction.timestamp), "HH:mm")}
+            {transaction.amount < 0 ? 'Återbetalning' : 'Köp'}: {format(new Date(transaction.timestamp), "HH:mm")}
           </span>
           {isRefunded && transaction.refund_timestamp && (
             <span className="text-red-500 text-sm">
