@@ -132,7 +132,10 @@ const StaffMember = () => {
 
       <div className="space-y-4">
         <StaffStats stats={statsData} />
-        <SalesChartSection sales={memberData.sales} />
+        <SalesChartSection 
+          sales={memberData.sales} 
+          userName={decodeURIComponent(memberData.displayName)}
+        />
         <ShiftsList shifts={memberData.shifts} />
       </div>
     </PageLayout>
