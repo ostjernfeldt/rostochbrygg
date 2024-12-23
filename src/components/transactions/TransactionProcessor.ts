@@ -17,25 +17,25 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
     }
 
     if (currentTransaction.amount > 0) {
-      // Look ahead for a matching refund
+      // Look for a refund by checking payment references
       let isRefunded = false;
       let refundTimestamp = null;
       let refundId = null;
 
-      for (let j = i + 1; j < sortedTransactions.length; j++) {
-        const potentialRefund = sortedTransactions[j];
-        
-        if (
-          potentialRefund.amount === -currentTransaction.amount &&
-          potentialRefund.user_display_name === currentTransaction.user_display_name
-        ) {
-          // Check if there are any other transactions by the same user between these timestamps
-          const transactionsBetween = sortedTransactions.slice(i + 1, j).filter(t => 
-            t.user_display_name === currentTransaction.user_display_name &&
-            t.id !== potentialRefund.id
+      // Get the payment UUID for the current transaction
+      const paymentUuid = currentTransaction.payments?.[0]?.uuid;
+
+      if (paymentUuid) {
+        // Look ahead for a refund that references this payment
+        for (let j = i + 1; j < sortedTransactions.length; j++) {
+          const potentialRefund = sortedTransactions[j];
+          
+          // Check if any payment in the potential refund references our payment UUID
+          const isRefundingThisPayment = potentialRefund.payments?.some(payment => 
+            payment.references?.refundsPayment === paymentUuid
           );
 
-          if (transactionsBetween.length === 0) {
+          if (isRefundingThisPayment) {
             isRefunded = true;
             refundTimestamp = potentialRefund.timestamp;
             refundId = potentialRefund.id;
