@@ -42,6 +42,13 @@ export interface TotalPurchase {
   refund_uuid: string | null;
   refund_timestamp?: string;
   payments?: Payment[];
+  cost_price?: number | null;
+  currency?: string | null;
+  country?: string | null;
+  purchase_number?: number | null;
+  gps_coordinates?: any;
+  products?: any;
+  vat_amount?: number | null;
 }
 
 export interface LegacyPurchaseFormat {
