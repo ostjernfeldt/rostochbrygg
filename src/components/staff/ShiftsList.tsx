@@ -31,7 +31,7 @@ export const ShiftsList = ({ shifts }: ShiftsListProps) => {
 
       console.log("Shift dates:", shiftDates);
 
-      // For each shift date, fetch the sales data
+      // For each shift date, fetch the sales data for the specific user
       const shiftsWithSales = await Promise.all(shiftDates.map(async (date) => {
         const startDate = new Date(date);
         startDate.setHours(0, 0, 0, 0);
@@ -39,9 +39,13 @@ export const ShiftsList = ({ shifts }: ShiftsListProps) => {
         const endDate = new Date(date);
         endDate.setHours(23, 59, 59, 999);
 
+        // Get the user display name from the first shift
+        const userDisplayName = shifts[0].sales[0]?.user_display_name;
+
         const { data: sales, error } = await supabase
           .from("total_purchases")
           .select("*")
+          .eq("user_display_name", userDisplayName)
           .gte("timestamp", startDate.toISOString())
           .lte("timestamp", endDate.toISOString())
           .not("refunded", "eq", true);
@@ -58,7 +62,7 @@ export const ShiftsList = ({ shifts }: ShiftsListProps) => {
         // Calculate total sales for the shift
         const totalSales = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
 
-        console.log(`Sales for ${date}:`, {
+        console.log(`Sales for ${date} by ${userDisplayName}:`, {
           salesCount: validSales.length,
           totalAmount: totalSales
         });
