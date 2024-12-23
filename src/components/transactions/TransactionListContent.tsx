@@ -28,36 +28,30 @@ export const TransactionListContent = ({ isLoading, transactions }: TransactionL
     );
   }
 
-  // Group transactions by their related IDs
-  const groupedTransactions = transactions.reduce((groups: TotalPurchase[][], transaction) => {
-    // Try to find an existing group that this transaction belongs to
-    const existingGroupIndex = groups.findIndex(group => 
-      group.some(t => 
-        // Match by payment_uuid/refund_uuid
-        (t.payment_uuid && t.payment_uuid === transaction.refund_uuid) ||
-        (t.refund_uuid && t.refund_uuid === transaction.payment_uuid) ||
-        // Or by matching amounts (positive/negative) and user
-        (t.user_display_name === transaction.user_display_name &&
-         Math.abs(Number(t.amount)) === Math.abs(Number(transaction.amount)) &&
-         ((t.amount > 0 && transaction.amount < 0) || (t.amount < 0 && transaction.amount > 0)))
-      )
+  // Filter out standalone refund transactions that are already shown as part of their original transaction
+  const filteredTransactions = transactions.filter(transaction => {
+    // Keep all positive amount transactions
+    if (transaction.amount >= 0) return true;
+    
+    // For negative amounts (refunds), check if there's a matching original transaction
+    const hasMatchingOriginal = transactions.some(t => 
+      // Match by payment_uuid/refund_uuid
+      (t.payment_uuid === transaction.refund_uuid) ||
+      // Or by matching amounts and user (as fallback)
+      (t.user_display_name === transaction.user_display_name &&
+       Math.abs(Number(t.amount)) === Math.abs(Number(transaction.amount)) &&
+       t.amount > 0 &&
+       new Date(t.timestamp) < new Date(transaction.timestamp))
     );
+    
+    // Only keep refund transactions that don't have a matching original transaction
+    return !hasMatchingOriginal;
+  });
 
-    if (existingGroupIndex >= 0) {
-      groups[existingGroupIndex].push(transaction);
-    } else {
-      groups.push([transaction]);
-    }
-    return groups;
-  }, []);
-
-  // Sort transactions within each group by timestamp
-  const sortedGroups = groupedTransactions.map(group => 
-    group.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+  // Sort transactions by timestamp
+  const sortedTransactions = [...filteredTransactions].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
-
-  // Flatten the groups back into a single array
-  const sortedTransactions = sortedGroups.flat();
 
   return (
     <div className="space-y-4">
