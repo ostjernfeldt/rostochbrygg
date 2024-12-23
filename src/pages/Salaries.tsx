@@ -72,21 +72,20 @@ const Salaries = () => {
 
     // Handle salary period format (yyyy-MM-dd)
     const selectedDate = parseISO(selectedPeriod);
-    const salaryStart = new Date(salary.period_start);
+    const salaryStart = startOfDay(new Date(salary.period_start));
     
-    // Compare the dates by checking if the salary period starts on the selected date
-    const isMatchingPeriod = isEqual(
-      startOfDay(salaryStart),
-      startOfDay(selectedDate)
-    );
+    // For salary periods, we want to match if the selected date falls within the salary period
+    const isWithinPeriod = 
+      selectedDate >= startOfDay(new Date(salary.period_start)) &&
+      selectedDate <= endOfDay(new Date(salary.period_end));
 
     console.log('Date comparison:', {
       salaryStart: format(salaryStart, 'yyyy-MM-dd'),
       selectedDate: format(selectedDate, 'yyyy-MM-dd'),
-      isMatchingPeriod
+      isWithinPeriod
     });
 
-    return isMatchingPeriod;
+    return isWithinPeriod;
   });
 
   const calculateShiftsCount = (userName: string, startDate: string, endDate: string) => {
