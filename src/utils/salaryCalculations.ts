@@ -24,10 +24,38 @@ export const calculateAccumulatedSales = (
   userName: string,
   endDate: string
 ) => {
-  return sales
-    .filter(sale => 
-      sale["User Display Name"] === userName &&
-      new Date(sale.Timestamp!) <= new Date(endDate)
-    )
-    .reduce((sum, sale) => sum + (Number(sale.Amount) || 0), 0);
+  console.log('Calculating accumulated sales for:', {
+    userName,
+    endDate,
+    totalSales: sales.length
+  });
+
+  const total = sales
+    .filter(sale => {
+      const saleDate = new Date(sale.timestamp);
+      const end = new Date(endDate);
+      const isBeforeEnd = saleDate <= end;
+      const isValidSale = !sale.refunded && Number(sale.amount) > 0;
+      const isCorrectUser = sale.user_display_name === userName;
+
+      console.log('Checking accumulated sale:', {
+        saleDate: saleDate.toISOString(),
+        endDate: end.toISOString(),
+        isBeforeEnd,
+        isValidSale,
+        isCorrectUser,
+        amount: sale.amount
+      });
+
+      return isCorrectUser && isBeforeEnd && isValidSale;
+    })
+    .reduce((sum, sale) => sum + Number(sale.amount), 0);
+
+  console.log('Accumulated sales result:', {
+    userName,
+    total,
+    endDate
+  });
+
+  return total;
 };
