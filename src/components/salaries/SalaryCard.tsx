@@ -33,6 +33,10 @@ export const SalaryCard = ({
   // Calculate commission with the new logic
   const commission = calculateCommission(totalSales, salary.commission_rate, accumulatedSales);
   
+  // Calculate increased commission (15%) only on sales after 25000
+  const increasedCommission = accumulatedSales > 25000 ? 
+    Math.max(0, (totalSales - Math.max(0, 25000 - (accumulatedSales - totalSales)))) * 0.15 : 0;
+  
   // Get bonus amount (if any)
   const bonus = salary.bonus || 0;
   
@@ -63,6 +67,7 @@ export const SalaryCard = ({
         commission={commission}
         commissionRate={salary.commission_rate}
         hasIncreasedCommission={hasIncreasedCommission}
+        increasedCommission={increasedCommission}
         bonus={bonus}
         subtotal={subtotal}
         vacationPay={vacationPay}

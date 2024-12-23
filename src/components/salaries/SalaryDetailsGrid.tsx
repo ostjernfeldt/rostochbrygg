@@ -10,6 +10,7 @@ interface SalaryDetailsGridProps {
   commission: number;
   commissionRate: number;
   hasIncreasedCommission: boolean;
+  increasedCommission: number;
   bonus: number;
   subtotal: number;
   vacationPay: number;
@@ -27,6 +28,7 @@ export const SalaryDetailsGrid = ({
   commission,
   commissionRate,
   hasIncreasedCommission,
+  increasedCommission,
   bonus,
   subtotal,
   vacationPay,
@@ -106,7 +108,7 @@ export const SalaryDetailsGrid = ({
         }
       >
         <CommissionDetail 
-          totalSales={totalSales} 
+          totalSales={Math.min(totalSales, Math.max(0, 25000 - (accumulatedSales - totalSales)))} 
           commission={commission} 
           rate={commissionRate} 
         />
@@ -120,14 +122,14 @@ export const SalaryDetailsGrid = ({
               <span>Provision 15%</span>
             </div>
             <div className="text-lg font-semibold">
-              {hasIncreasedCommission ? (totalSales * 0.15).toLocaleString() : '0'} kr
+              {increasedCommission.toLocaleString()} kr
             </div>
           </div>
         }
       >
         <CommissionDetail 
-          totalSales={totalSales} 
-          commission={hasIncreasedCommission ? totalSales * 0.15 : 0} 
+          totalSales={hasIncreasedCommission ? Math.max(0, totalSales - Math.max(0, 25000 - (accumulatedSales - totalSales))) : 0} 
+          commission={increasedCommission} 
           rate={15} 
         />
       </SalaryDetail>
