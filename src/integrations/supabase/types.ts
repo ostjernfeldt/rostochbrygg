@@ -368,6 +368,7 @@ export type Database = {
           gps_coordinates: Json | null
           id: string
           payment_type: string | null
+          payment_uuid: string | null
           payments: Json | null
           product_name: string | null
           products: Json | null
@@ -390,6 +391,7 @@ export type Database = {
           gps_coordinates?: Json | null
           id?: string
           payment_type?: string | null
+          payment_uuid?: string | null
           payments?: Json | null
           product_name?: string | null
           products?: Json | null
@@ -412,6 +414,7 @@ export type Database = {
           gps_coordinates?: Json | null
           id?: string
           payment_type?: string | null
+          payment_uuid?: string | null
           payments?: Json | null
           product_name?: string | null
           products?: Json | null
