@@ -30,22 +30,35 @@ const Salaries = () => {
     
     const periodSales = sales.filter(sale => {
       const saleDate = new Date(sale.timestamp);
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+      const start = startOfDay(new Date(startDate));
+      const end = endOfDay(new Date(endDate));
+      
+      const isWithinPeriod = saleDate >= start && saleDate <= end;
+      
+      console.log('Checking sale:', {
+        saleDate: format(saleDate, 'yyyy-MM-dd HH:mm:ss'),
+        start: format(start, 'yyyy-MM-dd HH:mm:ss'),
+        end: format(end, 'yyyy-MM-dd HH:mm:ss'),
+        isWithinPeriod,
+        userName: sale.user_display_name,
+        amount: sale.amount,
+        refunded: sale.refunded
+      });
       
       return sale.user_display_name === userName &&
-             saleDate >= start &&
-             saleDate <= end &&
+             isWithinPeriod &&
              !sale.refunded &&
              sale.amount > 0;
     });
 
-    const total = periodSales.reduce((sum, sale) => sum + (Number(sale.amount) || 0), 0);
+    const total = periodSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
     
     console.log('Period sales result:', {
       userName,
       periodSalesCount: periodSales.length,
-      total
+      total,
+      startDate,
+      endDate
     });
 
     return total;
@@ -71,8 +84,8 @@ const Salaries = () => {
     }
 
     if (selectedPeriod === "custom" && dateRange) {
-      const salaryStart = new Date(salary.period_start);
-      const salaryEnd = new Date(salary.period_end);
+      const salaryStart = startOfDay(new Date(salary.period_start));
+      const salaryEnd = endOfDay(new Date(salary.period_end));
       const rangeStart = dateRange.from ? startOfDay(dateRange.from) : null;
       const rangeEnd = dateRange.to ? endOfDay(dateRange.to) : null;
 
@@ -90,9 +103,7 @@ const Salaries = () => {
     const salaryEnd = endOfDay(new Date(salary.period_end));
     
     // For salary periods, we want to match if the selected date falls within the salary period
-    const isWithinPeriod = 
-      selectedDate >= salaryStart &&
-      selectedDate <= salaryEnd;
+    const isWithinPeriod = selectedDate >= salaryStart && selectedDate <= salaryEnd;
 
     console.log('Date comparison:', {
       salaryStart: format(salaryStart, 'yyyy-MM-dd'),
@@ -109,14 +120,18 @@ const Salaries = () => {
     
     const uniqueDates = new Set(
       sales
-        .filter(sale => 
-          sale.user_display_name === userName &&
-          new Date(sale.timestamp) >= new Date(startDate) &&
-          new Date(sale.timestamp) <= new Date(endDate) &&
-          !sale.refunded &&
-          sale.amount > 0
-        )
-        .map(sale => new Date(sale.timestamp).toDateString())
+        .filter(sale => {
+          const saleDate = new Date(sale.timestamp);
+          const start = startOfDay(new Date(startDate));
+          const end = endOfDay(new Date(endDate));
+          
+          return sale.user_display_name === userName &&
+                 saleDate >= start &&
+                 saleDate <= end &&
+                 !sale.refunded &&
+                 sale.amount > 0;
+        })
+        .map(sale => format(new Date(sale.timestamp), 'yyyy-MM-dd'))
     );
     
     return uniqueDates.size;
