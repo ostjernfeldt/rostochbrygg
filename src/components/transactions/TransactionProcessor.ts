@@ -1,8 +1,10 @@
 import { TotalPurchase } from "@/types/purchase";
+import { mapToTotalPurchase } from "@/utils/purchaseMappers";
 
-export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurchase[] => {
+export const processTransactions = (rawTransactions: any[]): TotalPurchase[] => {
+  const mappedTransactions = rawTransactions.map(mapToTotalPurchase);
   const processedTransactions: TotalPurchase[] = [];
-  const sortedTransactions = [...rawTransactions].sort((a, b) => 
+  const sortedTransactions = [...mappedTransactions].sort((a, b) => 
     new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
 

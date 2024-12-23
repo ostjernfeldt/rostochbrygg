@@ -16,11 +16,11 @@ export interface DatabasePurchase {
   source?: string;
 }
 
-interface PaymentReference {
+export interface PaymentReference {
   refundsPayment?: string;
 }
 
-interface Payment {
+export interface Payment {
   uuid: string;
   amount: number;
   type: string;
@@ -40,8 +40,8 @@ export interface TotalPurchase {
   updated_at: string | null;
   refunded: boolean | null;
   refund_uuid: string | null;
-  refund_timestamp?: string;
-  payments?: Payment[];
+  refund_timestamp?: string | null;
+  payments?: Payment[] | null;
   cost_price?: number | null;
   currency?: string | null;
   country?: string | null;

@@ -1,4 +1,5 @@
-import { DatabasePurchase, LegacyPurchaseFormat, TotalPurchase } from "@/types/purchase";
+import { DatabasePurchase, LegacyPurchaseFormat, TotalPurchase, Payment } from "@/types/purchase";
+import { Json } from "@/types/database";
 
 export const mapDatabaseToLegacyFormat = (purchase: DatabasePurchase | TotalPurchase): LegacyPurchaseFormat => {
   const normalizeNumeric = (value: string | number | null) => {
@@ -20,7 +21,7 @@ export const mapPurchaseArray = (purchases: (DatabasePurchase | TotalPurchase)[]
   return purchases.map(mapDatabaseToLegacyFormat);
 };
 
-const parseJsonField = (field: any) => {
+const parseJsonField = (field: Json | null): any => {
   if (!field) return undefined;
   if (typeof field === 'string') {
     try {
@@ -33,15 +34,24 @@ const parseJsonField = (field: any) => {
   return field;
 };
 
+const parsePayments = (paymentsJson: Json | null): Payment[] => {
+  const parsed = parseJsonField(paymentsJson);
+  if (!Array.isArray(parsed)) return [];
+  
+  return parsed.map(payment => ({
+    uuid: payment.uuid || '',
+    amount: Number(payment.amount) || 0,
+    type: payment.type || '',
+    references: payment.references || undefined
+  }));
+};
+
 export const mapToTotalPurchase = (purchase: any): TotalPurchase => {
   const normalizeAmount = (amount: number | string | null): number => {
     if (!amount) return 0;
     const numericAmount = typeof amount === 'number' ? amount : parseFloat(amount.toString().replace(',', '.'));
     return isNaN(numericAmount) ? 0 : numericAmount;
   };
-
-  // Parse payments JSON if it exists
-  const payments = parseJsonField(purchase.payments);
 
   return {
     id: purchase.id || purchase.purchase_uuid,
@@ -57,7 +67,7 @@ export const mapToTotalPurchase = (purchase: any): TotalPurchase => {
     refunded: purchase.refunded || false,
     refund_uuid: purchase.refund_uuid || null,
     refund_timestamp: purchase.refund_timestamp || null,
-    payments: payments,
+    payments: parsePayments(purchase.payments),
     cost_price: purchase.cost_price,
     currency: purchase.currency,
     country: purchase.country,
