@@ -7,13 +7,29 @@ interface StatsResult {
 }
 
 export const calculateTopSeller = (sales: TotalPurchase[]): StatsResult => {
-  const userTotals = sales.reduce<Record<string, number>>((acc, sale) => {
+  console.log("Calculating top seller with total sales:", sales.length);
+  
+  // Filter out refunded transactions and only include valid sales
+  const validSales = sales.filter(sale => 
+    !sale.refunded && // exclude refunded transactions
+    Number(sale.amount) > 0 && // only positive amounts
+    sale.user_display_name // must have a user name
+  );
+
+  console.log("Valid sales after filtering:", validSales.length);
+
+  const userTotals = validSales.reduce<Record<string, number>>((acc, sale) => {
     const name = sale.user_display_name;
     if (!name) return acc;
     
-    acc[name] = (acc[name] || 0) + Number(sale.amount);
+    const amount = Number(sale.amount);
+    acc[name] = (acc[name] || 0) + amount;
+    
+    console.log(`Adding ${amount} to ${name}'s total. New total: ${acc[name]}`);
     return acc;
   }, {});
+
+  console.log("Final user totals:", userTotals);
 
   return Object.entries(userTotals)
     .map(([name, total]) => ({
@@ -24,7 +40,13 @@ export const calculateTopSeller = (sales: TotalPurchase[]): StatsResult => {
 };
 
 export const calculateHighestSale = (sales: TotalPurchase[]): StatsResult => {
-  const highestSale = sales
+  const validSales = sales.filter(sale => 
+    !sale.refunded && 
+    Number(sale.amount) > 0 &&
+    sale.user_display_name
+  );
+
+  const highestSale = validSales
     .reduce((highest, sale) => {
       const amount = Number(sale.amount);
       return amount > highest.value ? { user_display_name: sale.user_display_name || '-', value: amount } : highest;
@@ -34,7 +56,13 @@ export const calculateHighestSale = (sales: TotalPurchase[]): StatsResult => {
 };
 
 export const calculateTopAverageValue = (sales: TotalPurchase[]): StatsResult => {
-  const userSales = sales.reduce<Record<string, { total: number; count: number }>>((acc, sale) => {
+  const validSales = sales.filter(sale => 
+    !sale.refunded && 
+    Number(sale.amount) > 0 &&
+    sale.user_display_name
+  );
+
+  const userSales = validSales.reduce<Record<string, { total: number; count: number }>>((acc, sale) => {
     const name = sale.user_display_name;
     if (!name) return acc;
     
@@ -57,11 +85,14 @@ export const calculateTopAverageValue = (sales: TotalPurchase[]): StatsResult =>
 export const calculateTopPresence = (sales: TotalPurchase[]): StatsResult => {
   const thirtyDaysAgo = subDays(new Date(), 30);
   
-  const recentSales = sales.filter(sale => 
-    new Date(sale.timestamp) >= thirtyDaysAgo
+  const validSales = sales.filter(sale => 
+    !sale.refunded &&
+    Number(sale.amount) > 0 &&
+    new Date(sale.timestamp) >= thirtyDaysAgo &&
+    sale.user_display_name
   );
 
-  const userDays = recentSales.reduce<Record<string, Set<string>>>((acc, sale) => {
+  const userDays = validSales.reduce<Record<string, Set<string>>>((acc, sale) => {
     const name = sale.user_display_name;
     if (!name) return acc;
     
