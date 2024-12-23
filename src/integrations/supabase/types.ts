@@ -374,6 +374,7 @@ export type Database = {
           products: Json | null
           purchase_number: number | null
           purchase_uuid: string | null
+          refund_timestamp: string | null
           refund_uuid: string | null
           refunded: boolean | null
           source: string
@@ -397,6 +398,7 @@ export type Database = {
           products?: Json | null
           purchase_number?: number | null
           purchase_uuid?: string | null
+          refund_timestamp?: string | null
           refund_uuid?: string | null
           refunded?: boolean | null
           source?: string
@@ -420,6 +422,7 @@ export type Database = {
           products?: Json | null
           purchase_number?: number | null
           purchase_uuid?: string | null
+          refund_timestamp?: string | null
           refund_uuid?: string | null
           refunded?: boolean | null
           source?: string
