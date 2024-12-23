@@ -8,7 +8,6 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
   rawTransactions.forEach(transaction => {
     if (transaction.amount < 0) {
       // Try to find the original transaction by matching payment_uuid with refund_uuid
-      // or by matching amount, product, and user for historical transactions
       const originalTransaction = rawTransactions.find(t => {
         // First try to match using payment_uuid and refund_uuid
         if (transaction.refund_uuid && t.payment_uuid === transaction.refund_uuid) {
@@ -29,37 +28,13 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
       if (originalTransaction) {
         console.log("Found matching original transaction for refund:", {
           original: originalTransaction,
-          refund: transaction,
-          match: {
-            originalPaymentUuid: originalTransaction.payment_uuid,
-            refundUuid: transaction.refund_uuid,
-            matchedByAmount: Math.abs(Number(originalTransaction.amount)) === Math.abs(Number(transaction.amount)),
-            matchedByProduct: originalTransaction.product_name === transaction.product_name,
-            matchedByUser: originalTransaction.user_display_name === transaction.user_display_name
-          }
+          refund: transaction
         });
         
         // Mark the original transaction as refunded and store refund details
         originalTransaction.refunded = true;
         originalTransaction.refund_timestamp = transaction.timestamp;
         originalTransaction.refund_uuid = transaction.purchase_uuid;
-      } else {
-        console.log("No matching original transaction found for refund:", {
-          refund: transaction,
-          refundUuid: transaction.refund_uuid,
-          amount: Math.abs(Number(transaction.amount)),
-          product: transaction.product_name,
-          user: transaction.user_display_name,
-          availableTransactions: rawTransactions
-            .filter(t => t.amount > 0)
-            .map(t => ({
-              paymentUuid: t.payment_uuid,
-              amount: Number(t.amount),
-              product: t.product_name,
-              user: t.user_display_name,
-              timestamp: t.timestamp
-            }))
-        });
       }
     }
   });
@@ -71,7 +46,6 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
     }
   });
 
-  console.log("Processed transactions:", processedTransactions);
   return processedTransactions;
 };
 

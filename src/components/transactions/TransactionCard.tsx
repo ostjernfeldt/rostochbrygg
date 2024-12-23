@@ -7,6 +7,7 @@ interface TransactionCardProps {
 
 export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   const isRefunded = transaction.refunded || transaction.amount < 0;
+  const isRefund = transaction.amount < 0;
   
   return (
     <div 
@@ -17,9 +18,9 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
       <div className="flex justify-between items-start mb-2">
         <div className="flex flex-col">
           <span className="text-gray-400">
-            Köp: {format(new Date(transaction.timestamp), "HH:mm")}
+            {isRefund ? 'Återbetalning' : 'Köp'}: {format(new Date(transaction.timestamp), "HH:mm")}
           </span>
-          {isRefunded && transaction.refund_timestamp && (
+          {isRefunded && transaction.refund_timestamp && !isRefund && (
             <span className="text-red-500 text-sm">
               Återbetalning: {format(new Date(transaction.refund_timestamp), "HH:mm")}
             </span>
@@ -30,7 +31,9 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
             SEK {Math.abs(Number(transaction.amount))?.toLocaleString()}
           </span>
           {isRefunded && (
-            <span className="text-sm text-red-500">Återbetald</span>
+            <span className="text-sm text-red-500">
+              {isRefund ? 'Återbetalad' : 'Återbetald'}
+            </span>
           )}
         </div>
       </div>
