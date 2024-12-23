@@ -1,5 +1,5 @@
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -14,72 +14,37 @@ import type { LegacyPurchaseFormat, TotalPurchase } from "@/types/purchase";
 
 const TransactionList = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const dateParam = searchParams.get('date');
   const [selectedUser, setSelectedUser] = useState<string>('all');
   
   const { data: transactions, isLoading } = useQuery({
-    queryKey: ["latestTransactions"],
+    queryKey: ["latestTransactions", dateParam],
     queryFn: async () => {
-      console.log("Fetching transactions...");
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      console.log("Fetching transactions for date:", dateParam);
       
-      const todayResult = await supabase
+      const startOfDay = new Date(dateParam || new Date());
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(dateParam || new Date());
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const { data: salesData, error: salesError } = await supabase
         .from("total_purchases")
         .select()
-        .gte("timestamp", today.toISOString())
+        .gte("timestamp", startOfDay.toISOString())
+        .lte("timestamp", endOfDay.toISOString())
         .order("timestamp", { ascending: false });
 
-      if (todayResult.error) {
-        console.error("Error fetching today's transactions:", todayResult.error);
-        throw todayResult.error;
+      if (salesError) {
+        console.error("Error fetching sales data:", salesError);
+        throw salesError;
       }
 
-      console.log("Today's transactions:", todayResult.data);
-
-      if (todayResult.data && todayResult.data.length > 0) {
-        return {
-          transactions: processTransactions(todayResult.data),
-          date: today
-        };
-      }
-
-      const latestDateResult = await supabase
-        .from("total_purchases")
-        .select("timestamp")
-        .order("timestamp", { ascending: false })
-        .limit(1);
-
-      if (latestDateResult.error) {
-        console.error("Error fetching latest date:", latestDateResult.error);
-        throw latestDateResult.error;
-      }
-
-      if (!latestDateResult.data || latestDateResult.data.length === 0) {
-        return {
-          transactions: [],
-          date: today
-        };
-      }
-
-      const latestDate = new Date(latestDateResult.data[0].timestamp);
-      latestDate.setHours(0, 0, 0, 0);
-      
-      const latestTransactions = await supabase
-        .from("total_purchases")
-        .select()
-        .gte("timestamp", latestDate.toISOString())
-        .lt("timestamp", new Date(latestDate.getTime() + 24 * 60 * 60 * 1000).toISOString())
-        .order("timestamp", { ascending: false });
-
-      if (latestTransactions.error) {
-        console.error("Error fetching latest transactions:", latestTransactions.error);
-        throw latestTransactions.error;
-      }
-
-      console.log("Latest transactions:", latestTransactions.data);
+      console.log("Fetched transactions:", salesData);
       return {
-        transactions: processTransactions(latestTransactions.data),
-        date: latestDate
+        transactions: processTransactions(salesData || []),
+        date: startOfDay
       };
     }
   });

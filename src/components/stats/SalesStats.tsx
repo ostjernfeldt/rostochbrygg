@@ -76,7 +76,7 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
   return (
     <>
       <div 
-        onClick={() => navigate("/transactions")}
+        onClick={() => navigate(`/transactions${selectedDate ? `?date=${selectedDate}` : ''}`)}
         className="stat-card animate-fade-in [animation-delay:200ms] hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
       >
         <span className="text-gray-400 text-lg">Total försäljning</span>
