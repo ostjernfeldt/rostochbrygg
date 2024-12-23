@@ -100,7 +100,11 @@ const Home = () => {
             <h1 className="text-3xl font-bold mb-1 text-left">
               Välkommen{username ? ` ${username}` : ''}
             </h1>
-            <p className="text-gray-400 text-lg text-left">Här kan du se statistiken från idag.</p>
+            <p className="text-gray-400 text-lg text-left">
+              {selectedDate 
+                ? `Här kan du se statistiken från ${format(selectedDate, 'd MMMM', { locale: sv })}.`
+                : 'Här kan du se statistiken från idag.'}
+            </p>
             <button 
               onClick={() => navigate('/settings')}
               className="flex items-center gap-2 mt-2 text-gray-400 hover:text-primary transition-colors"
@@ -146,7 +150,7 @@ const Home = () => {
         </div>
 
         <TimeLeftCard />
-        <SalesStats shouldAnimate={shouldAnimate} />
+        <SalesStats shouldAnimate={shouldAnimate} selectedDate={formattedDate} />
         
         <div className="mt-8">
           <LeaderboardSection

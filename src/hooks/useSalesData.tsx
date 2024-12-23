@@ -1,7 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { mapPurchaseArray } from "@/utils/purchaseMappers";
-import { TotalPurchase } from "@/types/purchase";
 import { processTransactions, getValidSalesCount, getValidTotalAmount } from "@/components/transactions/TransactionProcessor";
 
 interface SalesData {
@@ -15,95 +13,73 @@ interface SalesData {
   };
 }
 
-export const useSalesData = () => {
+export const useSalesData = (selectedDate?: string) => {
   return useQuery({
-    queryKey: ["latestSales"],
+    queryKey: ["latestSales", selectedDate],
     queryFn: async (): Promise<SalesData> => {
-      console.log("Fetching latest sales data...");
+      console.log("Fetching sales data for date:", selectedDate);
       
-      const { data: dateData, error: dateError } = await supabase
+      const startOfDay = new Date(selectedDate || new Date());
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(selectedDate || new Date());
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const { data: salesData, error: salesError } = await supabase
         .from("total_purchases")
-        .select("timestamp")
-        .order("timestamp", { ascending: false });
+        .select("*")
+        .gte("timestamp", startOfDay.toISOString())
+        .lte("timestamp", endOfDay.toISOString());
 
-      if (dateError) {
-        console.error("Error fetching dates:", dateError);
-        throw dateError;
+      if (salesError) {
+        console.error("Error fetching sales data:", salesError);
+        throw salesError;
       }
 
-      if (!dateData || dateData.length === 0) {
-        console.log("No sales data found");
-        return {
-          totalAmount: 0,
-          salesCount: 0,
-          averageValue: 0,
-          percentageChanges: {
-            totalAmount: 0,
-            salesCount: 0,
-            averageValue: 0
-          }
-        };
+      // Get previous day's data for comparison
+      const previousDay = new Date(startOfDay);
+      previousDay.setDate(previousDay.getDate() - 1);
+      const previousDayEnd = new Date(previousDay);
+      previousDayEnd.setHours(23, 59, 59, 999);
+
+      const { data: previousSalesData, error: previousSalesError } = await supabase
+        .from("total_purchases")
+        .select("*")
+        .gte("timestamp", previousDay.toISOString())
+        .lte("timestamp", previousDayEnd.toISOString());
+
+      if (previousSalesError) {
+        console.error("Error fetching previous sales data:", previousSalesError);
+        throw previousSalesError;
       }
 
-      const uniqueDates = Array.from(new Set(
-        dateData.map(d => new Date(d.timestamp).toDateString())
-      )).map(dateStr => new Date(dateStr));
+      const processedTransactions = processTransactions(salesData || []);
+      const totalAmount = getValidTotalAmount(processedTransactions);
+      const salesCount = getValidSalesCount(processedTransactions);
+      const averageValue = salesCount > 0 ? totalAmount / salesCount : 0;
 
-      uniqueDates.sort((a, b) => b.getTime() - a.getTime());
-
-      const latestDate = uniqueDates[0];
-      const previousDate = uniqueDates[1];
-
-      console.log("Latest date:", latestDate);
-      console.log("Previous date:", previousDate);
-
-      const getSalesForDate = async (date: Date) => {
-        const startOfDay = new Date(date);
-        startOfDay.setHours(0, 0, 0, 0);
-
-        const endOfDay = new Date(date);
-        endOfDay.setHours(23, 59, 59, 999);
-
-        const { data: salesData, error: salesError } = await supabase
-          .from("total_purchases")
-          .select("*")
-          .gte("timestamp", startOfDay.toISOString())
-          .lte("timestamp", endOfDay.toISOString());
-
-        if (salesError) {
-          console.error("Error fetching sales data:", salesError);
-          throw salesError;
-        }
-
-        const processedTransactions = processTransactions(salesData || []);
-        const totalAmount = getValidTotalAmount(processedTransactions);
-        const salesCount = getValidSalesCount(processedTransactions);
-        const averageValue = salesCount > 0 ? totalAmount / salesCount : 0;
-
-        return { totalAmount, salesCount, averageValue };
-      };
-
-      const latestData = await getSalesForDate(latestDate);
-      const previousData = previousDate ? await getSalesForDate(previousDate) : null;
+      const processedPreviousTransactions = processTransactions(previousSalesData || []);
+      const previousTotalAmount = getValidTotalAmount(processedPreviousTransactions);
+      const previousSalesCount = getValidSalesCount(processedPreviousTransactions);
+      const previousAverageValue = previousSalesCount > 0 ? previousTotalAmount / previousSalesCount : 0;
 
       const calculatePercentageChange = (current: number, previous: number) => {
         if (!previous) return 0;
         return ((current - previous) / previous) * 100;
       };
 
-      const percentageChanges = {
-        totalAmount: calculatePercentageChange(latestData.totalAmount, previousData?.totalAmount || 0),
-        salesCount: calculatePercentageChange(latestData.salesCount, previousData?.salesCount || 0),
-        averageValue: calculatePercentageChange(latestData.averageValue, previousData?.averageValue || 0)
-      };
-
-      console.log("Latest data:", latestData);
-      console.log("Previous data:", previousData);
-      console.log("Percentage changes:", percentageChanges);
+      console.log("Current day stats:", { totalAmount, salesCount, averageValue });
+      console.log("Previous day stats:", { previousTotalAmount, previousSalesCount, previousAverageValue });
 
       return {
-        ...latestData,
-        percentageChanges
+        totalAmount,
+        salesCount,
+        averageValue,
+        percentageChanges: {
+          totalAmount: calculatePercentageChange(totalAmount, previousTotalAmount),
+          salesCount: calculatePercentageChange(salesCount, previousSalesCount),
+          averageValue: calculatePercentageChange(averageValue, previousAverageValue)
+        }
       };
     }
   });

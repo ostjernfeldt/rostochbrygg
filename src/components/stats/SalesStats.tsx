@@ -4,9 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { SellerStatsDialog } from "./SellerStatsDialog";
 
-export const SalesStats = ({ shouldAnimate = false }) => {
+interface SalesStatsProps {
+  shouldAnimate?: boolean;
+  selectedDate?: string;
+}
+
+export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsProps) => {
   const navigate = useNavigate();
-  const { data: salesData, isLoading } = useSalesData();
+  const { data: salesData, isLoading } = useSalesData(selectedDate);
   const [dialogType, setDialogType] = useState<"sales" | "average" | null>(null);
   
   const animatedSalesAmount = useCountAnimation(
