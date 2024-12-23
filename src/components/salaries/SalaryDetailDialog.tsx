@@ -79,7 +79,7 @@ interface SalesDetailProps {
 }
 
 export const SalesDetail = ({ sales, totalSales }: SalesDetailProps) => {
-  // Group sales by date and calculate total for each date
+  // Group sales by date and calculate total for each date (including negative amounts)
   const salesByDate = sales.reduce((acc, sale) => {
     const date = new Date(sale.timestamp);
     if (!isValid(date)) {
@@ -91,7 +91,8 @@ export const SalesDetail = ({ sales, totalSales }: SalesDetailProps) => {
     if (!acc[dateKey]) {
       acc[dateKey] = 0;
     }
-    acc[dateKey] += Number(sale.amount) || 0;
+    // Include both positive and negative amounts
+    acc[dateKey] += Number(sale.amount);
     return acc;
   }, {} as Record<string, number>);
 
@@ -107,7 +108,9 @@ export const SalesDetail = ({ sales, totalSales }: SalesDetailProps) => {
         {sortedDates.map((date) => (
           <div key={date} className="text-sm flex justify-between">
             <span>{format(parseISO(date), 'd MMMM yyyy', { locale: sv })}</span>
-            <span>{salesByDate[date].toLocaleString()} kr</span>
+            <span className={salesByDate[date] < 0 ? 'text-red-500' : ''}>
+              {salesByDate[date].toLocaleString()} kr
+            </span>
           </div>
         ))}
       </div>
