@@ -41,6 +41,11 @@ serve(async (req) => {
 
     console.log('Parsed purchase data:', JSON.stringify(purchaseData, null, 2))
 
+    // Calculate cost price from products if available
+    const costPrice = purchaseData.products?.reduce((total: number, product: any) => {
+      return total + (Number(product.costPrice || 0) * Number(product.quantity || 1));
+    }, 0) || null;
+
     // Format numeric values properly
     const formatNumeric = (value: any) => {
       if (!value) return "0";
@@ -79,7 +84,7 @@ serve(async (req) => {
     const formattedAmount = formatNumeric(purchaseData.amount);
     const formattedVatAmount = formatNumeric(purchaseData.vatAmount);
 
-    // Insert directly into total_purchases
+    // Insert into total_purchases with all available data
     const { error: totalPurchaseError } = await supabase
       .from('total_purchases')
       .insert([{
@@ -87,9 +92,17 @@ serve(async (req) => {
         timestamp: formattedTimestamp,
         amount: parseFloat(formattedAmount),
         user_display_name: purchaseData.userDisplayName,
-        payment_type: purchaseData.paymentType,
-        product_name: purchaseData.productName,
-        source: 'new'
+        payment_type: purchaseData.payments?.[0]?.type || null,
+        product_name: purchaseData.products?.[0]?.name || null,
+        source: purchaseData.source || 'new',
+        vat_amount: parseFloat(formattedVatAmount),
+        currency: purchaseData.currency,
+        country: purchaseData.country,
+        purchase_number: purchaseData.purchaseNumber,
+        gps_coordinates: purchaseData.gpsCoordinates,
+        products: purchaseData.products,
+        payments: purchaseData.payments,
+        cost_price: costPrice ? parseFloat(formatNumeric(costPrice)) : null
       }]);
 
     if (totalPurchaseError) {

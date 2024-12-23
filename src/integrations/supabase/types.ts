@@ -361,10 +361,17 @@ export type Database = {
       total_purchases: {
         Row: {
           amount: number
+          cost_price: number | null
+          country: string | null
           created_at: string | null
+          currency: string | null
+          gps_coordinates: Json | null
           id: string
           payment_type: string | null
+          payments: Json | null
           product_name: string | null
+          products: Json | null
+          purchase_number: number | null
           purchase_uuid: string | null
           refund_uuid: string | null
           refunded: boolean | null
@@ -372,13 +379,21 @@ export type Database = {
           timestamp: string
           updated_at: string | null
           user_display_name: string | null
+          vat_amount: number | null
         }
         Insert: {
           amount: number
+          cost_price?: number | null
+          country?: string | null
           created_at?: string | null
+          currency?: string | null
+          gps_coordinates?: Json | null
           id?: string
           payment_type?: string | null
+          payments?: Json | null
           product_name?: string | null
+          products?: Json | null
+          purchase_number?: number | null
           purchase_uuid?: string | null
           refund_uuid?: string | null
           refunded?: boolean | null
@@ -386,13 +401,21 @@ export type Database = {
           timestamp: string
           updated_at?: string | null
           user_display_name?: string | null
+          vat_amount?: number | null
         }
         Update: {
           amount?: number
+          cost_price?: number | null
+          country?: string | null
           created_at?: string | null
+          currency?: string | null
+          gps_coordinates?: Json | null
           id?: string
           payment_type?: string | null
+          payments?: Json | null
           product_name?: string | null
+          products?: Json | null
+          purchase_number?: number | null
           purchase_uuid?: string | null
           refund_uuid?: string | null
           refunded?: boolean | null
@@ -400,6 +423,7 @@ export type Database = {
           timestamp?: string
           updated_at?: string | null
           user_display_name?: string | null
+          vat_amount?: number | null
         }
         Relationships: []
       }
