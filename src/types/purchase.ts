@@ -16,6 +16,17 @@ export interface DatabasePurchase {
   source?: string;
 }
 
+interface PaymentReference {
+  refundsPayment?: string;
+}
+
+interface Payment {
+  uuid: string;
+  amount: number;
+  type: string;
+  references?: PaymentReference;
+}
+
 export interface TotalPurchase {
   id: string;
   purchase_uuid: string;
@@ -30,6 +41,7 @@ export interface TotalPurchase {
   refunded: boolean | null;
   refund_uuid: string | null;
   refund_timestamp?: string;
+  payments?: Payment[];
 }
 
 export interface LegacyPurchaseFormat {
