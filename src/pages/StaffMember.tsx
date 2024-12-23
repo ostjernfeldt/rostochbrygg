@@ -7,7 +7,7 @@ import { StaffStats } from "@/components/staff/StaffStats";
 import { SalesChartSection } from "@/components/staff/SalesChartSection";
 import { ShiftsList } from "@/components/staff/ShiftsList";
 import { StaffMemberStats, TotalPurchase } from "@/types/purchase";
-import { mapToTotalPurchase } from "@/utils/purchaseMappers";
+import { processTransactions } from "@/components/transactions/TransactionProcessor";
 
 const StaffMember = () => {
   const navigate = useNavigate();
@@ -24,14 +24,18 @@ const StaffMember = () => {
         .from("total_purchases")
         .select("*")
         .eq("user_display_name", decodeURIComponent(name))
-        .order("timestamp", { ascending: true });
+        .order("timestamp", { ascending: true })
+        .not("refunded", "eq", true);
 
       if (salesError) throw salesError;
       if (!sales || sales.length === 0) return null;
 
-      const totalPurchases = sales.map(mapToTotalPurchase);
+      // Process transactions to handle refunds
+      const processedSales = processTransactions(sales);
+      const validSales = processedSales.filter(sale => !sale.refunded);
 
-      const salesByDate = totalPurchases.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
+      // Group sales by date for shift calculation
+      const salesByDate = validSales.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
         const dateStr = new Date(sale.timestamp).toDateString();
         if (!acc[dateStr]) {
           acc[dateStr] = [];
@@ -40,8 +44,9 @@ const StaffMember = () => {
         return acc;
       }, {});
 
+      // Calculate daily totals for best/worst day analysis
       const dailyTotals = Object.entries(salesByDate).map(([dateStr, dateSales]) => {
-        const totalAmount = dateSales.reduce((sum, sale) => sum + (Number(sale.amount) || 0), 0);
+        const totalAmount = dateSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
         return {
           date: new Date(dateStr).toISOString(),
           amount: totalAmount
@@ -52,23 +57,32 @@ const StaffMember = () => {
       const bestDay = sortedDays[0];
       const worstDay = sortedDays[sortedDays.length - 1];
 
-      const firstSale = new Date(sales[0].timestamp);
-      const totalAmount = totalPurchases.reduce((sum, sale) => sum + (Number(sale.amount) || 0), 0);
-      const averageAmount = totalAmount / sales.length;
-      const uniqueDays = new Set(sales.map(s => new Date(s.timestamp).toDateString()));
+      const firstSale = new Date(validSales[0].timestamp);
+      const totalAmount = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
+      const averageAmount = totalAmount / validSales.length;
+      const uniqueDays = new Set(validSales.map(s => new Date(s.timestamp).toDateString()));
+
+      console.log("Processed member stats:", {
+        salesCount: validSales.length,
+        totalAmount,
+        averageAmount,
+        daysActive: uniqueDays.size,
+        bestDay,
+        worstDay
+      });
 
       const memberStats: StaffMemberStats = {
         displayName: name,
         firstSale,
         totalAmount,
         averageAmount,
-        salesCount: sales.length,
+        salesCount: validSales.length,
         daysActive: uniqueDays.size,
-        sales: totalPurchases,
+        sales: validSales,
         shifts: Object.entries(salesByDate).map(([dateStr, dateSales]) => ({
           id: new Date(dateStr).toISOString(),
           presence_start: new Date(dateStr).toISOString(),
-          totalSales: dateSales.reduce((sum, sale) => sum + (Number(sale.amount) || 0), 0),
+          totalSales: dateSales.reduce((sum, sale) => sum + Number(sale.amount), 0),
           sales: dateSales
         }))
       };
