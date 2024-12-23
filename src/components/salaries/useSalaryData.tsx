@@ -26,11 +26,11 @@ export const useSalaryData = () => {
     }
   });
 
-  // Fetch salaries data
+  // Fetch salaries data from salaries table
   const { data: salaries, isLoading: salariesLoading } = useQuery({
     queryKey: ["salaries"],
     queryFn: async () => {
-      console.log("Fetching salaries...");
+      console.log("Fetching salaries from salaries table...");
       const { data, error } = await supabase
         .from("salaries")
         .select("*")
@@ -41,6 +41,27 @@ export const useSalaryData = () => {
         throw error;
       }
       
+      console.log("Fetched salaries:", data);
+      return data;
+    }
+  });
+
+  // Fetch sales data for the period from total_purchases
+  const { data: sales, isLoading: salesLoading } = useQuery({
+    queryKey: ["sales"],
+    queryFn: async () => {
+      console.log("Fetching sales from total_purchases...");
+      const { data, error } = await supabase
+        .from("total_purchases")
+        .select("*")
+        .not("refunded", "eq", true);
+
+      if (error) {
+        console.error("Error fetching sales:", error);
+        throw error;
+      }
+
+      console.log("Fetched sales:", data);
       return data;
     }
   });
@@ -59,24 +80,7 @@ export const useSalaryData = () => {
         throw error;
       }
 
-      return data;
-    }
-  });
-
-  // Fetch sales data for the period
-  const { data: sales, isLoading: salesLoading } = useQuery({
-    queryKey: ["sales"],
-    queryFn: async () => {
-      console.log("Fetching sales...");
-      const { data, error } = await supabase
-        .from("total_purchases")
-        .select("*");
-
-      if (error) {
-        console.error("Error fetching sales:", error);
-        throw error;
-      }
-
+      console.log("Fetched bonuses:", data);
       return data;
     }
   });
