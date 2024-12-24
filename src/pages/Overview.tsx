@@ -6,9 +6,12 @@ import { useSalesData } from "@/hooks/useSalesData";
 import { importZettleHistory } from "@/utils/importZettleHistory";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { DateRange } from "react-day-picker";
 
 const Overview = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("week");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const { data: stats, isLoading } = useSalesData(selectedPeriod);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -31,6 +34,11 @@ const Overview = () => {
         <div className="flex justify-between items-center">
           <DateFilterSection
             selectedPeriod={selectedPeriod}
+            setSelectedPeriod={setSelectedPeriod}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
             onPeriodChange={setSelectedPeriod}
           />
           <Button 
