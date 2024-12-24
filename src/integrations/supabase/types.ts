@@ -118,6 +118,7 @@ export type Database = {
           "Product Name": string | null
           "Purchase Number": string | null
           "Purchase UUID": string | null
+          "Refund UUID": string | null
           Refunded: string | null
           "Tax Amount": string | null
           Timestamp: string | null
@@ -141,6 +142,7 @@ export type Database = {
           "Product Name"?: string | null
           "Purchase Number"?: string | null
           "Purchase UUID"?: string | null
+          "Refund UUID"?: string | null
           Refunded?: string | null
           "Tax Amount"?: string | null
           Timestamp?: string | null
@@ -164,6 +166,7 @@ export type Database = {
           "Product Name"?: string | null
           "Purchase Number"?: string | null
           "Purchase UUID"?: string | null
+          "Refund UUID"?: string | null
           Refunded?: string | null
           "Tax Amount"?: string | null
           Timestamp?: string | null

@@ -63,30 +63,35 @@ serve(async (req) => {
     const batchSize = 100
     for (let i = 0; i < purchases.length; i += batchSize) {
       const batch = purchases.slice(i, i + batchSize).map(purchase => {
-        // Find refund information if it exists
+        // Find refund information
         let refundUuid = null
-        if (purchase.payments && purchase.payments.length > 0) {
+        const amount = purchase.amount ? (purchase.amount / 100) : 0
+
+        // If amount is negative, this is a refund
+        if (amount < 0 && purchase.payments && purchase.payments.length > 0) {
           const payment = purchase.payments[0]
+          // Check for refund reference in the payment object
           if (payment.references && payment.references.refundsPayment) {
             refundUuid = payment.references.refundsPayment
+            console.log(`Found refund reference for purchase ${purchase.purchaseUUID}: ${refundUuid}`)
           }
         }
-
-        // Convert amount to correct decimal value (divide by 100)
-        const amount = purchase.amount ? (purchase.amount / 100).toString() : '0'
 
         return {
           "Purchase UUID": purchase.purchaseUUID,
           "Timestamp": purchase.timestamp,
-          "Amount": amount,
+          "Amount": amount.toString(),
           "User Display Name": purchase.userDisplayName,
           "Payment Type": purchase.payments?.[0]?.type,
           "Product Name": purchase.products?.[0]?.name,
           "Currency": purchase.currency,
           "Purchase Number": purchase.purchaseNumber?.toString(),
-          "Refund UUID": refundUuid // Add refund UUID to legacy purchases
+          "Refund UUID": refundUuid
         }
       })
+
+      console.log(`Inserting batch ${i + 1} to ${Math.min(i + batchSize, purchases.length)} of ${purchases.length}`)
+      console.log('Sample batch item:', batch[0])
 
       const { error: insertError } = await supabase
         .from('legacy_purchases')
@@ -95,8 +100,6 @@ serve(async (req) => {
       if (insertError) {
         throw new Error(`Error inserting batch ${i}: ${insertError.message}`)
       }
-
-      console.log(`Inserted batch ${i + 1} to ${Math.min(i + batchSize, purchases.length)} of ${purchases.length}`)
     }
 
     // Run the sync function to update total_purchases
