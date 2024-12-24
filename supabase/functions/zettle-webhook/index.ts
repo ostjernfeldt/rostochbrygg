@@ -49,16 +49,18 @@ serve(async (req) => {
     // Format numeric values properly
     const formatNumeric = (value: any) => {
       if (!value) return "0";
+      if (typeof value === 'number') return value.toString();
       const normalizedValue = value.toString().replace(',', '.');
       const numericValue = parseFloat(normalizedValue);
       if (isNaN(numericValue)) return "0";
-      return (numericValue / 100).toString();
+      return numericValue.toString();
     };
 
     // Format timestamp properly
     const formatTimestamp = (timestamp: any) => {
       if (!timestamp) return new Date().toISOString();
       
+      // Handle Unix timestamps (both seconds and milliseconds)
       if (typeof timestamp === 'number') {
         const date = timestamp.toString().length > 10 
           ? new Date(timestamp) 
@@ -66,8 +68,13 @@ serve(async (req) => {
         return date.toISOString();
       }
       
+      // Handle string timestamps
       try {
         const date = new Date(timestamp);
+        if (isNaN(date.getTime())) {
+          console.error('Invalid timestamp:', timestamp);
+          return new Date().toISOString();
+        }
         return date.toISOString();
       } catch (error) {
         console.error('Error formatting timestamp:', error);
@@ -81,13 +88,21 @@ serve(async (req) => {
 
     // Find refund reference if this is a refund
     let refundUuid = null;
+    let isRefund = false;
     if (purchaseData.payments && Array.isArray(purchaseData.payments)) {
       for (const payment of purchaseData.payments) {
         if (payment.references?.refundsPayment) {
           refundUuid = payment.references.refundsPayment;
+          isRefund = true;
           break;
         }
       }
+    }
+
+    // For historical data, check if amount is negative to identify refunds
+    if (!isRefund && parseFloat(formattedAmount) < 0) {
+      isRefund = true;
+      // For historical refunds, we'll try to match with the original transaction later
     }
 
     // Insert into total_purchases with all available data
@@ -98,8 +113,8 @@ serve(async (req) => {
         timestamp: formattedTimestamp,
         amount: parseFloat(formattedAmount),
         user_display_name: purchaseData.userDisplayName,
-        payment_type: purchaseData.payments?.[0]?.type || null,
-        product_name: purchaseData.products?.[0]?.name || null,
+        payment_type: purchaseData.payments?.[0]?.type || purchaseData.paymentType,
+        product_name: purchaseData.products?.[0]?.name || purchaseData.productName,
         source: purchaseData.source || 'new',
         vat_amount: parseFloat(formattedVatAmount),
         currency: purchaseData.currency,
@@ -109,7 +124,8 @@ serve(async (req) => {
         products: purchaseData.products,
         payments: purchaseData.payments,
         cost_price: costPrice ? parseFloat(formatNumeric(costPrice)) : null,
-        refund_uuid: refundUuid
+        refund_uuid: refundUuid,
+        refunded: isRefund
       }]);
 
     if (totalPurchaseError) {
@@ -129,7 +145,35 @@ serve(async (req) => {
       );
     }
 
-    console.log('Successfully inserted into total_purchases');
+    // If this is a refund without a refund_uuid (historical data),
+    // try to find and update the original transaction
+    if (isRefund && !refundUuid) {
+      const { data: originalTransaction, error: findError } = await supabase
+        .from('total_purchases')
+        .select('*')
+        .eq('user_display_name', purchaseData.userDisplayName)
+        .eq('amount', Math.abs(parseFloat(formattedAmount)))
+        .lt('timestamp', formattedTimestamp)
+        .eq('refunded', false)
+        .order('timestamp', { ascending: false })
+        .limit(1);
+
+      if (!findError && originalTransaction && originalTransaction.length > 0) {
+        const { error: updateError } = await supabase
+          .from('total_purchases')
+          .update({
+            refunded: true,
+            refund_timestamp: formattedTimestamp
+          })
+          .eq('id', originalTransaction[0].id);
+
+        if (updateError) {
+          console.error('Error updating original transaction:', updateError);
+        }
+      }
+    }
+
+    console.log('Successfully processed purchase data');
 
     return new Response(
       JSON.stringify({
