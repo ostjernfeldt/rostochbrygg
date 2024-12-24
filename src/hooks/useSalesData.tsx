@@ -6,6 +6,11 @@ interface SalesData {
   totalAmount: number;
   salesCount: number;
   averageValue: number;
+  sellingDays: number;
+  uniqueSellers: number;
+  dailyAverage: number;
+  transactions: any[];
+  paymentMethodStats: any[];
   percentageChanges: {
     totalAmount: number;
     salesCount: number;
@@ -63,10 +68,36 @@ export const useSalesData = (selectedDate?: string) => {
       const previousSalesCount = getValidSalesCount(processedPreviousTransactions);
       const previousAverageValue = previousSalesCount > 0 ? previousTotalAmount / previousSalesCount : 0;
 
+      // Calculate payment method stats
+      const paymentMethodStats = processedTransactions.reduce((acc: any[], transaction) => {
+        const methodIndex = acc.findIndex(m => m.method === transaction.payment_type);
+        if (methodIndex === -1) {
+          acc.push({
+            method: transaction.payment_type || 'UNKNOWN',
+            count: 1,
+            amount: Number(transaction.amount) || 0,
+            percentage: '0'
+          });
+        } else {
+          acc[methodIndex].count += 1;
+          acc[methodIndex].amount += Number(transaction.amount) || 0;
+        }
+        return acc;
+      }, []);
+
+      // Calculate percentages
+      const totalCount = paymentMethodStats.reduce((sum, stat) => sum + stat.count, 0);
+      paymentMethodStats.forEach(stat => {
+        stat.percentage = ((stat.count / totalCount) * 100).toFixed(1);
+      });
+
       const calculatePercentageChange = (current: number, previous: number) => {
         if (!previous) return 0;
         return ((current - previous) / previous) * 100;
       };
+
+      // Get unique sellers
+      const uniqueSellers = new Set(processedTransactions.map(t => t.user_display_name)).size;
 
       console.log("Current day stats:", { totalAmount, salesCount, averageValue });
       console.log("Previous day stats:", { previousTotalAmount, previousSalesCount, previousAverageValue });
@@ -75,6 +106,11 @@ export const useSalesData = (selectedDate?: string) => {
         totalAmount,
         salesCount,
         averageValue,
+        sellingDays: 1, // Since we're looking at a single day
+        uniqueSellers,
+        dailyAverage: totalAmount, // For a single day, this is the same as totalAmount
+        transactions: processedTransactions,
+        paymentMethodStats,
         percentageChanges: {
           totalAmount: calculatePercentageChange(totalAmount, previousTotalAmount),
           salesCount: calculatePercentageChange(salesCount, previousSalesCount),

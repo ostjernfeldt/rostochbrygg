@@ -19,6 +19,7 @@ interface DateFilterSectionProps {
   setDateRange: (range: DateRange | undefined) => void;
   selectedPeriod: string;
   setSelectedPeriod: (period: string) => void;
+  onPeriodChange?: (period: string) => void;  // Added this optional prop
 }
 
 export const DateFilterSection = ({
@@ -28,7 +29,8 @@ export const DateFilterSection = ({
   dateRange,
   setDateRange,
   selectedPeriod,
-  setSelectedPeriod
+  setSelectedPeriod,
+  onPeriodChange
 }: DateFilterSectionProps) => {
   // Create period filter options
   const periodOptions = [
@@ -92,6 +94,9 @@ export const DateFilterSection = ({
     setSelectedPeriod(period);
     setSelectedDate("");
     setDateRange(undefined);
+    if (onPeriodChange) {
+      onPeriodChange(period);
+    }
   };
 
   return (
