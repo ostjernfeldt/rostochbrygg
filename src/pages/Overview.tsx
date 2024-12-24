@@ -1,158 +1,54 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { PageLayout } from "@/components/PageLayout";
-import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
-import { BarChart3 } from "lucide-react";
 import { useState } from "react";
-import { DateRange } from "react-day-picker";
-import { useLeaderboardDates } from "@/hooks/useLeaderboardDates";
+import { PageLayout } from "@/components/PageLayout";
 import { DateFilterSection } from "@/components/overview/DateFilterSection";
 import { StatsSection } from "@/components/overview/StatsSection";
-import { TotalPurchase } from "@/types/purchase";
+import { useSalesData } from "@/hooks/useSalesData";
+import { importZettleHistory } from "@/utils/importZettleHistory";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
-export default function Overview() {
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("all");
-  const [selectedDate, setSelectedDate] = useState<string>("");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+const Overview = () => {
+  const [selectedPeriod, setSelectedPeriod] = useState("week");
+  const { data: stats, isLoading } = useSalesData(selectedPeriod);
+  const [isImporting, setIsImporting] = useState(false);
 
-  // Fetch available sales dates
-  const { data: salesDates } = useLeaderboardDates();
-
-  // Calculate date range based on selected period
-  const getDateRange = () => {
-    if (selectedPeriod === "day" && selectedDate) {
-      const start = startOfDay(new Date(selectedDate));
-      const end = endOfDay(new Date(selectedDate));
-      return { start, end };
+  const handleImport = async () => {
+    try {
+      setIsImporting(true);
+      await importZettleHistory();
+      toast.success("Historical data import completed successfully");
+    } catch (error) {
+      console.error("Import failed:", error);
+      toast.error("Failed to import historical data");
+    } finally {
+      setIsImporting(false);
     }
-
-    if (selectedPeriod === "week" && selectedDate) {
-      const start = startOfWeek(new Date(selectedDate));
-      const end = endOfWeek(start);
-      return { start, end };
-    }
-
-    if (selectedPeriod === "month" && selectedDate) {
-      const [year, month] = selectedDate.split('-').map(Number);
-      const start = startOfMonth(new Date(year, month - 1));
-      const end = endOfMonth(start);
-      return { start, end };
-    }
-
-    if (selectedPeriod === "all") {
-      const end = new Date();
-      const start = new Date(2000, 0, 1); // Start from year 2000
-      return { start, end };
-    }
-
-    if (selectedPeriod === "custom" && dateRange?.from) {
-      const start = startOfDay(dateRange.from);
-      const end = endOfDay(dateRange.to || dateRange.from);
-      return { start, end };
-    }
-
-    return null;
   };
-
-  // Fetch stats based on selected period
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ["overview-stats", selectedPeriod, selectedDate, dateRange],
-    queryFn: async () => {
-      const range = getDateRange();
-      if (!range) return null;
-
-      console.log("Fetching overview stats for period:", range);
-
-      const { data: sales, error } = await supabase
-        .from("total_purchases")
-        .select("*")
-        .gte("timestamp", range.start.toISOString())
-        .lte("timestamp", range.end.toISOString());
-
-      if (error) throw error;
-
-      // Calculate daily sales totals
-      const dailySales = (sales as TotalPurchase[]).reduce((acc: { [key: string]: number }, sale) => {
-        const date = format(new Date(sale.timestamp), "yyyy-MM-dd");
-        acc[date] = (acc[date] || 0) + Number(sale.amount);
-        return acc;
-      }, {});
-
-      // Count days with actual sales (total > 0)
-      const sellingDays = Object.values(dailySales).filter(total => total > 0).length;
-
-      // Get unique sellers
-      const uniqueSellers = new Set(
-        sales.map((sale) => sale.user_display_name)
-      );
-
-      // Calculate payment method statistics with amounts
-      const paymentMethodStats = (sales as TotalPurchase[]).reduce((acc: { [key: string]: { count: number; amount: number } }, sale) => {
-        const method = sale.payment_type || "Okänd";
-        const amount = Number(sale.amount) || 0;
-        
-        if (!acc[method]) {
-          acc[method] = { count: 0, amount: 0 };
-        }
-        acc[method].count += 1;
-        acc[method].amount += amount;
-        return acc;
-      }, {});
-
-      const totalSales = sales.length;
-      const paymentMethodStatsArray = Object.entries(paymentMethodStats).map(([method, { count, amount }]) => ({
-        method,
-        count,
-        amount: Number(amount),
-        percentage: ((count / totalSales) * 100).toFixed(1)
-      }));
-
-      console.log("Payment method stats:", paymentMethodStatsArray);
-
-      const totalAmount = sales.reduce(
-        (sum, sale) => sum + (Number(sale.amount) || 0),
-        0
-      );
-
-      return {
-        totalAmount,
-        salesCount: sales.length,
-        averageValue: sales.length > 0 ? totalAmount / sales.length : 0,
-        sellingDays,
-        uniqueSellers: uniqueSellers.size,
-        dailyAverage: sellingDays > 0 ? totalAmount / sellingDays : 0,
-        transactions: sales,
-        paymentMethodStats: paymentMethodStatsArray
-      };
-    },
-  });
 
   return (
     <PageLayout>
-      <div className="space-y-4">
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-6 w-6" />
-            <h1 className="text-2xl font-bold">Översikt</h1>
-          </div>
-          
+      <div className="space-y-8">
+        <div className="flex justify-between items-center">
           <DateFilterSection
-            salesDates={salesDates}
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            dateRange={dateRange}
-            setDateRange={setDateRange}
             selectedPeriod={selectedPeriod}
-            setSelectedPeriod={setSelectedPeriod}
+            onPeriodChange={setSelectedPeriod}
           />
+          <Button 
+            onClick={handleImport}
+            disabled={isImporting}
+            variant="outline"
+          >
+            {isImporting ? "Importing..." : "Import Historical Data"}
+          </Button>
         </div>
-
-        <StatsSection 
-          stats={stats} 
-          isLoading={isLoading} 
+        <StatsSection
+          stats={stats}
+          isLoading={isLoading}
           selectedPeriod={selectedPeriod}
         />
       </div>
     </PageLayout>
   );
-}
+};
+
+export default Overview;
