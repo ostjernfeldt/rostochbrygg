@@ -11,7 +11,6 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 const zettleApiKey = Deno.env.get('ZETTLE_API_KEY')
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -24,17 +23,16 @@ serve(async (req) => {
     const { error: clearError } = await supabase
       .from('legacy_purchases')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000') // Delete all rows
+      .neq('id', '00000000-0000-0000-0000-000000000000')
 
     if (clearError) {
       throw new Error(`Error clearing legacy_purchases: ${clearError.message}`)
     }
 
-    let startDate = new Date('2023-01-01') // Adjust this date as needed
+    let startDate = new Date('2023-01-01')
     const endDate = new Date()
     const purchases = []
 
-    // Fetch purchases in batches
     while (startDate <= endDate) {
       const batchEndDate = new Date(startDate)
       batchEndDate.setMonth(startDate.getMonth() + 1)
@@ -57,26 +55,38 @@ serve(async (req) => {
 
       const data = await response.json()
       purchases.push(...data.purchases)
-      
-      // Move to next month
       startDate = batchEndDate
     }
 
     console.log(`Found ${purchases.length} historical purchases`)
 
-    // Insert purchases in batches
     const batchSize = 100
     for (let i = 0; i < purchases.length; i += batchSize) {
-      const batch = purchases.slice(i, i + batchSize).map(purchase => ({
-        "Purchase UUID": purchase.purchaseUUID,
-        "Timestamp": purchase.timestamp,
-        "Amount": purchase.amount.toString(),
-        "User Display Name": purchase.userDisplayName,
-        "Payment Type": purchase.payments?.[0]?.type,
-        "Product Name": purchase.products?.[0]?.name,
-        "Currency": purchase.currency,
-        "Purchase Number": purchase.purchaseNumber?.toString()
-      }))
+      const batch = purchases.slice(i, i + batchSize).map(purchase => {
+        // Find refund information if it exists
+        let refundUuid = null
+        if (purchase.payments && purchase.payments.length > 0) {
+          const payment = purchase.payments[0]
+          if (payment.references && payment.references.refundsPayment) {
+            refundUuid = payment.references.refundsPayment
+          }
+        }
+
+        // Convert amount to correct decimal value (divide by 100)
+        const amount = purchase.amount ? (purchase.amount / 100).toString() : '0'
+
+        return {
+          "Purchase UUID": purchase.purchaseUUID,
+          "Timestamp": purchase.timestamp,
+          "Amount": amount,
+          "User Display Name": purchase.userDisplayName,
+          "Payment Type": purchase.payments?.[0]?.type,
+          "Product Name": purchase.products?.[0]?.name,
+          "Currency": purchase.currency,
+          "Purchase Number": purchase.purchaseNumber?.toString(),
+          "Refund UUID": refundUuid // Add refund UUID to legacy purchases
+        }
+      })
 
       const { error: insertError } = await supabase
         .from('legacy_purchases')
