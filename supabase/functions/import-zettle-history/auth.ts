@@ -15,7 +15,11 @@ export async function refreshZettleToken(refreshToken: string): Promise<ZettleTo
     throw new Error('Missing required environment variables: ZETTLE_CLIENT_ID or ZETTLE_CLIENT_SECRET');
   }
 
-  const credentials = btoa(`${clientId}:${clientSecret}`);
+  // Use TextEncoder to properly encode credentials for Base64
+  const encoder = new TextEncoder();
+  const credentials = btoa(String.fromCharCode(...encoder.encode(`${clientId}:${clientSecret}`)));
+  
+  console.log("Attempting to refresh token with credentials...");
   
   try {
     const response = await fetch('https://oauth.zettle.com/token', {
@@ -30,17 +34,19 @@ export async function refreshZettleToken(refreshToken: string): Promise<ZettleTo
       })
     });
 
+    const responseText = await response.text();
+    console.log("Raw response:", responseText);
+
     if (!response.ok) {
-      const errorText = await response.text();
       console.error("Token refresh failed:", {
         status: response.status,
         statusText: response.statusText,
-        error: errorText
+        response: responseText
       });
-      throw new Error(`Failed to refresh token: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error(`Failed to refresh token: ${response.status} ${response.statusText} - ${responseText}`);
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
     console.log("Successfully refreshed token");
     return data;
   } catch (error) {
