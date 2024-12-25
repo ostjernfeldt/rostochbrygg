@@ -12,18 +12,17 @@ export async function refreshZettleToken(refreshToken: string): Promise<ZettleTo
   const clientSecret = Deno.env.get('ZETTLE_CLIENT_SECRET');
   
   if (!clientId || !clientSecret) {
+    console.error("Missing required environment variables");
     throw new Error('Missing required environment variables: ZETTLE_CLIENT_ID or ZETTLE_CLIENT_SECRET');
   }
 
-  console.log("Preparing credentials for OAuth request...");
+  console.log("Preparing OAuth request with client ID:", clientId.substring(0, 5) + "...");
   
-  // Create credentials string and encode it properly for OAuth
+  // Create Base64 encoded credentials string
   const credentialsString = `${clientId}:${clientSecret}`;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(credentialsString);
-  const base64Credentials = btoa(String.fromCharCode(...data));
+  const base64Credentials = btoa(credentialsString);
   
-  console.log("Making OAuth token request...");
+  console.log("Making OAuth token request to Zettle...");
   
   try {
     const response = await fetch('https://oauth.zettle.com/token', {
@@ -39,21 +38,26 @@ export async function refreshZettleToken(refreshToken: string): Promise<ZettleTo
     });
 
     const responseText = await response.text();
-    console.log("Raw OAuth response:", responseText);
-
+    console.log("OAuth response status:", response.status);
+    console.log("OAuth response headers:", Object.fromEntries(response.headers));
+    
     if (!response.ok) {
       console.error("Token refresh failed:", {
         status: response.status,
         statusText: response.statusText,
-        response: responseText,
-        credentials: `Basic ${base64Credentials.substring(0, 10)}...` // Log partial credentials for debugging
+        response: responseText
       });
       throw new Error(`Failed to refresh token: ${response.status} ${response.statusText} - ${responseText}`);
     }
 
-    const data = JSON.parse(responseText);
-    console.log("Successfully refreshed token");
-    return data;
+    try {
+      const data = JSON.parse(responseText);
+      console.log("Successfully parsed token response");
+      return data;
+    } catch (parseError) {
+      console.error("Failed to parse token response:", parseError);
+      throw new Error(`Invalid token response format: ${responseText}`);
+    }
   } catch (error) {
     console.error("Error during token refresh:", error);
     throw error;
@@ -66,6 +70,7 @@ export async function getValidAccessToken(): Promise<string> {
   const refreshToken = Deno.env.get('ZETTLE_REFRESH_TOKEN');
   
   if (!refreshToken) {
+    console.error("Missing ZETTLE_REFRESH_TOKEN");
     throw new Error('ZETTLE_REFRESH_TOKEN is not set');
   }
 
