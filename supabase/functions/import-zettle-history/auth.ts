@@ -39,19 +39,20 @@ export async function refreshZettleToken(refreshToken: string): Promise<ZettleTo
       })
     });
 
-    const responseText = await response.text();
-    console.log("OAuth response status:", response.status);
-    console.log("OAuth response headers:", Object.fromEntries(response.headers));
-    
     if (!response.ok) {
+      const responseText = await response.text();
       console.error("Token refresh failed:", {
         status: response.status,
         statusText: response.statusText,
-        response: responseText
+        response: responseText,
+        headers: Object.fromEntries(response.headers)
       });
       throw new Error(`Failed to refresh token: ${response.status} ${response.statusText} - ${responseText}`);
     }
 
+    const responseText = await response.text();
+    console.log("Raw OAuth response:", responseText);
+    
     try {
       const data = JSON.parse(responseText);
       console.log("Successfully parsed token response");
