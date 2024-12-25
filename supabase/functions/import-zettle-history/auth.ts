@@ -16,11 +16,13 @@ export async function refreshZettleToken(refreshToken: string): Promise<ZettleTo
     throw new Error('Missing required environment variables: ZETTLE_CLIENT_ID or ZETTLE_CLIENT_SECRET');
   }
 
-  console.log("Preparing OAuth request with client ID:", clientId.substring(0, 5) + "...");
+  console.log("Preparing OAuth request...");
   
   // Create Base64 encoded credentials string
   const credentialsString = `${clientId}:${clientSecret}`;
-  const base64Credentials = btoa(credentialsString);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(credentialsString);
+  const base64Credentials = btoa(String.fromCharCode(...new Uint8Array(data)));
   
   console.log("Making OAuth token request to Zettle...");
   
