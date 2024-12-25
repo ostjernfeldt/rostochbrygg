@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getValidAccessToken } from './auth.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,62 +9,6 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-const zettleApiKey = Deno.env.get('ZETTLE_API_KEY')
-
-const logPurchaseData = (purchase: any) => {
-  console.log('\n=== Purchase Details ===');
-  console.log('UUID:', purchase.purchaseUUID);
-  console.log('Timestamp:', purchase.timestamp);
-  console.log('Amount:', purchase.amount);
-  console.log('User:', purchase.userDisplayName);
-  
-  if (purchase.products && purchase.products.length > 0) {
-    console.log('\n--- Product Information ---');
-    purchase.products.forEach((product: any, index: number) => {
-      console.log(`Product ${index + 1}:`);
-      console.log('  Name:', product.name);
-      console.log('  UUID:', product.uuid);
-      console.log('  Variant UUID:', product.variantUuid);
-      console.log('  SKU:', product.sku);
-      console.log('  Description:', product.description);
-      console.log('  Category:', product.category);
-      console.log('  Quantity:', product.quantity);
-      console.log('  Unit Price:', product.unitPrice);
-      console.log('  Gross Amount:', product.grossAmount);
-      console.log('  Net Amount:', product.netAmount);
-      console.log('  Discount Amount:', product.discountAmount);
-      console.log('  Discount Rate:', product.discountRate);
-    });
-  }
-
-  if (purchase.payments && purchase.payments.length > 0) {
-    console.log('\n--- Payment Information ---');
-    purchase.payments.forEach((payment: any, index: number) => {
-      console.log(`Payment ${index + 1}:`);
-      console.log('  UUID:', payment.uuid);
-      console.log('  Type:', payment.type);
-      console.log('  Reference:', payment.reference);
-      console.log('  Card Type:', payment.cardType);
-      console.log('  Card Last Four:', payment.cardLastFour);
-      console.log('  Card Mask:', payment.cardMask);
-      console.log('  Installments:', payment.installments);
-      console.log('  Reference Number:', payment.referenceNumber);
-      console.log('  Message:', payment.message);
-      if (payment.references?.refundsPayment) {
-        console.log('  Refunds Payment:', payment.references.refundsPayment);
-      }
-    });
-  }
-
-  if (purchase.gpsCoordinates) {
-    console.log('\n--- Location Information ---');
-    console.log('  Latitude:', purchase.gpsCoordinates.latitude);
-    console.log('  Longitude:', purchase.gpsCoordinates.longitude);
-    console.log('  Accuracy (meters):', purchase.gpsCoordinates.accuracyMeters);
-  }
-  
-  console.log('\n=== End Purchase Details ===\n');
-};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -74,15 +19,9 @@ serve(async (req) => {
     console.log('Starting historical data import...')
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
 
-    // First, clear the legacy_purchases table
-    const { error: clearError } = await supabase
-      .from('legacy_purchases')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000')
-
-    if (clearError) {
-      throw new Error(`Error clearing legacy_purchases: ${clearError.message}`)
-    }
+    // Get a fresh access token
+    const accessToken = await getValidAccessToken();
+    console.log('Successfully obtained fresh access token');
 
     let startDate = new Date('2023-01-01')
     const endDate = new Date()
@@ -98,7 +37,7 @@ serve(async (req) => {
         `https://purchase.izettle.com/purchases/v2?startDate=${startDate.toISOString()}&endDate=${batchEndDate.toISOString()}&limit=1000`,
         {
           headers: {
-            'Authorization': `Bearer ${zettleApiKey}`,
+            'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           }
         }

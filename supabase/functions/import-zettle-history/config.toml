@@ -1,1 +1,5 @@
 project_id = "fdowkbceorqxbborsjlp"
+[secrets]
+ZETTLE_CLIENT_ID = ""
+ZETTLE_CLIENT_SECRET = ""
+ZETTLE_REFRESH_TOKEN = ""
