@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getValidAccessToken } from './auth.ts'
@@ -9,6 +10,15 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+const logPurchaseData = (purchase: any) => {
+  console.log("Purchase details:", {
+    uuid: purchase.purchaseUuid,
+    timestamp: purchase.timestamp,
+    amount: purchase.amount / 100, // Convert from öre to kronor
+    userName: purchase.userDisplayName
+  });
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -66,7 +76,7 @@ serve(async (req) => {
       const batch = purchases.slice(i, i + batchSize).map(purchase => {
         // Find refund information
         let refundUuid = null
-        const amount = purchase.amount ? (purchase.amount / 100) : 0
+        const amount = purchase.amount ? (purchase.amount / 100) : 0 // Convert from öre to kronor
 
         // If amount is negative, this is a refund
         if (amount < 0 && purchase.payments && purchase.payments.length > 0) {
@@ -81,7 +91,7 @@ serve(async (req) => {
         return {
           "Purchase UUID": purchase.purchaseUuid || purchase.uuid,
           "Timestamp": purchase.timestamp,
-          "Amount": amount.toString(),
+          "Amount": amount.toString(), // Already converted to kronor above
           "User Display Name": purchase.userDisplayName,
           "Payment Type": purchase.payments?.[0]?.type,
           "Product Name": purchase.products?.[0]?.name,
