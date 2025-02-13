@@ -1,3 +1,4 @@
+
 import { TotalPurchase } from "@/types/purchase";
 
 export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurchase[] => {

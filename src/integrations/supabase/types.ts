@@ -574,6 +574,144 @@ export type Database = {
         }
         Relationships: []
       }
+      total_purchases_backup_20240214: {
+        Row: {
+          amount: number | null
+          coordinates_accuracy_meters: number | null
+          coordinates_latitude: number | null
+          coordinates_longitude: number | null
+          cost_price: number | null
+          country: string | null
+          created_at: string | null
+          currency: string | null
+          discount_amount: number | null
+          discount_rate: number | null
+          gps_coordinates: Json | null
+          gross_amount: number | null
+          id: string | null
+          net_amount: number | null
+          payment_card_last4: string | null
+          payment_card_mask: string | null
+          payment_card_type: string | null
+          payment_installments: number | null
+          payment_message: string | null
+          payment_reference: string | null
+          payment_reference_number: string | null
+          payment_type: string | null
+          payment_uuid: string | null
+          payments: Json | null
+          product_category: string | null
+          product_description: string | null
+          product_name: string | null
+          product_sku: string | null
+          product_uuid: string | null
+          product_variant_uuid: string | null
+          products: Json | null
+          purchase_number: number | null
+          purchase_uuid: string | null
+          quantity: number | null
+          refund_timestamp: string | null
+          refund_uuid: string | null
+          refunded: boolean | null
+          source: string | null
+          timestamp: string | null
+          unit_price: number | null
+          updated_at: string | null
+          user_display_name: string | null
+          vat_amount: number | null
+        }
+        Insert: {
+          amount?: number | null
+          coordinates_accuracy_meters?: number | null
+          coordinates_latitude?: number | null
+          coordinates_longitude?: number | null
+          cost_price?: number | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          discount_amount?: number | null
+          discount_rate?: number | null
+          gps_coordinates?: Json | null
+          gross_amount?: number | null
+          id?: string | null
+          net_amount?: number | null
+          payment_card_last4?: string | null
+          payment_card_mask?: string | null
+          payment_card_type?: string | null
+          payment_installments?: number | null
+          payment_message?: string | null
+          payment_reference?: string | null
+          payment_reference_number?: string | null
+          payment_type?: string | null
+          payment_uuid?: string | null
+          payments?: Json | null
+          product_category?: string | null
+          product_description?: string | null
+          product_name?: string | null
+          product_sku?: string | null
+          product_uuid?: string | null
+          product_variant_uuid?: string | null
+          products?: Json | null
+          purchase_number?: number | null
+          purchase_uuid?: string | null
+          quantity?: number | null
+          refund_timestamp?: string | null
+          refund_uuid?: string | null
+          refunded?: boolean | null
+          source?: string | null
+          timestamp?: string | null
+          unit_price?: number | null
+          updated_at?: string | null
+          user_display_name?: string | null
+          vat_amount?: number | null
+        }
+        Update: {
+          amount?: number | null
+          coordinates_accuracy_meters?: number | null
+          coordinates_latitude?: number | null
+          coordinates_longitude?: number | null
+          cost_price?: number | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          discount_amount?: number | null
+          discount_rate?: number | null
+          gps_coordinates?: Json | null
+          gross_amount?: number | null
+          id?: string | null
+          net_amount?: number | null
+          payment_card_last4?: string | null
+          payment_card_mask?: string | null
+          payment_card_type?: string | null
+          payment_installments?: number | null
+          payment_message?: string | null
+          payment_reference?: string | null
+          payment_reference_number?: string | null
+          payment_type?: string | null
+          payment_uuid?: string | null
+          payments?: Json | null
+          product_category?: string | null
+          product_description?: string | null
+          product_name?: string | null
+          product_sku?: string | null
+          product_uuid?: string | null
+          product_variant_uuid?: string | null
+          products?: Json | null
+          purchase_number?: number | null
+          purchase_uuid?: string | null
+          quantity?: number | null
+          refund_timestamp?: string | null
+          refund_uuid?: string | null
+          refunded?: boolean | null
+          source?: string | null
+          timestamp?: string | null
+          unit_price?: number | null
+          updated_at?: string | null
+          user_display_name?: string | null
+          vat_amount?: number | null
+        }
+        Relationships: []
+      }
       user_presence: {
         Row: {
           created_at: string | null
