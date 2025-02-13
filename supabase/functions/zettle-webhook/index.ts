@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -46,14 +47,18 @@ serve(async (req) => {
       return total + (Number(product.costPrice || 0) * Number(product.quantity || 1));
     }, 0) || null;
 
-    // Format numeric values properly
+    // Format numeric values properly - NOW DIVIDING BY 100 FOR NEW TRANSACTIONS
     const formatNumeric = (value: any) => {
       if (!value) return "0";
-      if (typeof value === 'number') return value.toString();
+      if (typeof value === 'number') {
+        // Convert to string and divide by 100 for the correct amount
+        return (value / 100).toString();
+      }
       const normalizedValue = value.toString().replace(',', '.');
       const numericValue = parseFloat(normalizedValue);
       if (isNaN(numericValue)) return "0";
-      return numericValue.toString();
+      // Divide by 100 for the correct amount
+      return (numericValue / 100).toString();
     };
 
     // Format timestamp properly
@@ -104,6 +109,14 @@ serve(async (req) => {
       isRefund = true;
       // For historical refunds, we'll try to match with the original transaction later
     }
+
+    console.log('Formatted data:', {
+      timestamp: formattedTimestamp,
+      amount: formattedAmount,
+      vatAmount: formattedVatAmount,
+      isRefund,
+      refundUuid
+    });
 
     // Insert into total_purchases with all available data
     const { error: totalPurchaseError } = await supabase
