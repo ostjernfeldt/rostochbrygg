@@ -22,7 +22,8 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
 
       // Find the original transaction that was refunded
       const originalTransaction = sortedTransactions.find(t => 
-        t.payment_uuid === transaction.refund_uuid
+        t.payment_uuid === transaction.refund_uuid ||
+        t.purchase_uuid === transaction.refund_uuid // Added this condition
       );
 
       if (originalTransaction) {
@@ -67,11 +68,9 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
     }
   });
 
-  // Second pass: add only non-refund transactions to the final list
+  // Second pass: add all transactions to the final list, not just positive ones
   sortedTransactions.forEach(transaction => {
-    if (transaction.amount > 0) {
-      processedTransactions.push(transaction);
-    }
+    processedTransactions.push(transaction);
   });
 
   // Log final processed transactions for debugging
