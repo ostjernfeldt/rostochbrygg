@@ -4,7 +4,7 @@ import { PageLayout } from "@/components/PageLayout";
 import { format, parseISO } from "date-fns";
 import { sv } from "date-fns/locale";
 import { processTransactions } from "@/components/transactions/TransactionProcessor";
-import { calculatePoints } from "@/utils/pointsCalculation";
+import { calculateTotalPoints } from "@/utils/pointsCalculation";
 import { Trophy, Calendar, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -48,93 +48,91 @@ const HallOfFame = () => {
           !sale.refunded
         );
 
-      // 1. Highest single sale
+      // 1. Highest single sales (using calculateTotalPoints)
       const sortedBySalePoints = [...processedSales].sort((a, b) => {
-        const pointsA = calculatePoints(Number(a.amount));
-        const pointsB = calculatePoints(Number(b.amount));
+        const pointsA = calculateTotalPoints([a]);
+        const pointsB = calculateTotalPoints([b]);
         return pointsB - pointsA;
       });
 
       const topSales = sortedBySalePoints.slice(0, 3).map(sale => ({
         name: sale.user_display_name || 'Okänd',
-        points: calculatePoints(Number(sale.amount)),
+        points: calculateTotalPoints([sale]),
         date: format(new Date(sale.timestamp), 'd MMMM yyyy', { locale: sv })
       }));
 
-      // 2. Best months
-      const monthlyTotals: Record<string, { points: number; sellers: Record<string, number> }> = processedSales.reduce((acc, sale) => {
-        const date = new Date(sale.timestamp);
-        const monthKey = format(date, 'yyyy-MM');
+      // 2. Best months (using calculateTotalPoints)
+      const monthlyTotals = processedSales.reduce((acc, sale) => {
+        const monthKey = format(new Date(sale.timestamp), 'yyyy-MM');
         if (!acc[monthKey]) {
           acc[monthKey] = {
-            points: 0,
-            sellers: {}
+            sellers: {},
+            totalPoints: 0
           };
         }
-        const points = calculatePoints(Number(sale.amount));
-        acc[monthKey].points += points;
         
-        if (sale.user_display_name) {
-          if (!acc[monthKey].sellers[sale.user_display_name]) {
-            acc[monthKey].sellers[sale.user_display_name] = 0;
-          }
-          acc[monthKey].sellers[sale.user_display_name] += points;
+        const sellerName = sale.user_display_name || 'Okänd';
+        if (!acc[monthKey].sellers[sellerName]) {
+          acc[monthKey].sellers[sellerName] = [];
         }
+        acc[monthKey].sellers[sellerName].push(sale);
         
         return acc;
-      }, {} as Record<string, { points: number; sellers: Record<string, number> }>);
+      }, {} as Record<string, { sellers: Record<string, typeof processedSales>, totalPoints: number }>);
 
       const topMonths = Object.entries(monthlyTotals)
         .map(([monthKey, data]) => {
           const bestSeller = Object.entries(data.sellers)
-            .sort((a, b) => Number(b[1]) - Number(a[1]))[0];
+            .map(([name, sales]) => ({
+              name,
+              points: calculateTotalPoints(sales)
+            }))
+            .sort((a, b) => b.points - a.points)[0];
           
           return {
             month: format(parseISO(monthKey), 'MMMM yyyy', { locale: sv }),
-            points: data.points,
-            name: bestSeller ? bestSeller[0] : 'Okänd',
-            sellerPoints: bestSeller ? bestSeller[1] : 0
+            points: bestSeller.points,
+            name: bestSeller.name
           };
         })
-        .sort((a, b) => Number(b.sellerPoints) - Number(a.sellerPoints))
+        .sort((a, b) => b.points - a.points)
         .slice(0, 3);
 
-      // 3. Best days
-      const dailyTotals: Record<string, { points: number; sellers: Record<string, number> }> = processedSales.reduce((acc, sale) => {
-        const date = new Date(sale.timestamp);
-        const dateKey = format(date, 'yyyy-MM-dd');
+      // 3. Best days (using calculateTotalPoints)
+      const dailyTotals = processedSales.reduce((acc, sale) => {
+        const dateKey = format(new Date(sale.timestamp), 'yyyy-MM-dd');
         if (!acc[dateKey]) {
           acc[dateKey] = {
-            points: 0,
-            sellers: {}
+            sellers: {},
+            totalPoints: 0
           };
         }
-        const points = calculatePoints(Number(sale.amount));
-        acc[dateKey].points += points;
         
-        if (sale.user_display_name) {
-          if (!acc[dateKey].sellers[sale.user_display_name]) {
-            acc[dateKey].sellers[sale.user_display_name] = 0;
-          }
-          acc[dateKey].sellers[sale.user_display_name] += points;
+        const sellerName = sale.user_display_name || 'Okänd';
+        if (!acc[dateKey].sellers[sellerName]) {
+          acc[dateKey].sellers[sellerName] = [];
         }
+        acc[dateKey].sellers[sellerName].push(sale);
         
         return acc;
-      }, {} as Record<string, { points: number; sellers: Record<string, number> }>);
+      }, {} as Record<string, { sellers: Record<string, typeof processedSales>, totalPoints: number }>);
 
       const topDays = Object.entries(dailyTotals)
         .map(([dateKey, data]) => {
           const bestSeller = Object.entries(data.sellers)
-            .sort((a, b) => Number(b[1]) - Number(a[1]))[0];
+            .map(([name, sales]) => ({
+              name,
+              points: calculateTotalPoints(sales)
+            }))
+            .sort((a, b) => b.points - a.points)[0];
           
           return {
             date: format(parseISO(dateKey), 'd MMMM yyyy', { locale: sv }),
-            points: data.points,
-            name: bestSeller ? bestSeller[0] : 'Okänd',
-            sellerPoints: bestSeller ? bestSeller[1] : 0
+            points: bestSeller.points,
+            name: bestSeller.name
           };
         })
-        .sort((a, b) => Number(b.sellerPoints) - Number(a.sellerPoints))
+        .sort((a, b) => b.points - a.points)
         .slice(0, 3);
 
       return {
