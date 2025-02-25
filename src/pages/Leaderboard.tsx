@@ -15,6 +15,7 @@ const Leaderboard = () => {
   // Handle dates loaded from the server
   const handleDatesLoaded = (dates: string[]) => {
     if (dates.length > 0 && !selectedWeek) {
+      console.log("Latest sale date:", dates[0]);
       const latestDate = parseISO(dates[0]);
       const latestWeekStart = format(startOfWeek(latestDate), 'yyyy-MM-dd');
       setSelectedWeek(latestWeekStart);
@@ -25,22 +26,23 @@ const Leaderboard = () => {
   // Fetch dates with sales activity
   const { data: salesDates } = useLeaderboardDates(handleDatesLoaded);
 
+  // Generate weeks based on sales dates
+  const weekOptions = salesDates ? Array.from({ length: 5 }, (_, i) => {
+    const latestDate = parseISO(salesDates[0]);
+    const date = startOfWeek(latestDate);
+    date.setDate(date.getDate() - (i * 7));
+    return {
+      value: format(date, 'yyyy-MM-dd'),
+      label: `Vecka ${format(date, 'w')} (${format(date, 'd MMM')} - ${format(endOfWeek(date), 'd MMM')})`
+    };
+  }) : [];
+
   // Generate last 12 months for the dropdown
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
     const date = subMonths(new Date(), i);
     return {
       value: format(date, 'yyyy-MM'),
       label: format(date, 'MMMM yyyy')
-    };
-  });
-
-  // Generate weeks for the current month
-  const weekOptions = Array.from({ length: 5 }, (_, i) => {
-    const date = startOfWeek(new Date());
-    date.setDate(date.getDate() - (i * 7));
-    return {
-      value: format(date, 'yyyy-MM-dd'),
-      label: `Vecka ${format(date, 'w')} (${format(date, 'd MMM')} - ${format(endOfWeek(date), 'd MMM')})`
     };
   });
 

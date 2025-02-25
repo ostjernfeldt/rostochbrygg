@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -6,10 +7,11 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
   return useQuery({
     queryKey: ["salesDates"],
     queryFn: async () => {
-      console.log("Fetching dates with sales activity...");
+      console.log("Fetching dates with sales activity from total_purchases...");
       const { data, error } = await supabase
-        .from("purchases")
+        .from("total_purchases")
         .select("timestamp")
+        .eq('refunded', false)
         .order("timestamp", { ascending: false });
 
       if (error) throw error;
