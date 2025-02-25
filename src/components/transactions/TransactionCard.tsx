@@ -50,14 +50,9 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
             )}
           </div>
         </div>
-        <div className="flex flex-col gap-1">
-          <div className="flex justify-between items-center">
-            <span className="text-primary">{transaction.user_display_name}</span>
-            <span className="text-gray-400">{transaction.payment_type || "Okänd betalningsmetod"}</span>
-          </div>
-          <div className="text-sm text-gray-400">
-            Antal påsar: {transaction.quantity || 0}
-          </div>
+        <div className="flex justify-between items-center">
+          <span className="text-primary">{transaction.user_display_name}</span>
+          <span className="text-gray-400">{transaction.payment_type || "Okänd betalningsmetod"}</span>
         </div>
       </div>
 
