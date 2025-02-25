@@ -53,33 +53,18 @@ export interface TotalPurchase {
   gps_coordinates?: Json | null;
   products?: Json | null;
   vat_amount?: number | null;
-  quantity?: number | null;  // Added this field
-}
-
-export interface LegacyPurchaseFormat {
-  Timestamp: string;
-  Amount: number;
-  "User Display Name": string;
-  "Payment Type"?: string;
-  "Product Name"?: string;
+  quantity?: number | null;
 }
 
 export interface StaffMemberStats {
   displayName: string;
   firstSale: Date;
   totalAmount: number;
-  totalPoints: number;  // Added this field
-  averagePoints: number;  // Added this field
+  totalPoints: number;
+  averagePoints: number;
   averageAmount: number;
   daysActive: number;
   salesCount: number;
   totalSales?: number;
   sales: TotalPurchase[];
-  shifts: {
-    id: string;
-    presence_start: string;
-    totalSales: number;
-    sales: TotalPurchase[];
-  }[];
 }
-
