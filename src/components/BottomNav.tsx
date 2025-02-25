@@ -1,9 +1,8 @@
 
-import { Menu, Trophy } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { useUserRole } from "@/hooks/useUserRole";
 import {
   Sheet,
   SheetContent,
@@ -15,14 +14,12 @@ export const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const { data: userRole } = useUserRole();
 
-  const menuItems = userRole === "admin" ? [
+  const menuItems = [
     { path: "/", label: "Idag" },
     { path: "/leaderboard", label: "Topplista" },
+    { path: "/hall-of-fame", label: "Hall of Fame" },
     { path: "/staff", label: "Personal" },
-  ] : [
-    { path: "/leaderboard", label: "Topplista" },
   ];
 
   const handleSignOut = async () => {
@@ -71,9 +68,13 @@ export const BottomNav = () => {
               </button>
             ))}
             <button
-              onClick={handleSignOut}
-              className="p-3 text-left rounded-lg transition-colors text-gray-400 hover:bg-card/80 mt-4"
+              onClick={() => {
+                handleSignOut();
+                setOpen(false);
+              }}
+              className="p-3 text-left rounded-lg transition-colors text-gray-400 hover:bg-card/80 mt-4 flex items-center gap-2"
             >
+              <LogOut className="h-4 w-4" />
               Logga ut
             </button>
           </nav>

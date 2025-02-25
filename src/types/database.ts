@@ -16,8 +16,6 @@ export interface TotalPurchase {
   product_name?: string | null;
 }
 
-export type AppRole = "admin" | "user";
-
 export type Database = GeneratedDatabase & {
   public: {
     Tables: {

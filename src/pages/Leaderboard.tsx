@@ -4,7 +4,6 @@ import { format, startOfWeek, endOfWeek, parseISO, subMonths } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { PageLayout } from "@/components/PageLayout";
 import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection";
-import { AllTimeStats } from "@/components/stats/AllTimeStats";
 import { useLeaderboardDates } from "@/hooks/useLeaderboardDates";
 import { useLeaderboardData } from "@/hooks/useLeaderboardData";
 
@@ -79,8 +78,6 @@ const Leaderboard = () => {
           }}
           onUserClick={(userName) => navigate(`/staff/${encodeURIComponent(userName)}`)}
         />
-
-        <AllTimeStats />
       </div>
     </PageLayout>
   );
