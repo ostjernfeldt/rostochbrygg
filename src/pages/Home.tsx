@@ -8,7 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { TimeLeftCard } from "@/components/stats/TimeLeftCard";
 import { SalesStats } from "@/components/stats/SalesStats";
 import { PageLayout } from "@/components/PageLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,7 +34,6 @@ const Home = () => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedSeller, setSelectedSeller] = useState("all");
 
-  // Fetch latest transaction date
   const { data: latestDate } = useQuery({
     queryKey: ['latestTransactionDate'],
     queryFn: async () => {
@@ -87,7 +85,7 @@ const Home = () => {
   });
 
   const activeSellers = Array.from(new Set(transactions.map(t => t.user_display_name).filter(Boolean))) as string[];
-  
+
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -192,7 +190,6 @@ const Home = () => {
           </div>
         </div>
 
-        <TimeLeftCard />
         <SalesStats shouldAnimate={shouldAnimate} selectedDate={formattedDate} />
         
         <div className="mt-8">
