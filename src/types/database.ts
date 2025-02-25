@@ -1,23 +1,28 @@
-
 import { Database as GeneratedDatabase } from "@/integrations/supabase/types";
 
-export type AppRole = 'admin' | 'user';
-
-export interface UserRole {
-  id: string;
-  user_id: string;
-  role: AppRole;
-  created_at: string;
-  updated_at: string;
+export interface TotalPurchase {
+  amount: string;
+  country: string | null;
+  created_at: string | null;
+  currency: string | null;
+  purchase_number: string | null;
+  purchase_uuid: string;
+  timestamp: string;
+  updated_at: string | null;
+  user_display_name: string | null;
+  user_uuid: string | null;
+  vat_amount: string | null;
+  payment_type?: string | null;
+  product_name?: string | null;
 }
 
 export type Database = GeneratedDatabase & {
   public: {
     Tables: {
-      user_roles: {
-        Row: UserRole;
-        Insert: Omit<UserRole, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<UserRole, 'id'>>;
+      total_purchases: {
+        Row: TotalPurchase;
+        Insert: TotalPurchase;
+        Update: Partial<TotalPurchase>;
       };
     } & GeneratedDatabase['public']['Tables'];
   };

@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -14,21 +15,12 @@ import Login from "./pages/Login";
 import TransactionList from "./pages/TransactionList";
 import Staff from "./pages/Staff";
 import StaffMember from "./pages/StaffMember";
-import HallOfFame from "./pages/HallOfFame";
-import Users from "./pages/Users";
-import { useUserRole, AppRole } from "./hooks/useUserRole";
 
 const queryClient = new QueryClient();
 
-interface PrivateRouteProps {
-  children: React.ReactNode;
-  requiredRole?: AppRole;
-}
-
-const PrivateRoute = ({ children, requiredRole }: PrivateRouteProps) => {
+const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const { data: userRole, isLoading: isRoleLoading } = useUserRole();
 
   useEffect(() => {
     const checkSession = async () => {
@@ -69,78 +61,46 @@ const PrivateRoute = ({ children, requiredRole }: PrivateRouteProps) => {
     };
   }, [navigate]);
 
-  if (isAuthenticated === null || isRoleLoading) {
+  if (isAuthenticated === null) {
     return null;
   }
 
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  if (requiredRole && userRole !== requiredRole) {
-    return <Navigate to={userRole === 'user' ? '/leaderboard' : '/'} replace />;
-  }
-
-  return <>{children}</>;
+  return isAuthenticated ? <>{children}</> : null;
 };
 
 const AppContent = () => {
   const location = useLocation();
-  const { data: userRole } = useUserRole();
-
-  useEffect(() => {
-    if (userRole === 'user' && location.pathname === '/') {
-      navigate('/leaderboard');
-    }
-  }, [userRole, location.pathname]);
-
-  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background">
       <Routes>
         <Route path="/login" element={<Login />} />
-        
         <Route path="/" element={
-          <PrivateRoute requiredRole="admin">
+          <PrivateRoute>
             <Home />
           </PrivateRoute>
         } />
-        <Route path="/staff" element={
-          <PrivateRoute requiredRole="admin">
-            <Staff />
-          </PrivateRoute>
-        } />
-        <Route path="/staff/:name" element={
-          <PrivateRoute requiredRole="admin">
-            <StaffMember />
-          </PrivateRoute>
-        } />
-        <Route path="/transactions" element={
-          <PrivateRoute requiredRole="admin">
-            <TransactionList />
-          </PrivateRoute>
-        } />
-        <Route path="/users" element={
-          <PrivateRoute requiredRole="admin">
-            <Users />
-          </PrivateRoute>
-        } />
-        
         <Route path="/leaderboard" element={
           <PrivateRoute>
             <Leaderboard />
           </PrivateRoute>
         } />
-        <Route path="/hall-of-fame" element={
+        <Route path="/transactions" element={
           <PrivateRoute>
-            <HallOfFame />
+            <TransactionList />
           </PrivateRoute>
         } />
-
-        <Route path="*" element={
-          <Navigate to={userRole === 'user' ? '/leaderboard' : '/'} replace />
+        <Route path="/staff" element={
+          <PrivateRoute>
+            <Staff />
+          </PrivateRoute>
         } />
+        <Route path="/staff/:name" element={
+          <PrivateRoute>
+            <StaffMember />
+          </PrivateRoute>
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       {location.pathname !== '/login' && <BottomNav />}
     </div>
