@@ -38,21 +38,22 @@ export const TransactionListContent = ({ isLoading, transactions }: TransactionL
         refunded: false,
         refund_timestamp: null
       });
-    } else {
-      // This is a refund, find the original transaction
-      const originalTransaction = Array.from(acc.values()).find(t => 
-        // Match by exact same products and user
-        t.user_display_name === transaction.user_display_name &&
-        Math.abs(Number(t.amount)) === Math.abs(Number(transaction.amount)) &&
-        !t.refunded
-      );
+    } else if (transaction.refund_uuid) {
+      // This is a refund, update the original transaction using refund_uuid
+      const originalTransactionKey = Array.from(acc.keys()).find(key => {
+        const originalTransaction = acc.get(key);
+        return originalTransaction?.payment_uuid === transaction.refund_uuid;
+      });
 
-      if (originalTransaction) {
-        acc.set(originalTransaction.purchase_uuid, {
-          ...originalTransaction,
-          refunded: true,
-          refund_timestamp: transaction.timestamp
-        });
+      if (originalTransactionKey) {
+        const originalTransaction = acc.get(originalTransactionKey);
+        if (originalTransaction) {
+          acc.set(originalTransactionKey, {
+            ...originalTransaction,
+            refunded: true,
+            refund_timestamp: transaction.timestamp
+          });
+        }
       }
     }
     return acc;
