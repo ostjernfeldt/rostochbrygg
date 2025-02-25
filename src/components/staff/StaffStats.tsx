@@ -1,3 +1,4 @@
+
 import { StatCard } from "@/components/stats/StatCard";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
@@ -5,16 +6,16 @@ import { sv } from "date-fns/locale";
 interface StaffStatsProps {
   stats: {
     salesCount: number;
-    averageValue: number;
+    averagePoints: number;  // Changed from averageValue
     activeDays: number;
     firstSaleDate: string;
     bestDay: {
       date: string;
-      amount: number;
+      points: number;  // Changed from amount
     };
     worstDay: {
       date: string;
-      amount: number;
+      points: number;  // Changed from amount
     };
   };
 }
@@ -29,8 +30,8 @@ export const StaffStats = ({ stats }: StaffStatsProps) => {
         animationDelay="200ms"
       />
       <StatCard
-        title="Snittordervärde"
-        value={`SEK ${Math.round(stats.averageValue)}`}
+        title="Snittpoäng"
+        value={`${Math.round(stats.averagePoints)} p`}
         userName=""
         animationDelay="400ms"
       />
@@ -49,14 +50,14 @@ export const StaffStats = ({ stats }: StaffStatsProps) => {
       <StatCard
         title="Första säljdagen"
         subtitle={format(new Date(stats.worstDay.date), "d MMM yyyy", { locale: sv })}
-        value={`SEK ${Math.round(stats.worstDay.amount).toLocaleString()}`}
+        value={`${Math.round(stats.worstDay.points)} p`}
         userName=""
         animationDelay="1000ms"
       />
       <StatCard
         title="Bästa säljdagen"
         subtitle={format(new Date(stats.bestDay.date), "d MMM yyyy", { locale: sv })}
-        value={`SEK ${Math.round(stats.bestDay.amount).toLocaleString()}`}
+        value={`${Math.round(stats.bestDay.points)} p`}
         userName=""
         animationDelay="1200ms"
       />

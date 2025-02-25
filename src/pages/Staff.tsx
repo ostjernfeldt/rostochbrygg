@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +7,7 @@ import { Search, Award } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PageLayout } from "@/components/PageLayout";
 import { StaffMemberStats } from "@/types/purchase";
+import { calculatePoints, calculateTotalPoints } from "@/utils/pointsCalculation";
 import {
   Select,
   SelectContent,
@@ -17,8 +19,8 @@ import { useState } from "react";
 
 type SortField = 'totalAmount' | 'salesCount' | 'averageAmount' | 'daysActive' | 'firstSale';
 
-const getSalesRole = (totalAmount: number) => {
-  if (totalAmount >= 25000) return "Sales Associate";
+const getSalesRole = (totalPoints: number) => {
+  if (totalPoints >= 1000) return "Sales Associate";
   return "Sales Intern";
 };
 
@@ -45,14 +47,14 @@ const Staff = () => {
       const staffStats = sales.reduce((acc: { [key: string]: StaffMemberStats }, sale) => {
         const displayName = sale.user_display_name as string;
         const saleDate = new Date(sale.timestamp);
-        const amount = Number(sale.amount) || 0;
+        const points = calculatePoints(sale.quantity);
 
         if (!acc[displayName]) {
           acc[displayName] = {
             displayName,
             firstSale: saleDate,
-            totalSales: 0,
-            averageAmount: 0,
+            totalPoints: 0,
+            averagePoints: 0,
             totalAmount: 0,
             daysActive: 0,
             salesCount: 0,
@@ -61,9 +63,12 @@ const Staff = () => {
           };
         }
 
-        acc[displayName].totalAmount += amount;
-        acc[displayName].salesCount += 1;
-        acc[displayName].averageAmount = acc[displayName].totalAmount / acc[displayName].salesCount;
+        if (!sale.refunded) {
+          acc[displayName].totalPoints += points;
+          acc[displayName].salesCount += 1;
+          acc[displayName].averagePoints = acc[displayName].totalPoints / acc[displayName].salesCount;
+        }
+        
         acc[displayName].sales.push(sale);
 
         // Calculate unique days
@@ -173,18 +178,18 @@ const Staff = () => {
                 <h3 className="text-xl font-bold">{member.displayName}</h3>
                 <div className="flex items-center gap-1 text-sm text-primary">
                   <Award className="h-4 w-4" />
-                  <span>{getSalesRole(member.totalAmount)}</span>
+                  <span>{getSalesRole(member.totalPoints)}</span>
                 </div>
               </div>
               <span className="text-primary">
-                SEK {Math.round(member.totalAmount).toLocaleString()}
+                {Math.round(member.totalPoints)} poäng
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm text-gray-400">
               <div>Första sälj: {format(member.firstSale, 'yyyy-MM-dd')}</div>
               <div>Antal sälj: {member.salesCount}</div>
               <div>Aktiva dagar: {member.daysActive}</div>
-              <div>Snitt per sälj: SEK {Math.round(member.averageAmount).toLocaleString()}</div>
+              <div>Snittpoäng: {Math.round(member.averagePoints)} p/sälj</div>
             </div>
           </div>
         ))}
@@ -194,9 +199,9 @@ const Staff = () => {
 };
 
 const sortOptions: { value: SortField; label: string }[] = [
-  { value: 'totalAmount', label: 'Total försäljning' },
+  { value: 'totalAmount', label: 'Total poäng' },
   { value: 'salesCount', label: 'Antal sälj' },
-  { value: 'averageAmount', label: 'Snittförsäljning' },
+  { value: 'averageAmount', label: 'Snittpoäng' },
   { value: 'daysActive', label: 'Aktiva dagar' },
   { value: 'firstSale', label: 'Första sälj' }
 ];

@@ -68,6 +68,8 @@ export interface StaffMemberStats {
   displayName: string;
   firstSale: Date;
   totalAmount: number;
+  totalPoints: number;  // Added this field
+  averagePoints: number;  // Added this field
   averageAmount: number;
   daysActive: number;
   salesCount: number;
@@ -80,3 +82,4 @@ export interface StaffMemberStats {
     sales: TotalPurchase[];
   }[];
 }
+
