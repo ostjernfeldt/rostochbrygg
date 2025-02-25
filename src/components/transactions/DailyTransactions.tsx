@@ -1,3 +1,4 @@
+
 import { TransactionCard } from "@/components/transactions/TransactionCard";
 import { TotalPurchase } from "@/types/purchase";
 import { format } from "date-fns";
@@ -20,14 +21,15 @@ export const DailyTransactions = ({
     ? transactions 
     : transactions.filter(t => t.user_display_name === selectedSeller);
 
-  const formattedDate = selectedDate 
-    ? format(selectedDate, 'd MMMM', { locale: sv })
-    : format(new Date(), 'd MMMM', { locale: sv });
+  // Get the date from the first transaction, or use selectedDate, or fallback to current date
+  const dateToShow = transactions.length > 0 
+    ? new Date(transactions[0].timestamp) 
+    : selectedDate || new Date();
 
   return (
     <div className="mt-8">
       <h2 className="text-2xl font-bold mb-4">
-        Transaktioner {formattedDate}
+        Transaktioner {format(dateToShow, 'd MMMM', { locale: sv })}
       </h2>
       <div className="space-y-4">
         {isLoading ? (
