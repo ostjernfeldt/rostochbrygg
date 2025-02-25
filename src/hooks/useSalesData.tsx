@@ -41,21 +41,23 @@ export const useSalesData = (selectedDate?: string) => {
       const endOfDay = new Date(selectedDate || new Date());
       endOfDay.setHours(23, 59, 59, 999);
 
-      // First check if there are any visible sellers for this day
-      const { data: sellerCheck } = await supabase
+      // First check if there are any non-refund transactions for this day
+      const { data: salesCheck } = await supabase
         .from("total_purchases")
-        .select("user_display_name")
+        .select("user_display_name, refund_uuid")
         .gte("timestamp", startOfDay.toISOString())
         .lte("timestamp", endOfDay.toISOString())
         .not("user_display_name", "is", null);
 
-      // Check if all sellers for this day are hidden
-      const hasVisibleSellers = sellerCheck?.some(sale => 
-        sale.user_display_name && visibleStaffNames.has(sale.user_display_name)
+      // Check if all transactions are refunds or from hidden sellers
+      const hasValidSales = salesCheck?.some(sale => 
+        !sale.refund_uuid && // not a refund
+        sale.user_display_name && 
+        visibleStaffNames.has(sale.user_display_name)
       );
 
-      if (!hasVisibleSellers) {
-        // If all sellers are hidden, return empty data
+      if (!hasValidSales) {
+        // If all transactions are refunds or from hidden sellers, return empty data
         return {
           totalAmount: 0,
           salesCount: 0,
@@ -89,7 +91,7 @@ export const useSalesData = (selectedDate?: string) => {
         !sale.user_display_name || visibleStaffNames.has(sale.user_display_name)
       ) || [];
 
-      // Get previous day's data from a day that has visible sellers
+      // Get previous day's data from a day that has visible sellers and non-refund transactions
       let previousSalesData: any[] = [];
       let currentDate = new Date(startOfDay);
       currentDate.setDate(currentDate.getDate() - 1);
@@ -106,9 +108,11 @@ export const useSalesData = (selectedDate?: string) => {
           .gte("timestamp", previousStart.toISOString())
           .lte("timestamp", previousEnd.toISOString());
 
-        // Filter and check if there are any visible sellers
+        // Filter and check if there are any valid sales (non-refunds from visible sellers)
         const filteredPrevData = prevData?.filter(sale => 
-          sale.user_display_name && visibleStaffNames.has(sale.user_display_name)
+          !sale.refund_uuid && // not a refund
+          sale.user_display_name && 
+          visibleStaffNames.has(sale.user_display_name)
         ) || [];
 
         if (filteredPrevData.length > 0) {
@@ -131,6 +135,8 @@ export const useSalesData = (selectedDate?: string) => {
 
       // Calculate payment method stats from filtered data
       const paymentMethodStats = processedTransactions.reduce((acc: any[], transaction) => {
+        if (transaction.refund_uuid) return acc; // Skip refunds
+
         const methodIndex = acc.findIndex(m => m.method === transaction.payment_type);
         if (methodIndex === -1) {
           acc.push({
@@ -157,8 +163,12 @@ export const useSalesData = (selectedDate?: string) => {
         return ((current - previous) / previous) * 100;
       };
 
-      // Get unique sellers from filtered data
-      const uniqueSellers = new Set(processedTransactions.map(t => t.user_display_name)).size;
+      // Get unique sellers from filtered data (excluding refunds)
+      const uniqueSellers = new Set(
+        processedTransactions
+          .filter(t => !t.refund_uuid)
+          .map(t => t.user_display_name)
+      ).size;
 
       return {
         totalAmount,
