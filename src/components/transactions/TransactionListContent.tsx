@@ -29,23 +29,25 @@ export const TransactionListContent = ({ isLoading, transactions }: TransactionL
     );
   }
 
-  // Separate refunds and original transactions
-  const refunds = transactions.filter(t => t.amount < 0);
-  const originalTransactions = transactions.filter(t => t.amount >= 0);
-
-  // Process original transactions and add refund info
-  const processedTransactions = originalTransactions.map(transaction => {
-    // Find matching refund for this transaction
-    const matchingRefund = refunds.find(
-      refund => refund.refund_uuid === transaction.payment_uuid
-    );
-
-    return {
-      ...transaction,
-      refunded: !!matchingRefund,
-      refund_timestamp: matchingRefund ? matchingRefund.timestamp : null
-    };
+  // First, get all refund transactions
+  const refundTransactions = transactions.filter(t => t.refund_uuid !== null);
+  
+  // Create a map of refunds using refund_uuid as key
+  const refundMap = new Map<string, string>();
+  refundTransactions.forEach(refund => {
+    if (refund.refund_uuid) {
+      refundMap.set(refund.refund_uuid, refund.timestamp);
+    }
   });
+
+  // Process transactions and mark refunded ones
+  const processedTransactions = transactions
+    .filter(transaction => transaction.refund_uuid === null) // Only show original transactions
+    .map(transaction => ({
+      ...transaction,
+      refunded: transaction.payment_uuid ? refundMap.has(transaction.payment_uuid) : false,
+      refund_timestamp: transaction.payment_uuid ? refundMap.get(transaction.payment_uuid) : null
+    }));
 
   // Sort by timestamp
   const sortedTransactions = processedTransactions.sort(
