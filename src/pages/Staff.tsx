@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -58,8 +59,7 @@ const Staff = () => {
             averageAmount: 0,
             daysActive: 0,
             salesCount: 0,
-            sales: [],
-            shifts: []
+            sales: []
           };
         }
 
