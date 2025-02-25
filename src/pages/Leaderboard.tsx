@@ -15,9 +15,10 @@ const Leaderboard = () => {
   // Handle dates loaded from the server
   const handleDatesLoaded = (dates: string[]) => {
     if (dates.length > 0 && !selectedWeek) {
-      const latestDate = dates[0];
-      const latestWeekStart = format(startOfWeek(parseISO(latestDate)), 'yyyy-MM-dd');
+      const latestDate = parseISO(dates[0]);
+      const latestWeekStart = format(startOfWeek(latestDate), 'yyyy-MM-dd');
       setSelectedWeek(latestWeekStart);
+      console.log("Setting latest week start to:", latestWeekStart);
     }
   };
 
