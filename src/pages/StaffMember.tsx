@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useParams } from "react-router-dom";
 import { PageLayout } from "@/components/PageLayout";
 import { StaffStats } from "@/components/staff/StaffStats";
 import { StaffMemberStats, TotalPurchase } from "@/types/purchase";
@@ -9,7 +8,6 @@ import { processTransactions } from "@/components/transactions/TransactionProces
 import { calculatePoints, calculateTotalPoints } from "@/utils/pointsCalculation";
 
 const StaffMember = () => {
-  const navigate = useNavigate();
   const { name } = useParams();
   
   const { data: memberData, isLoading } = useQuery({
@@ -126,12 +124,6 @@ const StaffMember = () => {
   if (!memberData) {
     return (
       <PageLayout>
-        <button 
-          onClick={() => navigate(-1)}
-          className="mb-4"
-        >
-          <ArrowLeft size={24} />
-        </button>
         <div className="text-center text-gray-400">
           Ingen data hittades för denna säljare
         </div>
@@ -151,12 +143,6 @@ const StaffMember = () => {
 
   return (
     <PageLayout>
-      <button 
-        onClick={() => navigate(-1)}
-        className="mb-4"
-      >
-        <ArrowLeft size={24} />
-      </button>
       <h1 className="text-2xl font-bold mb-6">{decodeURIComponent(memberData.displayName)}</h1>
 
       <div className="space-y-4">
