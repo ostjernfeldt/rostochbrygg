@@ -39,6 +39,13 @@ const StaffMember = () => {
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
 
+      // Find highest single sale
+      const highestSingleSale = [...validSales].sort((a, b) => {
+        const pointsA = calculatePoints(a.amount);
+        const pointsB = calculatePoints(b.amount);
+        return pointsB - pointsA;
+      })[0];
+
       // Get the first sale date
       const firstSaleDate = new Date(sortedSales[0].timestamp);
       console.log("First sale date:", firstSaleDate);
@@ -96,6 +103,10 @@ const StaffMember = () => {
       return {
         ...memberStats,
         bestDay,
+        highestSale: {
+          date: highestSingleSale.timestamp,
+          points: calculatePoints(highestSingleSale.amount)
+        },
         worstDay: firstDay
       };
     }
@@ -135,6 +146,7 @@ const StaffMember = () => {
     activeDays: memberData.daysActive,
     firstSaleDate: memberData.firstSale.toISOString(),
     bestDay: memberData.bestDay,
+    highestSale: memberData.highestSale,
     worstDay: memberData.worstDay
   };
 

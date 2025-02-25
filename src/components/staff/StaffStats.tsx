@@ -13,6 +13,10 @@ interface StaffStatsProps {
       date: string;
       points: number;
     };
+    highestSale: {
+      date: string;
+      points: number;
+    };
     worstDay: {
       date: string;
       points: number;
@@ -31,9 +35,9 @@ export const StaffStats = ({ stats }: StaffStatsProps) => {
       />
       <StatCard
         title="Högsta sälj"
-        value={`${Math.round(stats.bestDay.points)} p`}
+        value={`${Math.round(stats.highestSale.points)} p`}
         userName=""
-        subtitle={format(new Date(stats.bestDay.date), "d MMM yyyy", { locale: sv })}
+        subtitle={format(new Date(stats.highestSale.date), "d MMM yyyy", { locale: sv })}
         animationDelay="800ms"
       />
       <StatCard
