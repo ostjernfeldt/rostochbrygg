@@ -29,31 +29,26 @@ export const TransactionListContent = ({ isLoading, transactions }: TransactionL
     );
   }
 
-  // Create a map to store original transactions
-  const processedTransactions = new Map<string, TotalPurchase>();
-  
-  // First, find all refunds and their corresponding original transactions
-  const refunds = new Map<string, TotalPurchase>();
-  transactions.forEach(transaction => {
-    if (transaction.amount < 0 && transaction.refund_uuid) {
-      refunds.set(transaction.refund_uuid, transaction);
-    }
+  // Separate refunds and original transactions
+  const refunds = transactions.filter(t => t.amount < 0);
+  const originalTransactions = transactions.filter(t => t.amount >= 0);
+
+  // Process original transactions and add refund info
+  const processedTransactions = originalTransactions.map(transaction => {
+    // Find matching refund for this transaction
+    const matchingRefund = refunds.find(
+      refund => refund.refund_uuid === transaction.payment_uuid
+    );
+
+    return {
+      ...transaction,
+      refunded: !!matchingRefund,
+      refund_timestamp: matchingRefund ? matchingRefund.timestamp : null
+    };
   });
 
-  // Then process original transactions and add refund info if they have been refunded
-  transactions.forEach(transaction => {
-    if (transaction.amount >= 0) {
-      const refund = transaction.payment_uuid ? refunds.get(transaction.payment_uuid) : null;
-      processedTransactions.set(transaction.purchase_uuid, {
-        ...transaction,
-        refunded: !!refund,
-        refund_timestamp: refund ? refund.timestamp : null
-      });
-    }
-  });
-
-  // Convert map to array and sort by timestamp
-  const sortedTransactions = Array.from(processedTransactions.values()).sort(
+  // Sort by timestamp
+  const sortedTransactions = processedTransactions.sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 
