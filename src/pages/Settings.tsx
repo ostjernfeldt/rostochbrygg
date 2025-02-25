@@ -1,10 +1,8 @@
+
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
-import { ChallengeManager } from "@/components/settings/ChallengeManager";
-import { ActiveChallenges } from "@/components/settings/ActiveChallenges";
 
 const Settings = () => {
   const [salesGoal, setSalesGoal] = useState("12000");
@@ -67,9 +65,6 @@ const Settings = () => {
             Spara inställningar
           </Button>
         </div>
-
-        <ChallengeManager />
-        <ActiveChallenges />
       </div>
     </PageLayout>
   );
