@@ -44,17 +44,29 @@ const Login = () => {
 
       // Om admin-login är valt, kontrollera användarens roll
       if (isAdminLogin) {
+        console.log("Checking admin role for user:", data.user.id);
+        
         const { data: roleData, error: roleError } = await supabase
           .from("user_roles")
-          .select("role")
+          .select("*")  // Ändrat från "role" till "*" för att se all data
           .eq("user_id", data.user.id)
           .single();
 
-        if (roleError || roleData?.role !== 'admin') {
-          // Logga ut användaren om de inte är admin
+        console.log("Role check result:", { roleData, roleError });
+
+        if (roleError) {
+          console.error("Role check error:", roleError);
+          await supabase.auth.signOut();
+          throw new Error("Kunde inte verifiera användarrollen");
+        }
+
+        if (!roleData || roleData.role !== 'admin') {
+          console.log("User role is not admin:", roleData?.role);
           await supabase.auth.signOut();
           throw new Error("Behörighet saknas: Endast administratörer kan logga in här.");
         }
+
+        console.log("Admin role verified:", roleData);
       }
 
       // Om allt är ok, uppdatera sessionen
