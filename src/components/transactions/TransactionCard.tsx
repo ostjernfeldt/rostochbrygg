@@ -4,7 +4,7 @@ import { TotalPurchase, Product } from "@/types/purchase";
 import { calculatePoints, calculateProductPoints } from "@/utils/pointsCalculation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
-import { Info, List } from "lucide-react";
+import { List } from "lucide-react";
 
 interface TransactionCardProps {
   transaction: TotalPurchase;
@@ -23,7 +23,8 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   return (
     <>
       <div 
-        className={`bg-card rounded-xl p-4 hover:scale-[1.02] transition-transform duration-200 ${
+        onClick={() => setShowDetails(true)}
+        className={`bg-card rounded-xl p-4 hover:scale-[1.02] transition-transform duration-200 cursor-pointer ${
           isRefunded ? 'border-red-500 border' : ''
         }`}
       >
@@ -52,18 +53,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
         <div className="flex flex-col gap-1">
           <div className="flex justify-between items-center">
             <span className="text-primary">{transaction.user_display_name}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-400">{transaction.payment_type || "Okänd betalningsmetod"}</span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDetails(true);
-                }}
-                className="p-1 hover:bg-gray-700 rounded-full transition-colors"
-              >
-                <Info className="h-4 w-4 text-gray-400" />
-              </button>
-            </div>
+            <span className="text-gray-400">{transaction.payment_type || "Okänd betalningsmetod"}</span>
           </div>
           <div className="text-sm text-gray-400">
             Antal påsar: {transaction.quantity || 0}
