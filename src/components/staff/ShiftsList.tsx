@@ -2,7 +2,7 @@
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DateFilterSection } from "@/components/staff/DateFilterSection";
+import { Button } from "@/components/ui/button";
 import { DateRange } from "react-day-picker";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -16,8 +16,6 @@ interface ShiftsListProps {
 
 export const ShiftsList = ({ shifts }: ShiftsListProps) => {
   const [selectedPeriod, setSelectedPeriod] = useState("all");
-  const [selectedDate, setSelectedDate] = useState("");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   // Fetch shifts data from total_purchases
   const { data: shiftsData, isLoading } = useQuery({
@@ -115,14 +113,15 @@ export const ShiftsList = ({ shifts }: ShiftsListProps) => {
   return (
     <div className="stat-card">
       <h3 className="text-gray-400 mb-4">Säljpass</h3>
-      <DateFilterSection
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-        selectedPeriod={selectedPeriod}
-        setSelectedPeriod={setSelectedPeriod}
-      />
+      <div className="flex gap-2">
+        <Button
+          variant={selectedPeriod === "all" ? "default" : "outline"}
+          onClick={() => setSelectedPeriod("all")}
+          size="sm"
+        >
+          Alla
+        </Button>
+      </div>
       
       <ScrollArea className="h-[400px] mt-4">
         <div className="space-y-4">
