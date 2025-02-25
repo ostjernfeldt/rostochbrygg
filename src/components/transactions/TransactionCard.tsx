@@ -23,6 +23,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   const formatPaymentType = (paymentType: string | null) => {
     if (!paymentType) return "Okänd betalningsmetod";
     if (paymentType === "IZETTLE_CASH") return "KONTANT";
+    if (paymentType === "IZETTLE_CARD") return "KORT";
     return paymentType;
   };
   
