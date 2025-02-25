@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,6 +12,8 @@ import Leaderboard from "./pages/Leaderboard";
 import Learn from "./pages/Learn";
 import Article from "./pages/Article";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Invite from "./pages/Invite";
 import TransactionList from "./pages/TransactionList";
 import Staff from "./pages/Staff";
 import StaffMember from "./pages/StaffMember";
