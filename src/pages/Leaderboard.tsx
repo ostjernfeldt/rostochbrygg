@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { format, startOfWeek, endOfWeek, parseISO, subMonths } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -8,16 +9,13 @@ import { useLeaderboardData } from "@/hooks/useLeaderboardData";
 
 const Leaderboard = () => {
   const navigate = useNavigate();
-  const [selectedDay, setSelectedDay] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [selectedWeek, setSelectedWeek] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
 
   // Handle dates loaded from the server
   const handleDatesLoaded = (dates: string[]) => {
-    if (dates.length > 0 && !selectedDay) {
+    if (dates.length > 0 && !selectedWeek) {
       const latestDate = dates[0];
-      setSelectedDay(latestDate);
-      
       const latestWeekStart = format(startOfWeek(parseISO(latestDate)), 'yyyy-MM-dd');
       setSelectedWeek(latestWeekStart);
     }
@@ -25,12 +23,6 @@ const Leaderboard = () => {
 
   // Fetch dates with sales activity
   const { data: salesDates } = useLeaderboardDates(handleDatesLoaded);
-
-  // Generate date options from sales dates
-  const dayOptions = (salesDates || []).map(date => ({
-    value: date,
-    label: format(parseISO(date), 'd MMMM yyyy')
-  }));
 
   // Generate last 12 months for the dropdown
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
@@ -52,33 +44,12 @@ const Leaderboard = () => {
   });
 
   // Fetch leaderboard data for each time period
-  const { data: dailyLeaderboard, isLoading: isDailyLoading } = useLeaderboardData('daily', selectedDay);
   const { data: weeklyLeaderboard, isLoading: isWeeklyLoading } = useLeaderboardData('weekly', selectedWeek);
   const { data: monthlyLeaderboard, isLoading: isMonthlyLoading } = useLeaderboardData('monthly', selectedMonth);
-
-  const getLeaderboardTitle = () => {
-    if (dailyLeaderboard?.latestDate && dailyLeaderboard.latestDate !== selectedDay) {
-      return `Senaste försäljning ${format(new Date(dailyLeaderboard.latestDate), 'd MMMM')}`;
-    }
-    return "Dagens topplista";
-  };
 
   return (
     <PageLayout>
       <div className="space-y-8">
-        <LeaderboardSection
-          title={getLeaderboardTitle()}
-          data={dailyLeaderboard?.dailyLeaders}
-          isLoading={isDailyLoading}
-          filter={{
-            options: dayOptions,
-            value: selectedDay,
-            onValueChange: setSelectedDay,
-            placeholder: "Välj datum"
-          }}
-          onUserClick={(userName) => navigate(`/staff/${encodeURIComponent(userName)}`)}
-        />
-
         <LeaderboardSection
           title="Veckans topplista"
           data={weeklyLeaderboard?.weeklyLeaders}
