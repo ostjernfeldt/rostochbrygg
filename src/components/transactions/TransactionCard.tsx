@@ -1,54 +1,124 @@
 
 import { format } from "date-fns";
-import { TotalPurchase } from "@/types/purchase";
+import { TotalPurchase, Product } from "@/types/purchase";
 import { calculatePoints } from "@/utils/pointsCalculation";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
+import { Info, List } from "lucide-react";
 
 interface TransactionCardProps {
   transaction: TotalPurchase;
 }
 
 export const TransactionCard = ({ transaction }: TransactionCardProps) => {
+  const [showDetails, setShowDetails] = useState(false);
   const isRefunded = transaction.refunded || transaction.amount < 0;
   const isRefund = transaction.amount < 0;
   const points = calculatePoints(transaction.quantity);
   
+  const getProductPoints = (product: Product) => {
+    return Number(product.quantity) * 15;
+  };
+  
   return (
-    <div 
-      className={`bg-card rounded-xl p-4 hover:scale-[1.02] transition-transform duration-200 ${
-        isRefunded ? 'border-red-500 border' : ''
-      }`}
-    >
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex flex-col">
-          <span className="text-gray-400">
-            {isRefund ? 'Återbetalning' : 'Köp'}: {format(new Date(transaction.timestamp), "HH:mm")}
-          </span>
-          {isRefunded && transaction.refund_timestamp && !isRefund && (
-            <span className="text-red-500 text-sm">
-              Återbetalning: {format(new Date(transaction.refund_timestamp), "HH:mm")}
+    <>
+      <div 
+        className={`bg-card rounded-xl p-4 hover:scale-[1.02] transition-transform duration-200 ${
+          isRefunded ? 'border-red-500 border' : ''
+        }`}
+      >
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex flex-col">
+            <span className="text-gray-400">
+              {isRefund ? 'Återbetalning' : 'Köp'}: {format(new Date(transaction.timestamp), "HH:mm")}
             </span>
-          )}
+            {isRefunded && transaction.refund_timestamp && !isRefund && (
+              <span className="text-red-500 text-sm">
+                Återbetalning: {format(new Date(transaction.refund_timestamp), "HH:mm")}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-col items-end">
+            <span className={`text-xl font-bold ${isRefunded ? 'text-red-500' : ''}`}>
+              {Math.abs(points)} poäng
+            </span>
+            {isRefunded && (
+              <span className="text-sm text-red-500">
+                {isRefund ? 'Återbetalad' : 'Återbetald'}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex flex-col items-end">
-          <span className={`text-xl font-bold ${isRefunded ? 'text-red-500' : ''}`}>
-            {Math.abs(points)} poäng
-          </span>
-          {isRefunded && (
-            <span className="text-sm text-red-500">
-              {isRefund ? 'Återbetalad' : 'Återbetald'}
-            </span>
-          )}
+        <div className="flex flex-col gap-1">
+          <div className="flex justify-between items-center">
+            <span className="text-primary">{transaction.user_display_name}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400">{transaction.payment_type || "Okänd betalningsmetod"}</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDetails(true);
+                }}
+                className="p-1 hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <Info className="h-4 w-4 text-gray-400" />
+              </button>
+            </div>
+          </div>
+          <div className="text-sm text-gray-400">
+            Antal påsar: {transaction.quantity || 0}
+          </div>
         </div>
       </div>
-      <div className="flex flex-col gap-1">
-        <div className="flex justify-between items-center">
-          <span className="text-primary">{transaction.user_display_name}</span>
-          <span className="text-gray-400">{transaction.payment_type || "Okänd betalningsmetod"}</span>
-        </div>
-        <div className="text-sm text-gray-400">
-          Antal påsar: {transaction.quantity || 0}
-        </div>
-      </div>
-    </div>
+
+      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <List className="h-5 w-5" />
+              Transaktionsdetaljer
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="text-sm text-gray-400">
+              {format(new Date(transaction.timestamp), "yyyy-MM-dd HH:mm")}
+            </div>
+            
+            {transaction.products && Array.isArray(transaction.products) ? (
+              <div className="space-y-3">
+                <h3 className="font-semibold">Produkter:</h3>
+                {(transaction.products as Product[]).map((product, index) => (
+                  <div key={index} className="bg-card p-3 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-sm text-gray-400">Antal: {product.quantity}</div>
+                      </div>
+                      <div className="text-primary font-semibold">
+                        {getProductPoints(product)} poäng
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className="flex justify-between items-center pt-3 border-t">
+                  <span className="font-semibold">Totalt:</span>
+                  <span className="text-lg font-bold text-primary">
+                    {(transaction.products as Product[]).reduce((total, product) => 
+                      total + getProductPoints(product), 0
+                    )} poäng
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-400">
+                Inga produktdetaljer tillgängliga
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };

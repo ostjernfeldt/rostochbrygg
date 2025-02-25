@@ -1,3 +1,4 @@
+
 import { Json } from "./json";
 
 export interface DatabasePurchase {
@@ -60,7 +61,7 @@ export interface TotalPurchase {
   country?: string | null;
   purchase_number?: number | null;
   gps_coordinates?: Json | null;
-  products?: Product[] | null;
+  products?: Json | Product[] | null;
   vat_amount?: number | null;
   quantity?: number | null;
 }
