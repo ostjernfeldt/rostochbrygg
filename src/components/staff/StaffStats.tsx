@@ -28,7 +28,7 @@ export const StaffStats = ({ stats }: StaffStatsProps) => {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <StatCard
-        title="Snittpoäng"
+        title="Snittpoäng per sälj"
         value={`${Math.round(stats.averagePoints)} p`}
         userName=""
         animationDelay="400ms"
