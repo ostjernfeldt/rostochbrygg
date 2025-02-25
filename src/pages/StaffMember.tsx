@@ -49,6 +49,7 @@ const StaffMember = () => {
 
       // Process transactions to handle refunds
       const processedSales = processTransactions(sales);
+      // Filtrera bort alla återbetalade köp för statistikberäkningar
       const validSales = processedSales.filter(sale => !sale.refunded);
 
       // Sort sales by timestamp for consistent date handling
@@ -57,6 +58,7 @@ const StaffMember = () => {
       );
 
       // Find highest single sale by calculating total points for each individual sale
+      // Exkludera återbetalade köp från högsta sälj beräkningen
       const highestSingleSale = [...validSales].sort((a, b) => {
         const pointsA = calculateTotalPoints([a]);
         const pointsB = calculateTotalPoints([b]);
@@ -67,7 +69,7 @@ const StaffMember = () => {
       const firstSaleDate = new Date(sortedSales[0].timestamp);
       console.log("First sale date:", firstSaleDate);
 
-      // Group sales by date for daily totals
+      // Group sales by date for daily totals, exkludera återbetalade köp
       const salesByDate = sortedSales.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
         const dateStr = new Date(sale.timestamp).toDateString();
         if (!acc[dateStr]) {
