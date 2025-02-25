@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { format, startOfWeek, endOfWeek, parseISO, subMonths } from "date-fns";
+import { sv } from "date-fns/locale";  // Importera svenska lokaliseringen
 import { useNavigate } from "react-router-dom";
 import { PageLayout } from "@/components/PageLayout";
 import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection";
@@ -33,16 +34,16 @@ const Leaderboard = () => {
     date.setDate(date.getDate() - (i * 7));
     return {
       value: format(date, 'yyyy-MM-dd'),
-      label: `Vecka ${format(date, 'w')} (${format(date, 'd MMM')} - ${format(endOfWeek(date), 'd MMM')})`
+      label: `Vecka ${format(date, 'w')} (${format(date, 'd MMM', { locale: sv })} - ${format(endOfWeek(date), 'd MMM', { locale: sv })})`
     };
   }) : [];
 
-  // Generate last 12 months for the dropdown
+  // Generate last 12 months for the dropdown, now with Swedish month names
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
     const date = subMonths(new Date(), i);
     return {
       value: format(date, 'yyyy-MM'),
-      label: format(date, 'MMMM yyyy')
+      label: format(date, 'MMMM yyyy', { locale: sv })
     };
   });
 
