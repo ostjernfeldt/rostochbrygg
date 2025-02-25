@@ -30,35 +30,35 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
     <>
       <div 
         onClick={() => setShowDetails(true)}
-        className={`bg-card rounded-xl p-4 hover:scale-[1.02] transition-transform duration-200 cursor-pointer ${
+        className={`bg-card rounded-xl p-3 sm:p-4 hover:scale-[1.02] transition-transform duration-200 cursor-pointer ${
           isRefunded ? 'border-red-500 border' : ''
         }`}
       >
         <div className="flex justify-between items-start mb-2">
           <div className="flex flex-col">
-            <span className="text-gray-400">
+            <span className="text-gray-400 text-sm sm:text-base">
               {isRefund ? 'Återbetalning' : 'Köp'}: {format(new Date(transaction.timestamp), "HH:mm")}
             </span>
             {isRefunded && transaction.refund_timestamp && !isRefund && (
-              <span className="text-red-500 text-sm">
+              <span className="text-red-500 text-xs sm:text-sm">
                 Återbetalning: {format(new Date(transaction.refund_timestamp), "HH:mm")}
               </span>
             )}
           </div>
           <div className="flex flex-col items-end">
-            <span className={`text-xl font-bold ${isRefunded ? 'text-red-500' : ''}`}>
+            <span className={`text-lg sm:text-xl font-bold ${isRefunded ? 'text-red-500' : ''}`}>
               {Math.abs(points)} poäng
             </span>
             {isRefunded && (
-              <span className="text-sm text-red-500">
+              <span className="text-xs sm:text-sm text-red-500">
                 {isRefund ? 'Återbetalad' : 'Återbetald'}
               </span>
             )}
           </div>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-primary">{transaction.user_display_name}</span>
-          <span className="text-gray-400">{formatPaymentType(transaction.payment_type)}</span>
+        <div className="flex justify-between items-center gap-2">
+          <span className="text-primary text-sm sm:text-base truncate">{transaction.user_display_name}</span>
+          <span className="text-gray-400 text-sm sm:text-base whitespace-nowrap">{formatPaymentType(transaction.payment_type)}</span>
         </div>
       </div>
 
