@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,36 @@ const Login = () => {
   const [isResetMode, setIsResetMode] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Kontrollera om det finns en aktiv session vid komponentmontering
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Om det finns en session, hämta användarens roll och navigera
+        try {
+          const { data: roleData, error: roleError } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .single();
+
+          if (roleError) throw roleError;
+
+          // Navigera baserat på roll
+          if (roleData?.role === 'admin') {
+            navigate("/");
+          } else {
+            navigate("/leaderboard");
+          }
+        } catch (error) {
+          console.error("Error checking role:", error);
+        }
+      }
+    };
+
+    checkSession();
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
