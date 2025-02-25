@@ -35,29 +35,7 @@ const Home = () => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedSeller, setSelectedSeller] = useState("all");
 
-  const { data: latestDate } = useQuery({
-    queryKey: ['latestTransactionDate'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('total_purchases')
-        .select('timestamp')
-        .order('timestamp', { ascending: false })
-        .limit(1);
-
-      if (error) throw error;
-      if (!data || data.length === 0) return new Date();
-      
-      const date = new Date(data[0].timestamp);
-      if (!selectedDate) {
-        setSelectedDate(date);
-      }
-      return date;
-    },
-  });
-  
-  const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(latestDate || new Date(), 'yyyy-MM-dd');
-  const { data: leaderboardData, isLoading: isLeaderboardLoading } = useLeaderboardData('daily', formattedDate);
-
+  // First get visible staff members
   const { data: visibleStaff } = useQuery({
     queryKey: ['visibleStaff'],
     queryFn: async () => {
@@ -71,8 +49,40 @@ const Home = () => {
     }
   });
 
+  // Then fetch latest date with sales from visible staff
+  const { data: latestDate } = useQuery({
+    queryKey: ['latestTransactionDate', visibleStaff],
+    queryFn: async () => {
+      // Get latest sale that has a visible seller
+      const { data, error } = await supabase
+        .from('total_purchases')
+        .select('timestamp, user_display_name')
+        .not('user_display_name', 'is', null)
+        .order('timestamp', { ascending: false });
+
+      if (error) throw error;
+
+      // Find first sale with a visible seller
+      const latestValidSale = data.find(sale => 
+        sale.user_display_name && visibleStaff?.has(sale.user_display_name)
+      );
+
+      if (!latestValidSale) return new Date();
+      
+      const date = new Date(latestValidSale.timestamp);
+      if (!selectedDate) {
+        setSelectedDate(date);
+      }
+      return date;
+    },
+    enabled: !!visibleStaff
+  });
+  
+  const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(latestDate || new Date(), 'yyyy-MM-dd');
+  const { data: leaderboardData, isLoading: isLeaderboardLoading } = useLeaderboardData('daily', formattedDate);
+
   const { data: transactions = [], isLoading: isTransactionsLoading } = useQuery({
-    queryKey: ['transactions', formattedDate],
+    queryKey: ['transactions', formattedDate, visibleStaff],
     queryFn: async () => {
       console.log('Fetching transactions for date:', formattedDate);
       const start = new Date(formattedDate);
@@ -102,7 +112,7 @@ const Home = () => {
       console.log('Fetched transactions:', filteredData);
       return filteredData as TotalPurchase[];
     },
-    enabled: !!visibleStaff // Only run query when we have the visible staff list
+    enabled: !!visibleStaff
   });
 
   const activeSellers = Array.from(
