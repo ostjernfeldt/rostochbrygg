@@ -29,11 +29,37 @@ export const TransactionListContent = ({ isLoading, transactions }: TransactionL
     );
   }
 
-  // Filter out negative amount transactions (refunds) since they will be shown on their original transaction card
-  const filteredTransactions = transactions.filter(transaction => transaction.amount >= 0);
+  // Create a map of original transactions with their refunds
+  const processedTransactions = transactions.reduce((acc, transaction) => {
+    if (transaction.amount >= 0) {
+      // This is an original purchase
+      acc.set(transaction.purchase_uuid, {
+        ...transaction,
+        refunded: false,
+        refund_timestamp: null
+      });
+    } else {
+      // This is a refund, find the original transaction
+      const originalTransaction = Array.from(acc.values()).find(t => 
+        // Match by exact same products and user
+        t.user_display_name === transaction.user_display_name &&
+        Math.abs(Number(t.amount)) === Math.abs(Number(transaction.amount)) &&
+        !t.refunded
+      );
 
-  // Sort transactions by timestamp, newest first
-  const sortedTransactions = [...filteredTransactions].sort(
+      if (originalTransaction) {
+        acc.set(originalTransaction.purchase_uuid, {
+          ...originalTransaction,
+          refunded: true,
+          refund_timestamp: transaction.timestamp
+        });
+      }
+    }
+    return acc;
+  }, new Map<string, TotalPurchase>());
+
+  // Convert map to array and sort by timestamp
+  const sortedTransactions = Array.from(processedTransactions.values()).sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 
