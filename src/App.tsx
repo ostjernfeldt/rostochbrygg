@@ -92,7 +92,7 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
   }
 
   if (!isAuthenticated) {
-    return null;
+    return <Navigate to="/login" replace />;
   }
 
   // If route requires admin access and user is not admin, redirect to leaderboard
@@ -105,6 +105,7 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
 
 const AppContent = () => {
   const location = useLocation();
+  const { data: userRole } = useUserRole();
 
   return (
     <div className="min-h-screen bg-background">
@@ -140,7 +141,9 @@ const AppContent = () => {
             <StaffMember />
           </PrivateRoute>
         } />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={
+          userRole === 'admin' ? <Navigate to="/" replace /> : <Navigate to="/leaderboard" replace />
+        } />
       </Routes>
       {location.pathname !== '/login' && <BottomNav />}
     </div>
