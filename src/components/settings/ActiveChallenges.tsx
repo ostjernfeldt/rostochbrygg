@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -6,12 +7,13 @@ import { Trash, Edit2, Check, X } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Challenge } from "@/types/challenge";
 
 export const ActiveChallenges = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingReward, setEditingReward] = useState("");
 
-  const { data: challenges, refetch } = useQuery({
+  const { data: challenges, refetch } = useQuery<Challenge[]>({
     queryKey: ["active-challenges"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -20,7 +22,7 @@ export const ActiveChallenges = () => {
         .order("start_date", { ascending: true });
 
       if (error) throw error;
-      return data;
+      return data as Challenge[];
     }
   });
 

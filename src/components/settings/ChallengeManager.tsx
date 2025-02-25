@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
@@ -5,6 +6,7 @@ import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-f
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { Challenge } from "@/types/challenge";
 
 type ChallengeType = "daily" | "weekly" | "monthly";
 
@@ -41,14 +43,16 @@ export const ChallengeManager = () => {
     }
 
     try {
+      const newChallenge: Omit<Challenge, 'id' | 'created_at' | 'updated_at'> = {
+        type,
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        reward: parseFloat(reward),
+      };
+
       const { error } = await supabase
         .from("challenges")
-        .insert({
-          type,
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          reward: parseFloat(reward),
-        });
+        .insert(newChallenge);
 
       if (error) throw error;
 
@@ -58,7 +62,6 @@ export const ChallengeManager = () => {
         className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
       });
 
-      // Reset form and refresh challenges list
       setShowForm(false);
       setReward("");
       queryClient.invalidateQueries({ queryKey: ["active-challenges"] });
