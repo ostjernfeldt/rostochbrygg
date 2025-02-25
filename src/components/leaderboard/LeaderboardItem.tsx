@@ -48,9 +48,11 @@ export const LeaderboardItem = ({
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <span className={`text-xl font-bold ${getRankColor()}`}>
-            #{rank}
-          </span>
+          <div className={`w-8 h-8 flex items-center justify-center ${getRankColor()}`}>
+            <span className="text-xl font-bold">
+              #{rank}
+            </span>
+          </div>
           <div>
             <h3 className="font-semibold text-white">{displayName}</h3>
             <p className="text-gray-400 text-sm">
