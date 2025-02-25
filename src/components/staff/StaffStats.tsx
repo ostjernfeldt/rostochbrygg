@@ -21,6 +21,8 @@ interface StaffStatsProps {
 }
 
 export const StaffStats = ({ stats }: StaffStatsProps) => {
+  if (!stats) return null;
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <StatCard
@@ -31,7 +33,7 @@ export const StaffStats = ({ stats }: StaffStatsProps) => {
       />
       <StatCard
         title="Högsta försäljning"
-        value={`${Math.round(stats.bestDay.points)} p`}
+        value={`${Math.round(stats.worstDay.points)} p`}
         userName=""
         animationDelay="800ms"
       />

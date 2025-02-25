@@ -88,7 +88,10 @@ const StaffMember = () => {
       return {
         ...memberStats,
         bestDay,
-        highestSingleTransaction
+        worstDay: {
+          date: firstSaleDate.toISOString(),
+          points: highestSingleTransaction
+        }
       };
     }
   });
@@ -127,10 +130,7 @@ const StaffMember = () => {
     activeDays: memberData.daysActive,
     firstSaleDate: memberData.firstSale.toISOString(),
     bestDay: memberData.bestDay,
-    worstDay: {
-      date: memberData.firstSale.toISOString(),
-      points: memberData.highestSingleTransaction
-    }
+    worstDay: memberData.worstDay
   };
 
   return (
@@ -146,7 +146,7 @@ const StaffMember = () => {
       </div>
 
       <div className="space-y-4">
-        <StaffStats stats={statsData} />
+        {memberData && <StaffStats stats={statsData} />}
       </div>
     </PageLayout>
   );
