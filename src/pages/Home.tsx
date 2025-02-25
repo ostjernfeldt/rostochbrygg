@@ -1,3 +1,4 @@
+
 import { UserRound, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -57,6 +58,19 @@ const Home = () => {
   const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(latestDate || new Date(), 'yyyy-MM-dd');
   const { data: leaderboardData, isLoading: isLeaderboardLoading } = useLeaderboardData('daily', formattedDate);
 
+  const { data: visibleStaff } = useQuery({
+    queryKey: ['visibleStaff'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_roles')
+        .select('user_display_name')
+        .eq('hidden', false);
+      
+      if (error) throw error;
+      return new Set((data || []).map(s => s.user_display_name));
+    }
+  });
+
   const { data: transactions = [], isLoading: isTransactionsLoading } = useQuery({
     queryKey: ['transactions', formattedDate],
     queryFn: async () => {
@@ -79,12 +93,25 @@ const Home = () => {
         throw error;
       }
 
-      console.log('Fetched transactions:', data);
-      return data as TotalPurchase[];
+      // Filter out transactions from hidden staff members
+      const filteredData = (data || []).filter(transaction => 
+        !transaction.user_display_name || 
+        (visibleStaff && visibleStaff.has(transaction.user_display_name))
+      );
+
+      console.log('Fetched transactions:', filteredData);
+      return filteredData as TotalPurchase[];
     },
+    enabled: !!visibleStaff // Only run query when we have the visible staff list
   });
 
-  const activeSellers = Array.from(new Set(transactions.map(t => t.user_display_name).filter(Boolean))) as string[];
+  const activeSellers = Array.from(
+    new Set(
+      transactions
+        .map(t => t.user_display_name)
+        .filter(name => name && visibleStaff?.has(name))
+    )
+  ) as string[];
 
   useEffect(() => {
     const getUser = async () => {
