@@ -1,4 +1,3 @@
-
 import { UserRound, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -123,9 +122,10 @@ const Home = () => {
 
   const getLeaderboardTitle = () => {
     if (selectedDate) {
-      return `Topplista ${format(selectedDate, 'd MMMM', { locale: sv })}`;
+      const dateToShow = new Date(formattedDate);
+      return `Topplista ${format(dateToShow, 'd MMMM', { locale: sv })}`;
     }
-    return "Dagens topplista";
+    return `Topplista ${format(new Date(), 'd MMMM', { locale: sv })}`;
   };
 
   return (
