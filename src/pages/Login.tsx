@@ -6,15 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
-  const [isAdminLogin, setIsAdminLogin] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -33,7 +30,6 @@ const Login = () => {
     }
 
     try {
-      // Först loggar vi in användaren
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim()
@@ -42,32 +38,21 @@ const Login = () => {
       if (error) throw error;
       if (!data?.user) throw new Error("No user data received");
 
-      // Om admin-login är valt, kontrollera användarens roll
-      if (isAdminLogin) {
-        console.log("Checking admin role for user:", data.user.id);
-        
-        const { data: roleData, error: roleError } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", data.user.id)
-          .single();
+      // Kontrollera användarens roll
+      console.log("Checking role for user:", data.user.id);
+      
+      const { data: roleData, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id)
+        .single();
 
-        console.log("Role check result:", { roleData, roleError });
+      console.log("Role check result:", { roleData, roleError });
 
-        if (roleError) {
-          console.error("Role check error:", roleError);
-          await supabase.auth.signOut();
-          throw new Error("Kunde inte verifiera användarrollen");
-        }
-
-        // Kontrollera att användaren har admin-roll
-        if (!roleData?.role || roleData.role !== 'admin') {
-          console.log("User is not admin:", roleData?.role);
-          await supabase.auth.signOut();
-          throw new Error("Behörighet saknas: Endast administratörer kan logga in här.");
-        }
-
-        console.log("Admin role verified:", roleData);
+      if (roleError) {
+        console.error("Role check error:", roleError);
+        await supabase.auth.signOut();
+        throw new Error("Kunde inte verifiera användarrollen");
       }
 
       toast({
@@ -75,8 +60,8 @@ const Login = () => {
         description: "Välkommen tillbaka.",
       });
       
-      // Navigera till lämplig sida baserat på admin-status
-      if (isAdminLogin) {
+      // Navigera till lämplig sida baserat på användarens roll
+      if (roleData?.role === 'admin') {
         navigate("/");
       } else {
         navigate("/leaderboard");
@@ -176,17 +161,6 @@ const Login = () => {
                   required
                   disabled={isLoading}
                 />
-              )}
-              
-              {!isResetMode && (
-                <div className="flex items-center space-x-2 pt-2">
-                  <Checkbox
-                    id="admin"
-                    checked={isAdminLogin}
-                    onCheckedChange={(checked) => setIsAdminLogin(checked === true)}
-                  />
-                  <Label htmlFor="admin">Logga in som admin</Label>
-                </div>
               )}
             </div>
             
