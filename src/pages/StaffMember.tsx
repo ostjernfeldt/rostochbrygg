@@ -41,6 +41,7 @@ const StaffMember = () => {
 
       // Get the first sale date
       const firstSaleDate = new Date(sortedSales[0].timestamp);
+      console.log("First sale date:", firstSaleDate);
 
       // Group sales by date for daily totals
       const salesByDate = sortedSales.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
@@ -62,10 +63,17 @@ const StaffMember = () => {
       const sortedDays = [...dailyTotals].sort((a, b) => b.points - a.points);
       const bestDay = sortedDays[0];
 
-      // Find highest single transaction
-      const highestSingleTransaction = Math.max(
-        ...validSales.map(sale => calculatePoints(sale.quantity))
+      // Calculate total points for the first day
+      const firstDayPoints = calculateTotalPoints(
+        sortedSales.filter(sale => 
+          new Date(sale.timestamp).toDateString() === firstSaleDate.toDateString()
+        )
       );
+
+      const firstDay = {
+        date: firstSaleDate.toISOString(),
+        points: firstDayPoints
+      };
 
       const totalAmount = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
       const totalPoints = calculateTotalPoints(validSales);
@@ -88,10 +96,7 @@ const StaffMember = () => {
       return {
         ...memberStats,
         bestDay,
-        worstDay: {
-          date: firstSaleDate.toISOString(),
-          points: highestSingleTransaction
-        }
+        worstDay: firstDay
       };
     }
   });
@@ -146,7 +151,7 @@ const StaffMember = () => {
       </div>
 
       <div className="space-y-4">
-        {memberData && <StaffStats stats={statsData} />}
+        <StaffStats stats={statsData} />
       </div>
     </PageLayout>
   );
