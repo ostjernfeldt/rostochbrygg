@@ -1,5 +1,5 @@
 
-import { TotalPurchase } from "@/types/purchase";
+import { TotalPurchase, Product } from "@/types/purchase";
 
 export const calculatePoints = (quantity: number | null | undefined): number => {
   if (!quantity) return 0;
@@ -12,7 +12,7 @@ export const calculateTotalPoints = (transactions: TotalPurchase[]): number => {
     
     // Handle products array if it exists
     if (transaction.products && Array.isArray(transaction.products)) {
-      const productsPoints = transaction.products.reduce((productTotal, product) => {
+      const productsPoints = (transaction.products as Product[]).reduce((productTotal, product) => {
         const productQuantity = Number(product.quantity) || 0;
         return productTotal + (productQuantity * 15);
       }, 0);

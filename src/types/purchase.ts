@@ -1,4 +1,3 @@
-
 import { Json } from "./json";
 
 export interface DatabasePurchase {
@@ -30,6 +29,16 @@ export interface Payment {
   references?: PaymentReference;
 }
 
+export interface Product {
+  id: string;
+  name: string;
+  quantity: string;
+  unitPrice: number;
+  productUuid: string;
+  variantUuid: string;
+  vatPercentage: number;
+}
+
 export interface TotalPurchase {
   id: string;
   purchase_uuid: string;
@@ -51,7 +60,7 @@ export interface TotalPurchase {
   country?: string | null;
   purchase_number?: number | null;
   gps_coordinates?: Json | null;
-  products?: Json | null;
+  products?: Product[] | null;
   vat_amount?: number | null;
   quantity?: number | null;
 }
