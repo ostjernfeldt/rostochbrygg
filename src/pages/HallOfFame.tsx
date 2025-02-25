@@ -171,21 +171,25 @@ const HallOfFame = () => {
             onClick={() => {
               if (type === 'sale' && item.transaction) {
                 setSelectedTransaction(item.transaction);
-              } else if (item.name !== 'Okänd') {
-                navigate(`/staff/${encodeURIComponent(item.name)}`);
               }
             }}
-            className="group flex items-center gap-4 p-4 bg-gradient-to-r from-card to-card/80 hover:from-card/80 hover:to-card/60 rounded-xl cursor-pointer transition-all duration-300 border border-white/5 hover:border-primary/20"
+            className={`group flex items-center gap-4 p-4 bg-gradient-to-r from-card to-card/80 ${
+              type === 'sale' ? 'hover:from-card/80 hover:to-card/60 cursor-pointer' : ''
+            } rounded-xl transition-all duration-300 border border-white/5 ${
+              type === 'sale' ? 'hover:border-primary/20' : ''
+            }`}
           >
             <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${
               index === 0 ? 'bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 text-yellow-500' :
               index === 1 ? 'bg-gradient-to-br from-gray-400/20 to-gray-500/20 text-gray-400' :
               'bg-gradient-to-br from-amber-700/20 to-amber-800/20 text-amber-700'
-            } font-bold text-2xl transition-transform group-hover:scale-110`}>
+            } font-bold text-2xl ${type === 'sale' ? 'transition-transform group-hover:scale-110' : ''}`}>
               #{index + 1}
             </div>
             <div className="flex-1">
-              <div className="font-semibold text-lg text-white group-hover:text-primary transition-colors">
+              <div className={`font-semibold text-lg text-white ${
+                type === 'sale' ? 'group-hover:text-primary transition-colors' : ''
+              }`}>
                 {item.name}
               </div>
               <div className="text-sm text-gray-400">
@@ -194,7 +198,9 @@ const HallOfFame = () => {
                 {type === 'day' && item.date}
               </div>
             </div>
-            <div className="bg-gradient-to-r from-cyan-400 to-primary bg-clip-text text-transparent text-xl font-bold group-hover:scale-110 transition-transform">
+            <div className={`bg-gradient-to-r from-cyan-400 to-primary bg-clip-text text-transparent text-xl font-bold ${
+              type === 'sale' ? 'transition-transform group-hover:scale-110' : ''
+            }`}>
               {Math.round(item.points)} p
             </div>
           </div>
