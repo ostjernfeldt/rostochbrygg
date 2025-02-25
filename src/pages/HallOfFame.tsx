@@ -138,36 +138,40 @@ const HallOfFame = () => {
     data: TopSeller[];
     type: 'sale' | 'month' | 'day';
   }) => (
-    <div className="bg-card/50 rounded-xl p-6 border border-primary/20">
+    <div className="bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-xl rounded-xl p-6 border border-primary/20 shadow-lg shadow-primary/5 hover:shadow-primary/10 transition-all duration-300 animate-fade-in">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-primary/10 rounded-lg">
-          <Icon className="w-6 h-6 text-primary" />
+        <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
+          <Icon className="w-7 h-7 text-primary" />
         </div>
-        <h2 className="text-xl font-bold">{title}</h2>
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+          {title}
+        </h2>
       </div>
       <div className="space-y-4">
         {data.map((item, index) => (
           <div
             key={index}
             onClick={() => item.name !== 'Okänd' && navigate(`/staff/${encodeURIComponent(item.name)}`)}
-            className="flex items-center gap-4 p-4 bg-card hover:bg-card/80 rounded-lg cursor-pointer transition-colors"
+            className="group flex items-center gap-4 p-4 bg-gradient-to-r from-card to-card/80 hover:from-card/80 hover:to-card/60 rounded-xl cursor-pointer transition-all duration-300 border border-white/5 hover:border-primary/20"
           >
-            <div className={`text-2xl font-bold ${
-              index === 0 ? 'text-yellow-500' :
-              index === 1 ? 'text-gray-400' :
-              'text-amber-700'
-            }`}>
+            <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${
+              index === 0 ? 'bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 text-yellow-500' :
+              index === 1 ? 'bg-gradient-to-br from-gray-400/20 to-gray-500/20 text-gray-400' :
+              'bg-gradient-to-br from-amber-700/20 to-amber-800/20 text-amber-700'
+            } font-bold text-2xl transition-transform group-hover:scale-110`}>
               #{index + 1}
             </div>
             <div className="flex-1">
-              <div className="font-semibold text-white">{item.name}</div>
+              <div className="font-semibold text-lg text-white group-hover:text-primary transition-colors">
+                {item.name}
+              </div>
               <div className="text-sm text-gray-400">
                 {type === 'sale' && item.date}
                 {type === 'month' && item.month}
                 {type === 'day' && item.date}
               </div>
             </div>
-            <div className="text-cyan-400 font-bold">
+            <div className="bg-gradient-to-r from-cyan-400 to-primary bg-clip-text text-transparent text-xl font-bold group-hover:scale-110 transition-transform">
               {Math.round(item.points)} p
             </div>
           </div>
@@ -181,7 +185,7 @@ const HallOfFame = () => {
       <PageLayout>
         <div className="animate-pulse space-y-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-[300px] bg-card rounded-xl"/>
+            <div key={i} className="h-[300px] bg-gradient-to-br from-card/90 to-card/50 rounded-xl"/>
           ))}
         </div>
       </PageLayout>
@@ -190,16 +194,17 @@ const HallOfFame = () => {
 
   return (
     <PageLayout>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-cyan-400 text-transparent bg-clip-text">
+      <div className="relative mb-12 text-center">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-cyan-400/20 to-primary/20 blur-3xl opacity-30" />
+        <h1 className="relative text-4xl font-bold bg-gradient-to-r from-primary via-cyan-400 to-primary text-transparent bg-clip-text mb-3 animate-fade-in">
           Hall of Fame
         </h1>
-        <p className="text-gray-400 mt-2">
+        <p className="relative text-lg text-gray-400 mt-2 animate-fade-in">
           De mest prestigefyllda prestationerna genom tiderna
         </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8 max-w-3xl mx-auto">
         <LeaderboardCard
           title="Högsta enskilda försäljning"
           icon={Trophy}
