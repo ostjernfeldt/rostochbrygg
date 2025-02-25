@@ -24,6 +24,16 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
       console.log(`Fetching ${type} challenge leaders from total_purchases...`);
       
       try {
+        // First, get the list of visible staff members
+        const { data: visibleStaff, error: staffError } = await supabase
+          .from("staff_roles")
+          .select("user_display_name")
+          .eq("hidden", false);
+
+        if (staffError) throw staffError;
+
+        const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
+
         const { data: latestSale, error: latestError } = await supabase
           .from("total_purchases")
           .select("timestamp")
@@ -86,7 +96,9 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
           .from("total_purchases")
           .select("*")
           .gte("timestamp", startDate.toISOString())
-          .lte("timestamp", endDate.toISOString());
+          .lte("timestamp", endDate.toISOString())
+          .not("refunded", "eq", true)
+          .not("user_display_name", "is", null);
 
         if (salesError) throw salesError;
 
@@ -95,10 +107,15 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
         const calculateLeaders = (sales: TotalPurchase[] | null): UserSales[] => {
           if (!sales || sales.length === 0) return [];
           
-          const processedSales = processTransactions(sales);
+          // Filter out sales from hidden staff members
+          const visibleSales = sales.filter(sale => 
+            sale.user_display_name && visibleStaffNames.has(sale.user_display_name)
+          );
+          
+          const processedSales = processTransactions(visibleSales);
           const userTotals = processedSales.reduce<Record<string, TotalPurchase[]>>((acc, sale) => {
             const name = sale.user_display_name;
-            if (!name) return acc;
+            if (!name || !visibleStaffNames.has(name)) return acc;
             
             if (!acc[name]) {
               acc[name] = [];
