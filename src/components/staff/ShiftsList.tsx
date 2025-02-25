@@ -44,6 +44,16 @@ export const ShiftsList = ({ shifts }: ShiftsListProps) => {
         // Get the user display name from the first shift
         const userDisplayName = shifts[0].sales[0]?.user_display_name;
 
+        if (!userDisplayName) {
+          console.log("No user display name found for shift:", date);
+          return {
+            id: date,
+            presence_start: startDate.toISOString(),
+            totalPoints: 0,
+            sales: []
+          };
+        }
+
         const { data: sales, error } = await supabase
           .from("total_purchases")
           .select("*")
@@ -57,6 +67,16 @@ export const ShiftsList = ({ shifts }: ShiftsListProps) => {
           throw error;
         }
 
+        if (!sales || sales.length === 0) {
+          console.log("No sales found for date:", date);
+          return {
+            id: date,
+            presence_start: startDate.toISOString(),
+            totalPoints: 0,
+            sales: []
+          };
+        }
+
         // Process transactions to handle refunds
         const processedSales = processTransactions(sales);
         const validSales = processedSales.filter(sale => !sale.refunded);
@@ -66,13 +86,14 @@ export const ShiftsList = ({ shifts }: ShiftsListProps) => {
 
         console.log(`Sales for ${date} by ${userDisplayName}:`, {
           salesCount: validSales.length,
-          totalPoints
+          totalPoints,
+          validSales
         });
 
         return {
           id: date,
           presence_start: startDate.toISOString(),
-          totalPoints,
+          totalPoints: totalPoints || 0, // Ensure we always have a number
           sales: validSales
         };
       }));
@@ -127,7 +148,7 @@ export const ShiftsList = ({ shifts }: ShiftsListProps) => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold">{Math.round(shift.totalPoints)} poäng</div>
+                    <div className="font-bold">{Math.round(shift.totalPoints || 0)} poäng</div>
                   </div>
                 </div>
               </div>
