@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -140,9 +139,15 @@ const AppContent = () => {
     <div className="min-h-screen bg-background">
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/" element={
           <PrivateRoute requireAdmin={true}>
             <Home />
+          </PrivateRoute>
+        } />
+        <Route path="/invite" element={
+          <PrivateRoute requireAdmin={true}>
+            <Invite />
           </PrivateRoute>
         } />
         <Route path="/leaderboard" element={
@@ -174,7 +179,7 @@ const AppContent = () => {
           userRole === 'admin' ? <Navigate to="/" replace /> : <Navigate to="/leaderboard" replace />
         } />
       </Routes>
-      {location.pathname !== '/login' && <BottomNav />}
+      {location.pathname !== '/login' && location.pathname !== '/register' && <BottomNav />}
     </div>
   );
 };

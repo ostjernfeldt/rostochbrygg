@@ -42,6 +42,36 @@ export type Database = {
         }
         Relationships: []
       }
+      invitations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          email: string
+          expires_at: string
+          id: string
+          invitation_token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          email: string
+          expires_at?: string
+          id?: string
+          invitation_token: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invitation_token?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       legacy_purchases: {
         Row: {
           Amount: string | null
@@ -462,9 +492,24 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      mark_invitation_used: {
+        Args: {
+          token: string
+        }
+        Returns: boolean
+      }
       sync_total_purchases: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      validate_invitation: {
+        Args: {
+          token: string
+        }
+        Returns: {
+          is_valid: boolean
+          email: string
+        }[]
       }
     }
     Enums: {
