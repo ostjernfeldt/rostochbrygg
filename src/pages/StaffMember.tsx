@@ -5,7 +5,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { PageLayout } from "@/components/PageLayout";
 import { StaffStats } from "@/components/staff/StaffStats";
-import { SalesChartSection } from "@/components/staff/SalesChartSection";
 import { ShiftsList } from "@/components/staff/ShiftsList";
 import { StaffMemberStats, TotalPurchase } from "@/types/purchase";
 import { processTransactions } from "@/components/transactions/TransactionProcessor";
@@ -160,10 +159,6 @@ const StaffMember = () => {
 
       <div className="space-y-4">
         <StaffStats stats={statsData} />
-        <SalesChartSection 
-          sales={memberData.sales} 
-          userName={decodeURIComponent(memberData.displayName)}
-        />
         <ShiftsList shifts={memberData.shifts} />
       </div>
     </PageLayout>
