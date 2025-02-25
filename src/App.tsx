@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -16,6 +15,7 @@ import TransactionList from "./pages/TransactionList";
 import Staff from "./pages/Staff";
 import StaffMember from "./pages/StaffMember";
 import HallOfFame from "./pages/HallOfFame";
+import Users from "./pages/Users";
 import { useUserRole, AppRole } from "./hooks/useUserRole";
 
 const queryClient = new QueryClient();
@@ -77,7 +77,6 @@ const PrivateRoute = ({ children, requiredRole }: PrivateRouteProps) => {
     return null;
   }
 
-  // Om en specifik roll krävs och användaren inte har den, omdirigera
   if (requiredRole && userRole !== requiredRole) {
     return <Navigate to={userRole === 'user' ? '/leaderboard' : '/'} replace />;
   }
@@ -89,7 +88,6 @@ const AppContent = () => {
   const location = useLocation();
   const { data: userRole } = useUserRole();
 
-  // Om användaren är inloggad och är på index-sidan men har user-roll, omdirigera till topplistan
   useEffect(() => {
     if (userRole === 'user' && location.pathname === '/') {
       navigate('/leaderboard');
@@ -103,7 +101,6 @@ const AppContent = () => {
       <Routes>
         <Route path="/login" element={<Login />} />
         
-        {/* Admin routes */}
         <Route path="/" element={
           <PrivateRoute requiredRole="admin">
             <Home />
@@ -124,8 +121,12 @@ const AppContent = () => {
             <TransactionList />
           </PrivateRoute>
         } />
+        <Route path="/users" element={
+          <PrivateRoute requiredRole="admin">
+            <Users />
+          </PrivateRoute>
+        } />
         
-        {/* Routes accessible by both roles */}
         <Route path="/leaderboard" element={
           <PrivateRoute>
             <Leaderboard />

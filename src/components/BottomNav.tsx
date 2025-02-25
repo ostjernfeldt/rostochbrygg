@@ -1,6 +1,6 @@
 
 import { useLocation, Link } from "react-router-dom";
-import { Trophy, Home, Users, Receipt } from "lucide-react";
+import { Trophy, Home, Users, Receipt, User } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 
 export const BottomNav = () => {
@@ -9,12 +9,12 @@ export const BottomNav = () => {
   
   const isActive = (path: string) => location.pathname === path;
 
-  // Visa bara relevanta navigationslänkar baserat på användarroll
   const links = userRole === 'admin' ? [
     { path: '/', icon: Home, label: 'Hem' },
     { path: '/leaderboard', icon: Trophy, label: 'Topplista' },
     { path: '/staff', icon: Users, label: 'Personal' },
     { path: '/transactions', icon: Receipt, label: 'Transaktioner' },
+    { path: '/users', icon: User, label: 'Användare' },
   ] : [
     { path: '/leaderboard', icon: Trophy, label: 'Topplista' },
   ];
