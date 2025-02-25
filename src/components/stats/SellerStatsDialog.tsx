@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
@@ -22,6 +23,16 @@ export const SellerStatsDialog = ({ isOpen, onClose, type }: SellerStatsDialogPr
     queryFn: async () => {
       console.log("Fetching seller stats...");
       
+      // First get visible staff members
+      const { data: visibleStaff, error: staffError } = await supabase
+        .from("staff_roles")
+        .select("user_display_name")
+        .eq("hidden", false);
+
+      if (staffError) throw staffError;
+
+      const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
+
       // Get today's date range
       const today = new Date();
       const startOfToday = new Date(today);
@@ -42,10 +53,15 @@ export const SellerStatsDialog = ({ isOpen, onClose, type }: SellerStatsDialogPr
         throw todayError;
       }
 
+      // Filter out data from hidden staff members
+      const filteredTodaySales = todaySales?.filter(sale => 
+        visibleStaffNames.has(sale.user_display_name!)
+      ) || [];
+
       // If we have sales today, use them
-      if (todaySales && todaySales.length > 0) {
-        console.log("Found sales for today:", todaySales.length);
-        const processedSales = processTransactions(todaySales);
+      if (filteredTodaySales.length > 0) {
+        console.log("Found sales for today:", filteredTodaySales.length);
+        const processedSales = processTransactions(filteredTodaySales);
         return calculateStats(processedSales);
       }
 
@@ -87,8 +103,13 @@ export const SellerStatsDialog = ({ isOpen, onClose, type }: SellerStatsDialogPr
         throw latestSalesError;
       }
 
-      console.log("Found sales for latest day:", latestSales.length);
-      const processedSales = processTransactions(latestSales);
+      // Filter out data from hidden staff members
+      const filteredLatestSales = latestSales?.filter(sale => 
+        visibleStaffNames.has(sale.user_display_name!)
+      ) || [];
+
+      console.log("Found sales for latest day:", filteredLatestSales.length);
+      const processedSales = processTransactions(filteredLatestSales);
       return calculateStats(processedSales);
     }
   });
