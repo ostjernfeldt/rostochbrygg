@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -16,7 +17,6 @@ import Login from "./pages/Login";
 import TransactionList from "./pages/TransactionList";
 import Staff from "./pages/Staff";
 import StaffMember from "./pages/StaffMember";
-import Overview from "./pages/Overview";
 import Salaries from "./pages/Salaries";
 
 const queryClient = new QueryClient();
@@ -122,11 +122,6 @@ const AppContent = () => {
         <Route path="/staff/:name" element={
           <PrivateRoute>
             <StaffMember />
-          </PrivateRoute>
-        } />
-        <Route path="/overview" element={
-          <PrivateRoute>
-            <Overview />
           </PrivateRoute>
         } />
         <Route path="/salaries" element={

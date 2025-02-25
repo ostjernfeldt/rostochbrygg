@@ -1,3 +1,4 @@
+
 import { Menu, LogOut } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +17,6 @@ export const BottomNav = () => {
 
   const menuItems = [
     { path: "/", label: "Idag" },
-    { path: "/overview", label: "Översikt" },
     { path: "/competitions", label: "Tävlingar" },
     { path: "/leaderboard", label: "Topplista" },
     { path: "/staff", label: "Personal" },
