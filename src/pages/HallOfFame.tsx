@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
 import { format, parseISO } from "date-fns";
 import { sv } from "date-fns/locale";
-import { processTransactions } from "@/components/transactions/TransactionProcessor";
 import { calculateTotalPoints } from "@/utils/pointsCalculation";
 import { Trophy, Calendar, Sun, List } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +16,7 @@ interface TopSeller {
   points: number;
   date?: string;
   month?: string;
-  transaction?: TotalPurchase;  // Added to store transaction details
+  transaction?: TotalPurchase;
 }
 
 const HallOfFame = () => {
@@ -37,22 +36,38 @@ const HallOfFame = () => {
 
       const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
 
-      // Fetch all non-refunded sales
+      // Fetch all sales
       const { data: sales, error } = await supabase
         .from("total_purchases")
         .select("*")
-        .not("refunded", "eq", true)
         .order("timestamp", { ascending: true });
 
       if (error) throw error;
       if (!sales) return null;
 
-      const processedSales = processTransactions(sales)
-        .filter(sale => 
-          sale.user_display_name && 
-          visibleStaffNames.has(sale.user_display_name) && 
-          !sale.refunded
-        );
+      // Filter for visible staff members
+      const visibleSales = sales.filter(sale => 
+        sale.user_display_name && 
+        visibleStaffNames.has(sale.user_display_name)
+      );
+
+      // Helper function to check if a sale has a same-day refund by the same seller
+      const hasSameDayRefundBySameSeller = (sale: TotalPurchase, allSales: TotalPurchase[]) => {
+        const saleDate = new Date(sale.timestamp);
+        return allSales.some(otherSale => {
+          if (otherSale.amount >= 0) return false; // Only look at negative (refund) transactions
+          
+          const refundDate = new Date(otherSale.timestamp);
+          const isSameDay = saleDate.getFullYear() === refundDate.getFullYear() &&
+                          saleDate.getMonth() === refundDate.getMonth() &&
+                          saleDate.getDate() === refundDate.getDate();
+          
+          const isSameSeller = sale.user_display_name === otherSale.user_display_name;
+          const isSameAmount = Math.abs(Number(sale.amount)) === Math.abs(Number(otherSale.amount));
+          
+          return isSameDay && isSameSeller && isSameAmount;
+        });
+      };
 
       // Helper function to get unique top sellers
       const getUniqueTopSellers = (sellers: TopSeller[]): TopSeller[] => {
@@ -69,34 +84,39 @@ const HallOfFame = () => {
         return uniqueSellers;
       };
 
-      // 1. Highest single sales (using calculateTotalPoints)
-      const allSalesByPoints = [...processedSales].map(sale => ({
-        name: sale.user_display_name || 'Okänd',
-        points: calculateTotalPoints([sale]),
-        date: format(new Date(sale.timestamp), 'd MMMM yyyy', { locale: sv }),
-        transaction: sale  // Store the full transaction data
-      })).sort((a, b) => b.points - a.points);
+      // 1. Highest single sales (filtering out same-day refunds by same seller)
+      const allSalesByPoints = visibleSales
+        .filter(sale => sale.amount > 0 && !hasSameDayRefundBySameSeller(sale, visibleSales))
+        .map(sale => ({
+          name: sale.user_display_name || 'Okänd',
+          points: calculateTotalPoints([sale]),
+          date: format(new Date(sale.timestamp), 'd MMMM yyyy', { locale: sv }),
+          transaction: sale
+        }))
+        .sort((a, b) => b.points - a.points);
 
       const topSales = getUniqueTopSellers(allSalesByPoints);
 
-      // 2. Best months
-      const monthlyTotals = processedSales.reduce((acc, sale) => {
-        const monthKey = format(new Date(sale.timestamp), 'yyyy-MM');
-        if (!acc[monthKey]) {
-          acc[monthKey] = {
-            sellers: {},
-            totalPoints: 0
-          };
-        }
-        
-        const sellerName = sale.user_display_name || 'Okänd';
-        if (!acc[monthKey].sellers[sellerName]) {
-          acc[monthKey].sellers[sellerName] = [];
-        }
-        acc[monthKey].sellers[sellerName].push(sale);
-        
-        return acc;
-      }, {} as Record<string, { sellers: Record<string, typeof processedSales>, totalPoints: number }>);
+      // 2. Best months (using all valid sales)
+      const monthlyTotals = visibleSales
+        .filter(sale => sale.amount > 0)
+        .reduce((acc, sale) => {
+          const monthKey = format(new Date(sale.timestamp), 'yyyy-MM');
+          if (!acc[monthKey]) {
+            acc[monthKey] = {
+              sellers: {},
+              totalPoints: 0
+            };
+          }
+          
+          const sellerName = sale.user_display_name || 'Okänd';
+          if (!acc[monthKey].sellers[sellerName]) {
+            acc[monthKey].sellers[sellerName] = [];
+          }
+          acc[monthKey].sellers[sellerName].push(sale);
+          
+          return acc;
+        }, {} as Record<string, { sellers: Record<string, TotalPurchase[]>, totalPoints: number }>);
 
       const allMonthlyTopSellers = Object.entries(monthlyTotals)
         .flatMap(([monthKey, data]) => 
@@ -110,24 +130,26 @@ const HallOfFame = () => {
 
       const topMonths = getUniqueTopSellers(allMonthlyTopSellers);
 
-      // 3. Best days
-      const dailyTotals = processedSales.reduce((acc, sale) => {
-        const dateKey = format(new Date(sale.timestamp), 'yyyy-MM-dd');
-        if (!acc[dateKey]) {
-          acc[dateKey] = {
-            sellers: {},
-            totalPoints: 0
-          };
-        }
-        
-        const sellerName = sale.user_display_name || 'Okänd';
-        if (!acc[dateKey].sellers[sellerName]) {
-          acc[dateKey].sellers[sellerName] = [];
-        }
-        acc[dateKey].sellers[sellerName].push(sale);
-        
-        return acc;
-      }, {} as Record<string, { sellers: Record<string, typeof processedSales>, totalPoints: number }>);
+      // 3. Best days (using all valid sales)
+      const dailyTotals = visibleSales
+        .filter(sale => sale.amount > 0)
+        .reduce((acc, sale) => {
+          const dateKey = format(new Date(sale.timestamp), 'yyyy-MM-dd');
+          if (!acc[dateKey]) {
+            acc[dateKey] = {
+              sellers: {},
+              totalPoints: 0
+            };
+          }
+          
+          const sellerName = sale.user_display_name || 'Okänd';
+          if (!acc[dateKey].sellers[sellerName]) {
+            acc[dateKey].sellers[sellerName] = [];
+          }
+          acc[dateKey].sellers[sellerName].push(sale);
+          
+          return acc;
+        }, {} as Record<string, { sellers: Record<string, TotalPurchase[]>, totalPoints: number }>);
 
       const allDailyTopSellers = Object.entries(dailyTotals)
         .flatMap(([dateKey, data]) => 
