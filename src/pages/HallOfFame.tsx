@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
@@ -22,6 +21,16 @@ const HallOfFame = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["hallOfFame"],
     queryFn: async () => {
+      // Fetch visible staff members first
+      const { data: visibleStaff, error: staffError } = await supabase
+        .from("staff_roles")
+        .select("user_display_name")
+        .eq("hidden", false);
+
+      if (staffError) throw staffError;
+
+      const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
+
       // Fetch all non-refunded sales
       const { data: sales, error } = await supabase
         .from("total_purchases")
@@ -32,11 +41,15 @@ const HallOfFame = () => {
       if (error) throw error;
       if (!sales) return null;
 
-      const processedSales = processTransactions(sales);
-      const validSales = processedSales.filter(sale => !sale.refunded);
+      const processedSales = processTransactions(sales)
+        .filter(sale => 
+          sale.user_display_name && 
+          visibleStaffNames.has(sale.user_display_name) && 
+          !sale.refunded
+        );
 
       // 1. Highest single sale
-      const sortedBySalePoints = [...validSales].sort((a, b) => {
+      const sortedBySalePoints = [...processedSales].sort((a, b) => {
         const pointsA = calculatePoints(Number(a.amount));
         const pointsB = calculatePoints(Number(b.amount));
         return pointsB - pointsA;
@@ -49,7 +62,7 @@ const HallOfFame = () => {
       }));
 
       // 2. Best months
-      const monthlyTotals: Record<string, { points: number; sellers: Record<string, number> }> = validSales.reduce((acc, sale) => {
+      const monthlyTotals: Record<string, { points: number; sellers: Record<string, number> }> = processedSales.reduce((acc, sale) => {
         const date = new Date(sale.timestamp);
         const monthKey = format(date, 'yyyy-MM');
         if (!acc[monthKey]) {
@@ -87,7 +100,7 @@ const HallOfFame = () => {
         .slice(0, 3);
 
       // 3. Best days
-      const dailyTotals: Record<string, { points: number; sellers: Record<string, number> }> = validSales.reduce((acc, sale) => {
+      const dailyTotals: Record<string, { points: number; sellers: Record<string, number> }> = processedSales.reduce((acc, sale) => {
         const date = new Date(sale.timestamp);
         const dateKey = format(date, 'yyyy-MM-dd');
         if (!acc[dateKey]) {

@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Award } from "lucide-react";
 import { PageLayout } from "@/components/PageLayout";
 import { StaffStats } from "@/components/staff/StaffStats";
@@ -11,6 +11,7 @@ import { calculatePoints, calculateTotalPoints } from "@/utils/pointsCalculation
 
 const StaffMember = () => {
   const { name } = useParams();
+  const navigate = useNavigate();
   
   const { data: memberData, isLoading } = useQuery({
     queryKey: ["staffMember", name],
@@ -19,15 +20,21 @@ const StaffMember = () => {
       
       if (!name) throw new Error("No name provided");
       
-      // Fetch role data
+      // Fetch role data and check if hidden
       const { data: roleData, error: roleError } = await supabase
         .from("staff_roles")
-        .select("role")
+        .select("role, hidden")
         .eq("user_display_name", decodeURIComponent(name))
         .single();
 
       if (roleError) {
         console.error("Error fetching role:", roleError);
+      }
+
+      // If staff member is hidden, redirect to staff list
+      if (roleData?.hidden) {
+        navigate('/staff');
+        return null;
       }
 
       const { data: sales, error: salesError } = await supabase

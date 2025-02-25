@@ -28,6 +28,7 @@ const Staff = () => {
         supabase
           .from("staff_roles")
           .select("*")
+          .eq("hidden", false) // Only fetch non-hidden staff members
       ]);
 
       if (salesResponse.error) throw salesResponse.error;
@@ -35,11 +36,16 @@ const Staff = () => {
 
       const sales = salesResponse.data || [];
       const roles = rolesResponse.data || [];
+      const visibleStaffNames = new Set(roles.map(r => r.user_display_name));
 
       if (sales.length === 0) return [];
 
       const staffStats = sales.reduce((acc: { [key: string]: StaffMemberStats }, sale) => {
         const displayName = sale.user_display_name as string;
+        
+        // Skip if the staff member is not in the visible staff list
+        if (!visibleStaffNames.has(displayName)) return acc;
+        
         const points = calculatePoints(sale.quantity);
 
         if (!acc[displayName]) {
