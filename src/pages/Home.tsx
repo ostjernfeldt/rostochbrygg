@@ -1,4 +1,3 @@
-
 import { UserRound, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -49,13 +48,12 @@ const Home = () => {
       if (error) throw error;
       if (!data || data.length === 0) return new Date();
       
-      return new Date(data[0].timestamp);
-    },
-    onSuccess: (date) => {
+      const date = new Date(data[0].timestamp);
       if (!selectedDate) {
         setSelectedDate(date);
       }
-    }
+      return date;
+    },
   });
   
   const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(latestDate || new Date(), 'yyyy-MM-dd');
