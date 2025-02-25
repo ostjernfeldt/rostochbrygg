@@ -19,6 +19,12 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   const points = transaction.products && Array.isArray(transaction.products)
     ? (transaction.products as Product[]).reduce((total, product) => total + calculateProductPoints(product), 0)
     : calculatePoints(transaction.quantity);
+
+  const formatPaymentType = (paymentType: string | null) => {
+    if (!paymentType) return "Okänd betalningsmetod";
+    if (paymentType === "IZETTLE_CASH") return "KONTANT";
+    return paymentType;
+  };
   
   return (
     <>
@@ -52,7 +58,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-primary">{transaction.user_display_name}</span>
-          <span className="text-gray-400">{transaction.payment_type || "Okänd betalningsmetod"}</span>
+          <span className="text-gray-400">{formatPaymentType(transaction.payment_type)}</span>
         </div>
       </div>
 
