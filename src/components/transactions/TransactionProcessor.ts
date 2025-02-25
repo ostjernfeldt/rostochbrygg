@@ -1,5 +1,5 @@
 
-import { TotalPurchase } from "@/types/purchase";
+import { TotalPurchase, Product } from "@/types/purchase";
 
 export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurchase[] => {
   console.log("Processing transactions...");
@@ -23,7 +23,7 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
       // Find the original transaction that was refunded
       const originalTransaction = sortedTransactions.find(t => 
         t.payment_uuid === transaction.refund_uuid ||
-        t.purchase_uuid === transaction.refund_uuid // Added this condition
+        t.purchase_uuid === transaction.refund_uuid
       );
 
       if (originalTransaction) {
@@ -62,9 +62,9 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
         
         // Check if products match (if available)
         let productsMatch = true;
-        if (t.products && transaction.products) {
-          const originalProducts = JSON.stringify(t.products.sort((a, b) => a.name.localeCompare(b.name)));
-          const refundProducts = JSON.stringify(transaction.products.sort((a, b) => a.name.localeCompare(b.name)));
+        if (t.products && transaction.products && Array.isArray(t.products) && Array.isArray(transaction.products)) {
+          const originalProducts = JSON.stringify((t.products as Product[]).sort((a, b) => a.name.localeCompare(b.name)));
+          const refundProducts = JSON.stringify((transaction.products as Product[]).sort((a, b) => a.name.localeCompare(b.name)));
           productsMatch = originalProducts === refundProducts;
         }
         
