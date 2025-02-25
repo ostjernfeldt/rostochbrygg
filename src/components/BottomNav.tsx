@@ -1,85 +1,42 @@
 
-import { Menu, LogOut } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { useState } from "react";
+import { useLocation, Link } from "react-router-dom";
+import { Trophy, Home, Users, Receipt } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export const BottomNav = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const { data: userRole } = useUserRole();
+  
+  const isActive = (path: string) => location.pathname === path;
 
-  const menuItems = [
-    { path: "/", label: "Idag" },
-    { path: "/leaderboard", label: "Topplista" },
-    { path: "/hall-of-fame", label: "Hall of Fame" },
-    { path: "/staff", label: "Personal" },
+  // Visa bara relevanta navigationslänkar baserat på användarroll
+  const links = userRole === 'admin' ? [
+    { path: '/', icon: Home, label: 'Hem' },
+    { path: '/leaderboard', icon: Trophy, label: 'Topplista' },
+    { path: '/staff', icon: Users, label: 'Personal' },
+    { path: '/transactions', icon: Receipt, label: 'Transaktioner' },
+  ] : [
+    { path: '/leaderboard', icon: Trophy, label: 'Topplista' },
   ];
 
-  const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Fel vid utloggning",
-        description: error.message,
-      });
-    } else {
-      toast({
-        title: "Utloggad",
-        description: "Du har loggats ut",
-        className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
-        duration: 1000,
-      });
-      navigate("/login");
-    }
-  };
-
   return (
-    <div className="fixed top-4 left-4 z-50">
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <button className="p-2 rounded-lg bg-card hover:bg-card/80 transition-colors">
-            <Menu className="h-6 w-6 text-white" />
-          </button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-[250px] bg-card border-r border-gray-800">
-          <nav className="flex flex-col gap-2 mt-8">
-            {menuItems.map((item) => (
-              <button
-                key={item.path}
-                onClick={() => {
-                  navigate(item.path);
-                  setOpen(false);
-                }}
-                className={`p-3 text-left rounded-lg transition-colors ${
-                  location.pathname === item.path
-                    ? "bg-primary text-white"
-                    : "text-gray-400 hover:bg-card/80"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-            <button
-              onClick={() => {
-                handleSignOut();
-                setOpen(false);
-              }}
-              className="p-3 text-left rounded-lg transition-colors text-gray-400 hover:bg-card/80 mt-4 flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Logga ut
-            </button>
-          </nav>
-        </SheetContent>
-      </Sheet>
-    </div>
+    <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-lg border-t border-white/10">
+      <div className="flex justify-around items-center h-16 px-4 mx-auto max-w-lg">
+        {links.map(({ path, icon: Icon, label }) => (
+          <Link
+            key={path}
+            to={path}
+            className={`flex flex-col items-center py-1 px-3 rounded-lg transition-colors ${
+              isActive(path)
+                ? "text-primary"
+                : "text-gray-400 hover:text-gray-300"
+            }`}
+          >
+            <Icon className="w-6 h-6" />
+            <span className="text-xs mt-1">{label}</span>
+          </Link>
+        ))}
+      </div>
+    </nav>
   );
 };
