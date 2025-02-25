@@ -1,4 +1,3 @@
-
 import { TotalPurchase } from "@/types/purchase";
 import { TransactionCard } from "./TransactionCard";
 
@@ -29,25 +28,30 @@ export const TransactionListContent = ({ isLoading, transactions }: TransactionL
     );
   }
 
-  // First, get all refund transactions
-  const refundTransactions = transactions.filter(t => t.refund_uuid !== null);
+  // Create a map to store refund info using payment_uuid as key
+  const refundMap = new Map<string, TotalPurchase>();
   
-  // Create a map of refunds using refund_uuid as key
-  const refundMap = new Map<string, string>();
-  refundTransactions.forEach(refund => {
-    if (refund.refund_uuid) {
-      refundMap.set(refund.refund_uuid, refund.timestamp);
+  // First pass: Find all refunds and map them by the original transaction's payment_uuid
+  transactions.forEach(transaction => {
+    if (transaction.refund_uuid) {
+      refundMap.set(transaction.refund_uuid, transaction);
     }
   });
 
-  // Process transactions and mark refunded ones
+  // Second pass: Process original transactions and add refund info
   const processedTransactions = transactions
-    .filter(transaction => transaction.refund_uuid === null) // Only show original transactions
-    .map(transaction => ({
-      ...transaction,
-      refunded: transaction.payment_uuid ? refundMap.has(transaction.payment_uuid) : false,
-      refund_timestamp: transaction.payment_uuid ? refundMap.get(transaction.payment_uuid) : null
-    }));
+    .filter(transaction => {
+      // Only keep transactions that are not refunds themselves
+      return !transaction.refund_uuid;
+    })
+    .map(transaction => {
+      const refund = transaction.payment_uuid ? refundMap.get(transaction.payment_uuid) : null;
+      return {
+        ...transaction,
+        refunded: !!refund,
+        refund_timestamp: refund?.timestamp || null
+      };
+    });
 
   // Sort by timestamp
   const sortedTransactions = processedTransactions.sort(
