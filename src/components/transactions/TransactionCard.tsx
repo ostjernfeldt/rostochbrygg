@@ -12,8 +12,7 @@ interface TransactionCardProps {
 
 export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   const [showDetails, setShowDetails] = useState(false);
-  const isRefunded = transaction.refunded || transaction.amount < 0;
-  const isRefund = transaction.amount < 0;
+  const isRefunded = transaction.refunded || false;
   
   // Calculate points based on products if available, otherwise fall back to quantity
   const points = transaction.products && Array.isArray(transaction.products)
@@ -26,7 +25,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
     if (paymentType === "IZETTLE_CARD") return "KORT";
     return paymentType;
   };
-  
+
   return (
     <>
       <div 
@@ -38,9 +37,9 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
         <div className="flex justify-between items-start mb-2">
           <div className="flex flex-col">
             <span className="text-gray-400 text-sm sm:text-base">
-              {isRefund ? 'Återbetalning' : 'Köp'}: {format(new Date(transaction.timestamp), "HH:mm")}
+              Köp: {format(new Date(transaction.timestamp), "HH:mm")}
             </span>
-            {isRefunded && transaction.refund_timestamp && !isRefund && (
+            {isRefunded && transaction.refund_timestamp && (
               <span className="text-red-500 text-xs sm:text-sm">
                 Återbetalning: {format(new Date(transaction.refund_timestamp), "HH:mm")}
               </span>
@@ -52,7 +51,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
             </span>
             {isRefunded && (
               <span className="text-xs sm:text-sm text-red-500">
-                {isRefund ? 'Återbetalad' : 'Återbetald'}
+                Återbetald
               </span>
             )}
           </div>
@@ -73,8 +72,15 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="text-sm text-gray-400">
-              {format(new Date(transaction.timestamp), "yyyy-MM-dd HH:mm")}
+            <div className="flex flex-col text-sm">
+              <span className="text-gray-400">
+                Köp: {format(new Date(transaction.timestamp), "yyyy-MM-dd HH:mm")}
+              </span>
+              {isRefunded && transaction.refund_timestamp && (
+                <span className="text-red-500">
+                  Återbetalning: {format(new Date(transaction.refund_timestamp), "yyyy-MM-dd HH:mm")}
+                </span>
+              )}
             </div>
             
             {transaction.products && Array.isArray(transaction.products) ? (
