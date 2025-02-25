@@ -1,11 +1,18 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useParams } from "react-router-dom";
+import { Award } from "lucide-react";
 import { PageLayout } from "@/components/PageLayout";
 import { StaffStats } from "@/components/staff/StaffStats";
 import { StaffMemberStats, TotalPurchase } from "@/types/purchase";
 import { processTransactions } from "@/components/transactions/TransactionProcessor";
 import { calculatePoints, calculateTotalPoints } from "@/utils/pointsCalculation";
+
+const getSalesRole = (totalPoints: number) => {
+  if (totalPoints >= 1000) return "Sales Associate";
+  return "Sales Intern";
+};
 
 const StaffMember = () => {
   const { name } = useParams();
@@ -143,7 +150,13 @@ const StaffMember = () => {
 
   return (
     <PageLayout>
-      <h1 className="text-2xl font-bold mb-6">{decodeURIComponent(memberData.displayName)}</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">{decodeURIComponent(memberData.displayName)}</h1>
+        <div className="flex items-center gap-1 text-sm text-primary">
+          <Award className="h-4 w-4" />
+          <span>{getSalesRole(memberData.totalPoints)}</span>
+        </div>
+      </div>
 
       <div className="space-y-4">
         <StaffStats stats={statsData} />
