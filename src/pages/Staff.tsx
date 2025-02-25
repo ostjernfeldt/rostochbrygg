@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -56,6 +55,7 @@ const Staff = () => {
             totalPoints: 0,
             averagePoints: 0,
             totalAmount: 0,
+            averageAmount: 0,
             daysActive: 0,
             salesCount: 0,
             sales: [],
@@ -65,8 +65,10 @@ const Staff = () => {
 
         if (!sale.refunded) {
           acc[displayName].totalPoints += points;
+          acc[displayName].totalAmount += sale.amount;
           acc[displayName].salesCount += 1;
           acc[displayName].averagePoints = acc[displayName].totalPoints / acc[displayName].salesCount;
+          acc[displayName].averageAmount = acc[displayName].totalAmount / acc[displayName].salesCount;
         }
         
         acc[displayName].sales.push(sale);

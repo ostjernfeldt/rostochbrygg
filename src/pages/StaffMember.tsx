@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useParams } from "react-router-dom";
@@ -8,6 +9,7 @@ import { SalesChartSection } from "@/components/staff/SalesChartSection";
 import { ShiftsList } from "@/components/staff/ShiftsList";
 import { StaffMemberStats, TotalPurchase } from "@/types/purchase";
 import { processTransactions } from "@/components/transactions/TransactionProcessor";
+import { calculatePoints, calculateTotalPoints } from "@/utils/pointsCalculation";
 
 const StaffMember = () => {
   const navigate = useNavigate();
@@ -53,54 +55,48 @@ const StaffMember = () => {
         return acc;
       }, {});
 
-      // Calculate daily totals
+      // Calculate daily totals in points
       const dailyTotals = Object.entries(salesByDate).map(([dateStr, dateSales]) => ({
         date: new Date(dateStr).toISOString(),
-        amount: dateSales.reduce((sum, sale) => sum + Number(sale.amount), 0)
+        points: calculateTotalPoints(dateSales)
       }));
 
-      // Sort days by amount for best day
-      const sortedDays = [...dailyTotals].sort((a, b) => b.amount - a.amount);
+      // Sort days by points for best day
+      const sortedDays = [...dailyTotals].sort((a, b) => b.points - a.points);
       const bestDay = sortedDays[0];
 
-      // Calculate total sales for the first day
-      const firstDayTotal = sortedSales
-        .filter(sale => new Date(sale.timestamp).toDateString() === firstSaleDate.toDateString())
-        .reduce((sum, sale) => sum + Number(sale.amount), 0);
-
-      console.log("First day's total sales:", firstDayTotal);
+      // Calculate total points for the first day
+      const firstDayPoints = calculateTotalPoints(
+        sortedSales.filter(sale => 
+          new Date(sale.timestamp).toDateString() === firstSaleDate.toDateString()
+        )
+      );
 
       const firstDay = {
         date: firstSaleDate.toISOString(),
-        amount: firstDayTotal
+        points: firstDayPoints
       };
 
       const totalAmount = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
+      const totalPoints = calculateTotalPoints(validSales);
       const averageAmount = totalAmount / validSales.length;
+      const averagePoints = totalPoints / validSales.length;
       const uniqueDays = new Set(validSales.map(s => new Date(s.timestamp).toDateString()));
-
-      console.log("Processed member stats:", {
-        salesCount: validSales.length,
-        totalAmount,
-        averageAmount,
-        daysActive: uniqueDays.size,
-        firstSale: firstSaleDate,
-        bestDay,
-        firstDay
-      });
 
       const memberStats: StaffMemberStats = {
         displayName: name,
         firstSale: firstSaleDate,
         totalAmount,
         averageAmount,
+        totalPoints,
+        averagePoints,
         salesCount: validSales.length,
         daysActive: uniqueDays.size,
         sales: validSales,
         shifts: Object.entries(salesByDate).map(([dateStr, dateSales]) => ({
           id: new Date(dateStr).toISOString(),
           presence_start: new Date(dateStr).toISOString(),
-          totalSales: dateSales.reduce((sum, sale) => sum + Number(sale.amount), 0),
+          totalSales: calculateTotalPoints(dateSales),
           sales: dateSales
         }))
       };
@@ -108,7 +104,7 @@ const StaffMember = () => {
       return {
         ...memberStats,
         bestDay,
-        worstDay: firstDay // Now correctly showing the first day's total sales
+        worstDay: firstDay
       };
     }
   });
@@ -143,7 +139,7 @@ const StaffMember = () => {
 
   const statsData = {
     salesCount: memberData.salesCount,
-    averageValue: memberData.averageAmount,
+    averagePoints: memberData.averagePoints,
     activeDays: memberData.daysActive,
     firstSaleDate: memberData.firstSale.toISOString(),
     bestDay: memberData.bestDay,
