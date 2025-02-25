@@ -206,19 +206,19 @@ const HallOfFame = () => {
 
       <div className="space-y-8 max-w-3xl mx-auto">
         <LeaderboardCard
-          title="Högsta enskilda försäljning"
+          title="Högsta sälj"
           icon={Trophy}
           data={data.topSales}
           type="sale"
         />
         <LeaderboardCard
-          title="Bästa månader"
+          title="Bästa månad"
           icon={Calendar}
           data={data.topMonths}
           type="month"
         />
         <LeaderboardCard
-          title="Bästa dagar"
+          title="Bästa dag"
           icon={Sun}
           data={data.topDays}
           type="day"
