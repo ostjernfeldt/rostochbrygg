@@ -27,6 +27,9 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
       );
 
       if (originalTransaction) {
+        const originalDate = new Date(originalTransaction.timestamp);
+        const refundDate = new Date(transaction.timestamp);
+
         console.log("Marking original transaction as refunded:", {
           originalTimestamp: originalTransaction.timestamp,
           refundTimestamp: transaction.timestamp,
@@ -47,13 +50,26 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
       });
 
       // Try to find matching original transaction
-      const originalTransaction = sortedTransactions.find(t => 
-        !t.refunded && // not already marked as refunded
-        t.amount > 0 && // positive amount (original purchase)
-        Math.abs(Number(t.amount)) === Math.abs(Number(transaction.amount)) &&
-        t.user_display_name === transaction.user_display_name &&
-        new Date(t.timestamp).getTime() < new Date(transaction.timestamp).getTime()
-      );
+      const originalTransaction = sortedTransactions.find(t => {
+        if (t.refunded || t.amount <= 0) return false;
+        
+        // Check if amounts match (accounting for the negative refund amount)
+        const amountsMatch = Math.abs(Number(t.amount)) === Math.abs(Number(transaction.amount));
+        // Check if it's from the same user
+        const sameUser = t.user_display_name === transaction.user_display_name;
+        // Check if the refund happened before this transaction
+        const correctOrder = new Date(t.timestamp).getTime() < new Date(transaction.timestamp).getTime();
+        
+        // Check if products match (if available)
+        let productsMatch = true;
+        if (t.products && transaction.products) {
+          const originalProducts = JSON.stringify(t.products.sort((a, b) => a.name.localeCompare(b.name)));
+          const refundProducts = JSON.stringify(transaction.products.sort((a, b) => a.name.localeCompare(b.name)));
+          productsMatch = originalProducts === refundProducts;
+        }
+        
+        return amountsMatch && sameUser && correctOrder && productsMatch;
+      });
 
       if (originalTransaction) {
         console.log("Found matching original transaction for historical refund:", {
@@ -87,7 +103,28 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
 };
 
 export const getValidTransactions = (transactions: TotalPurchase[]): TotalPurchase[] => {
-  return transactions.filter(t => !t.refunded && t.amount > 0);
+  return transactions.filter(t => {
+    // Om transaktionen redan är markerad som refunderad, exkludera den
+    if (t.refunded) return false;
+
+    // Om det är en positiv transaktion
+    if (t.amount > 0) {
+      // Om det finns ett refund_timestamp, kolla om refunden skedde samma dag
+      if (t.refund_timestamp) {
+        const saleDate = new Date(t.timestamp);
+        const refundDate = new Date(t.refund_timestamp);
+        
+        // Om refunden skedde samma dag, exkludera transaktionen
+        if (saleDate.getFullYear() === refundDate.getFullYear() &&
+            saleDate.getMonth() === refundDate.getMonth() &&
+            saleDate.getDate() === refundDate.getDate()) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
+  });
 };
 
 export const getValidSalesCount = (transactions: TotalPurchase[]): number => {
