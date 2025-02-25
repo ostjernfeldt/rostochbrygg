@@ -22,12 +22,18 @@ interface StaffStatsProps {
 
 export const StaffStats = ({ stats }: StaffStatsProps) => {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <StatCard
         title="Snittpoäng"
         value={`${Math.round(stats.averagePoints)} p`}
         userName=""
         animationDelay="400ms"
+      />
+      <StatCard
+        title="Högsta försäljning"
+        value={`${Math.round(stats.bestDay.points)} p`}
+        userName=""
+        animationDelay="800ms"
       />
       <StatCard
         title="Bästa säljdagen"
