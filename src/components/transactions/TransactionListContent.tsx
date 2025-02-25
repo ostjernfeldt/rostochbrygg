@@ -32,29 +32,23 @@ export const TransactionListContent = ({ isLoading, transactions }: TransactionL
   // Create a map to store original transactions
   const processedTransactions = new Map<string, TotalPurchase>();
   
-  // First, add all positive transactions (original purchases)
+  // First, find all refunds and their corresponding original transactions
+  const refunds = new Map<string, TotalPurchase>();
   transactions.forEach(transaction => {
-    if (transaction.amount >= 0) {
-      processedTransactions.set(transaction.payment_uuid || transaction.purchase_uuid, {
-        ...transaction,
-        refunded: false,
-        refund_timestamp: null
-      });
+    if (transaction.amount < 0 && transaction.refund_uuid) {
+      refunds.set(transaction.refund_uuid, transaction);
     }
   });
 
-  // Then process refunds and update original transactions
+  // Then process original transactions and add refund info if they have been refunded
   transactions.forEach(transaction => {
-    if (transaction.amount < 0 && transaction.refund_uuid) {
-      // Find the original transaction using refund_uuid
-      const originalTransaction = processedTransactions.get(transaction.refund_uuid);
-      if (originalTransaction) {
-        processedTransactions.set(transaction.refund_uuid, {
-          ...originalTransaction,
-          refunded: true,
-          refund_timestamp: transaction.timestamp
-        });
-      }
+    if (transaction.amount >= 0) {
+      const refund = transaction.payment_uuid ? refunds.get(transaction.payment_uuid) : null;
+      processedTransactions.set(transaction.purchase_uuid, {
+        ...transaction,
+        refunded: !!refund,
+        refund_timestamp: refund ? refund.timestamp : null
+      });
     }
   });
 
