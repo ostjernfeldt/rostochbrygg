@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { processTransactions } from "@/components/transactions/TransactionProcessor";
+import { calculatePoints, calculateTotalPoints } from "@/utils/pointsCalculation";
 
 interface ShiftsListProps {
   shifts: any[];
@@ -60,18 +61,18 @@ export const ShiftsList = ({ shifts }: ShiftsListProps) => {
         const processedSales = processTransactions(sales);
         const validSales = processedSales.filter(sale => !sale.refunded);
 
-        // Calculate total sales for the shift
-        const totalSales = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
+        // Calculate total points for the shift
+        const totalPoints = calculateTotalPoints(validSales);
 
         console.log(`Sales for ${date} by ${userDisplayName}:`, {
           salesCount: validSales.length,
-          totalAmount: totalSales
+          totalPoints
         });
 
         return {
           id: date,
           presence_start: startDate.toISOString(),
-          totalSales,
+          totalPoints,
           sales: validSales
         };
       }));
@@ -126,7 +127,7 @@ export const ShiftsList = ({ shifts }: ShiftsListProps) => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold">SEK {Math.round(shift.totalSales).toLocaleString()}</div>
+                    <div className="font-bold">{Math.round(shift.totalPoints)} poäng</div>
                   </div>
                 </div>
               </div>
