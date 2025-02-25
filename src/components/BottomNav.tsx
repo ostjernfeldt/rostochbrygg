@@ -18,6 +18,7 @@ export const BottomNav = () => {
   const menuItems = [
     { path: "/", label: "Idag" },
     { path: "/leaderboard", label: "Topplista" },
+    { path: "/hall-of-fame", label: "Hall of Fame" },
     { path: "/staff", label: "Personal" },
     { path: "/learn", label: "Kunskap" },
     { path: "/settings", label: "Inställningar" },

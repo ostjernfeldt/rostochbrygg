@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -16,6 +15,7 @@ import Login from "./pages/Login";
 import TransactionList from "./pages/TransactionList";
 import Staff from "./pages/Staff";
 import StaffMember from "./pages/StaffMember";
+import HallOfFame from "./pages/HallOfFame";
 
 const queryClient = new QueryClient();
 
@@ -84,6 +84,11 @@ const AppContent = () => {
         <Route path="/leaderboard" element={
           <PrivateRoute>
             <Leaderboard />
+          </PrivateRoute>
+        } />
+        <Route path="/hall-of-fame" element={
+          <PrivateRoute>
+            <HallOfFame />
           </PrivateRoute>
         } />
         <Route path="/settings" element={
