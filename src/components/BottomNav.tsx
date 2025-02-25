@@ -42,9 +42,13 @@ export const BottomNav = () => {
       { path: "/staff", label: "Personal" },
     ];
 
-    // Only show "Idag" for admin users
+    // Only show "Idag" and "Bjud in" for admin users
     if (userRole === 'admin') {
-      return [{ path: "/", label: "Idag" }, ...baseItems];
+      return [
+        { path: "/", label: "Idag" },
+        { path: "/invite", label: "Bjud in" },
+        ...baseItems
+      ];
     }
 
     return baseItems;
