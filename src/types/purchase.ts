@@ -1,3 +1,4 @@
+
 import { Json } from "./json";
 
 export interface DatabasePurchase {
@@ -43,7 +44,7 @@ export interface TotalPurchase {
   refunded: boolean | null;
   refund_uuid: string | null;
   refund_timestamp?: string | null;
-  payment_uuid: string | null;  // Added this field
+  payment_uuid: string | null;
   payments?: Json | Payment[] | null;
   cost_price?: number | null;
   currency?: string | null;
@@ -52,6 +53,7 @@ export interface TotalPurchase {
   gps_coordinates?: Json | null;
   products?: Json | null;
   vat_amount?: number | null;
+  quantity?: number | null;  // Added this field
 }
 
 export interface LegacyPurchaseFormat {
