@@ -29,35 +29,34 @@ export const TransactionListContent = ({ isLoading, transactions }: TransactionL
     );
   }
 
-  // Create a map of original transactions with their refunds
-  const processedTransactions = transactions.reduce((acc, transaction) => {
+  // Create a map to store original transactions
+  const processedTransactions = new Map<string, TotalPurchase>();
+  
+  // First, add all positive transactions (original purchases)
+  transactions.forEach(transaction => {
     if (transaction.amount >= 0) {
-      // This is an original purchase
-      acc.set(transaction.purchase_uuid, {
+      processedTransactions.set(transaction.payment_uuid || transaction.purchase_uuid, {
         ...transaction,
         refunded: false,
         refund_timestamp: null
       });
-    } else if (transaction.refund_uuid) {
-      // This is a refund, update the original transaction using refund_uuid
-      const originalTransactionKey = Array.from(acc.keys()).find(key => {
-        const originalTransaction = acc.get(key);
-        return originalTransaction?.payment_uuid === transaction.refund_uuid;
-      });
+    }
+  });
 
-      if (originalTransactionKey) {
-        const originalTransaction = acc.get(originalTransactionKey);
-        if (originalTransaction) {
-          acc.set(originalTransactionKey, {
-            ...originalTransaction,
-            refunded: true,
-            refund_timestamp: transaction.timestamp
-          });
-        }
+  // Then process refunds and update original transactions
+  transactions.forEach(transaction => {
+    if (transaction.amount < 0 && transaction.refund_uuid) {
+      // Find the original transaction using refund_uuid
+      const originalTransaction = processedTransactions.get(transaction.refund_uuid);
+      if (originalTransaction) {
+        processedTransactions.set(transaction.refund_uuid, {
+          ...originalTransaction,
+          refunded: true,
+          refund_timestamp: transaction.timestamp
+        });
       }
     }
-    return acc;
-  }, new Map<string, TotalPurchase>());
+  });
 
   // Convert map to array and sort by timestamp
   const sortedTransactions = Array.from(processedTransactions.values()).sort(
