@@ -41,6 +41,38 @@ export const useSalesData = (selectedDate?: string) => {
       const endOfDay = new Date(selectedDate || new Date());
       endOfDay.setHours(23, 59, 59, 999);
 
+      // First check if there are any visible sellers for this day
+      const { data: sellerCheck } = await supabase
+        .from("total_purchases")
+        .select("user_display_name")
+        .gte("timestamp", startOfDay.toISOString())
+        .lte("timestamp", endOfDay.toISOString())
+        .not("user_display_name", "is", null);
+
+      // Check if all sellers for this day are hidden
+      const hasVisibleSellers = sellerCheck?.some(sale => 
+        sale.user_display_name && visibleStaffNames.has(sale.user_display_name)
+      );
+
+      if (!hasVisibleSellers) {
+        // If all sellers are hidden, return empty data
+        return {
+          totalAmount: 0,
+          salesCount: 0,
+          averageValue: 0,
+          sellingDays: 0,
+          uniqueSellers: 0,
+          dailyAverage: 0,
+          transactions: [],
+          paymentMethodStats: [],
+          percentageChanges: {
+            totalAmount: 0,
+            salesCount: 0,
+            averageValue: 0
+          }
+        };
+      }
+
       const { data: salesData, error: salesError } = await supabase
         .from("total_purchases")
         .select("*")
@@ -57,34 +89,42 @@ export const useSalesData = (selectedDate?: string) => {
         !sale.user_display_name || visibleStaffNames.has(sale.user_display_name)
       ) || [];
 
-      // Get previous day's data
-      const previousDay = new Date(startOfDay);
-      previousDay.setDate(previousDay.getDate() - 1);
-      const previousDayEnd = new Date(previousDay);
-      previousDayEnd.setHours(23, 59, 59, 999);
+      // Get previous day's data from a day that has visible sellers
+      let previousSalesData: any[] = [];
+      let currentDate = new Date(startOfDay);
+      currentDate.setDate(currentDate.getDate() - 1);
 
-      const { data: previousSalesData, error: previousSalesError } = await supabase
-        .from("total_purchases")
-        .select("*")
-        .gte("timestamp", previousDay.toISOString())
-        .lte("timestamp", previousDayEnd.toISOString());
+      while (previousSalesData.length === 0 && currentDate.getTime() > new Date('2020-01-01').getTime()) {
+        const previousStart = new Date(currentDate);
+        previousStart.setHours(0, 0, 0, 0);
+        const previousEnd = new Date(currentDate);
+        previousEnd.setHours(23, 59, 59, 999);
 
-      if (previousSalesError) {
-        console.error("Error fetching previous sales data:", previousSalesError);
-        throw previousSalesError;
+        const { data: prevData } = await supabase
+          .from("total_purchases")
+          .select("*")
+          .gte("timestamp", previousStart.toISOString())
+          .lte("timestamp", previousEnd.toISOString());
+
+        // Filter and check if there are any visible sellers
+        const filteredPrevData = prevData?.filter(sale => 
+          sale.user_display_name && visibleStaffNames.has(sale.user_display_name)
+        ) || [];
+
+        if (filteredPrevData.length > 0) {
+          previousSalesData = filteredPrevData;
+          break;
+        }
+
+        currentDate.setDate(currentDate.getDate() - 1);
       }
-
-      // Filter out data from hidden staff members for previous day
-      const filteredPreviousSalesData = previousSalesData?.filter(sale => 
-        !sale.user_display_name || visibleStaffNames.has(sale.user_display_name)
-      ) || [];
 
       const processedTransactions = processTransactions(filteredSalesData);
       const totalAmount = getValidTotalAmount(processedTransactions);
       const salesCount = getValidSalesCount(processedTransactions);
       const averageValue = salesCount > 0 ? totalAmount / salesCount : 0;
 
-      const processedPreviousTransactions = processTransactions(filteredPreviousSalesData);
+      const processedPreviousTransactions = processTransactions(previousSalesData);
       const previousTotalAmount = getValidTotalAmount(processedPreviousTransactions);
       const previousSalesCount = getValidSalesCount(processedPreviousTransactions);
       const previousAverageValue = previousSalesCount > 0 ? previousTotalAmount / previousSalesCount : 0;
