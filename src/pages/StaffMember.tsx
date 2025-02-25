@@ -5,7 +5,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { PageLayout } from "@/components/PageLayout";
 import { StaffStats } from "@/components/staff/StaffStats";
-import { ShiftsList } from "@/components/staff/ShiftsList";
 import { StaffMemberStats, TotalPurchase } from "@/types/purchase";
 import { processTransactions } from "@/components/transactions/TransactionProcessor";
 import { calculatePoints, calculateTotalPoints } from "@/utils/pointsCalculation";
@@ -91,13 +90,7 @@ const StaffMember = () => {
         averagePoints,
         salesCount: validSales.length,
         daysActive: uniqueDays.size,
-        sales: validSales,
-        shifts: Object.entries(salesByDate).map(([dateStr, dateSales]) => ({
-          id: new Date(dateStr).toISOString(),
-          presence_start: new Date(dateStr).toISOString(),
-          totalSales: calculateTotalPoints(dateSales),
-          sales: dateSales
-        }))
+        sales: validSales
       };
 
       return {
@@ -159,7 +152,6 @@ const StaffMember = () => {
 
       <div className="space-y-4">
         <StaffStats stats={statsData} />
-        <ShiftsList shifts={memberData.shifts} />
       </div>
     </PageLayout>
   );
