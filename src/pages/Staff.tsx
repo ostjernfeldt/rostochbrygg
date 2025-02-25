@@ -9,11 +9,6 @@ import { StaffMemberStats } from "@/types/purchase";
 import { calculatePoints, calculateTotalPoints } from "@/utils/pointsCalculation";
 import { useState } from "react";
 
-const getSalesRole = (totalPoints: number) => {
-  if (totalPoints >= 1000) return "Sales Associate";
-  return "Sales Intern";
-};
-
 const Staff = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,14 +18,25 @@ const Staff = () => {
     queryFn: async () => {
       console.log("Fetching staff members data...");
       
-      const { data: sales, error } = await supabase
-        .from("total_purchases")
-        .select("*")
-        .not("user_display_name", "is", null)
-        .order("timestamp", { ascending: true });
+      // Fetch both sales data and roles in parallel
+      const [salesResponse, rolesResponse] = await Promise.all([
+        supabase
+          .from("total_purchases")
+          .select("*")
+          .not("user_display_name", "is", null)
+          .order("timestamp", { ascending: true }),
+        supabase
+          .from("staff_roles")
+          .select("*")
+      ]);
 
-      if (error) throw error;
-      if (!sales || sales.length === 0) return [];
+      if (salesResponse.error) throw salesResponse.error;
+      if (rolesResponse.error) throw rolesResponse.error;
+
+      const sales = salesResponse.data || [];
+      const roles = rolesResponse.data || [];
+
+      if (sales.length === 0) return [];
 
       const staffStats = sales.reduce((acc: { [key: string]: StaffMemberStats }, sale) => {
         const displayName = sale.user_display_name as string;
@@ -59,7 +65,14 @@ const Staff = () => {
         return acc;
       }, {});
 
-      return Object.values(staffStats);
+      // Add roles to staff stats
+      return Object.values(staffStats).map(member => {
+        const roleData = roles.find(r => r.user_display_name === member.displayName);
+        return {
+          ...member,
+          role: roleData?.role || 'Sales Intern'
+        };
+      });
     }
   });
 
@@ -110,7 +123,7 @@ const Staff = () => {
                 <h3 className="text-xl font-bold">{member.displayName}</h3>
                 <div className="flex items-center gap-1 text-sm text-primary">
                   <Award className="h-4 w-4" />
-                  <span>{getSalesRole(member.totalPoints)}</span>
+                  <span>{member.role}</span>
                 </div>
               </div>
             </div>

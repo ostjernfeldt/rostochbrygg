@@ -262,6 +262,30 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: string
+          updated_at: string | null
+          user_display_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: string
+          updated_at?: string | null
+          user_display_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: string
+          updated_at?: string | null
+          user_display_name?: string
+        }
+        Relationships: []
+      }
       total_purchases: {
         Row: {
           amount: number

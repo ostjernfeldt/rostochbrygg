@@ -9,11 +9,6 @@ import { StaffMemberStats, TotalPurchase } from "@/types/purchase";
 import { processTransactions } from "@/components/transactions/TransactionProcessor";
 import { calculatePoints, calculateTotalPoints } from "@/utils/pointsCalculation";
 
-const getSalesRole = (totalPoints: number) => {
-  if (totalPoints >= 1000) return "Sales Associate";
-  return "Sales Intern";
-};
-
 const StaffMember = () => {
   const { name } = useParams();
   
@@ -24,6 +19,17 @@ const StaffMember = () => {
       
       if (!name) throw new Error("No name provided");
       
+      // Fetch role data
+      const { data: roleData, error: roleError } = await supabase
+        .from("staff_roles")
+        .select("role")
+        .eq("user_display_name", decodeURIComponent(name))
+        .single();
+
+      if (roleError) {
+        console.error("Error fetching role:", roleError);
+      }
+
       const { data: sales, error: salesError } = await supabase
         .from("total_purchases")
         .select("*")
@@ -106,6 +112,7 @@ const StaffMember = () => {
 
       return {
         ...memberStats,
+        role: roleData?.role || 'Sales Intern',
         bestDay,
         highestSale: {
           date: highestSingleSale.timestamp,
@@ -154,7 +161,7 @@ const StaffMember = () => {
         <h1 className="text-2xl font-bold">{decodeURIComponent(memberData.displayName)}</h1>
         <div className="flex items-center gap-1 text-sm text-primary">
           <Award className="h-4 w-4" />
-          <span>{getSalesRole(memberData.totalPoints)}</span>
+          <span>{memberData.role}</span>
         </div>
       </div>
 
