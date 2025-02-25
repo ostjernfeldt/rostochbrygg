@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,12 +16,37 @@ import TransactionList from "./pages/TransactionList";
 import Staff from "./pages/Staff";
 import StaffMember from "./pages/StaffMember";
 import HallOfFame from "./pages/HallOfFame";
+import { useQuery } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
 
-const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
+const useUserRole = () => {
+  return useQuery({
+    queryKey: ["userRole"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
+
+      return roleData?.role || "user";
+    },
+  });
+};
+
+interface PrivateRouteProps {
+  children: React.ReactNode;
+  requireAdmin?: boolean;
+}
+
+const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const { data: userRole, isLoading: isRoleLoading } = useUserRole();
 
   useEffect(() => {
     const checkSession = async () => {
@@ -61,11 +87,20 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
     };
   }, [navigate]);
 
-  if (isAuthenticated === null) {
+  if (isAuthenticated === null || isRoleLoading) {
     return null;
   }
 
-  return isAuthenticated ? <>{children}</> : null;
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  // If route requires admin access and user is not admin, redirect to leaderboard
+  if (requireAdmin && userRole === 'user') {
+    return <Navigate to="/leaderboard" replace />;
+  }
+
+  return <>{children}</>;
 };
 
 const AppContent = () => {
@@ -76,7 +111,7 @@ const AppContent = () => {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={
-          <PrivateRoute>
+          <PrivateRoute requireAdmin={true}>
             <Home />
           </PrivateRoute>
         } />
