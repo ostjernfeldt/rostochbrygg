@@ -46,8 +46,8 @@ export const BottomNav = () => {
     if (userRole === 'admin') {
       return [
         { path: "/", label: "Idag" },
+        ...baseItems,
         { path: "/invite", label: "Bjud in" },
-        ...baseItems
       ];
     }
 
