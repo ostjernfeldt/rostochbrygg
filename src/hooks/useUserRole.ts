@@ -1,8 +1,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { AppRole } from "@/types/database";
 
-export type AppRole = 'admin' | 'user';
+export type { AppRole };
 
 export const useUserRole = () => {
   return useQuery({
@@ -18,7 +19,7 @@ export const useUserRole = () => {
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user role:', error);
