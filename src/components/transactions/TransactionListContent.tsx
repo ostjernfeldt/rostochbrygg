@@ -1,4 +1,3 @@
-
 import { TotalPurchase } from "@/types/purchase";
 import { TransactionCard } from "./TransactionCard";
 
@@ -31,20 +30,39 @@ export const TransactionListContent = ({ isLoading, transactions }: TransactionL
 
   // Create a map for refund information
   const refundMap = new Map<string, string>();
+  const refundedPaymentUuids = new Set<string>();
   
-  // First, find all refunds and store their timestamps
+  // First pass: Find all refunds and their original payment UUIDs
   transactions.forEach(transaction => {
     if (transaction.refund_uuid) {
+      // Store the refund timestamp
       refundMap.set(transaction.refund_uuid, transaction.timestamp);
+      // Mark this as a refunded transaction
+      refundedPaymentUuids.add(transaction.refund_uuid);
     }
   });
 
-  // Only get original transactions (not refunds) and add refund information
+  // Get original transactions and add refund information
   const processedTransactions = transactions
-    .filter(transaction => !transaction.refund_uuid) // Remove all refunds from the list
+    .filter(transaction => {
+      // Keep only if:
+      // 1. It's not a refund transaction (no refund_uuid)
+      // 2. If it has a payment_uuid, check if we should include it
+      if (transaction.refund_uuid) {
+        return false;
+      }
+      
+      // For transactions with payment_uuid, only include if it matches a refund
+      // or if it's not in our refunded set
+      if (transaction.payment_uuid) {
+        return true; // We'll handle refund status in the map
+      }
+      
+      return true; // Include transactions without payment_uuid
+    })
     .map(transaction => ({
       ...transaction,
-      refunded: transaction.payment_uuid ? refundMap.has(transaction.payment_uuid) : false,
+      refunded: transaction.payment_uuid ? refundedPaymentUuids.has(transaction.payment_uuid) : false,
       refund_timestamp: transaction.payment_uuid ? refundMap.get(transaction.payment_uuid) : null
     }));
 
