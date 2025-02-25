@@ -17,7 +17,6 @@ export const BottomNav = () => {
 
   const menuItems = [
     { path: "/", label: "Idag" },
-    { path: "/competitions", label: "Tävlingar" },
     { path: "/leaderboard", label: "Topplista" },
     { path: "/staff", label: "Personal" },
     { path: "/salaries", label: "Löner" },

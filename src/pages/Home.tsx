@@ -1,4 +1,5 @@
-import { Settings, UserRound, Filter } from "lucide-react";
+
+import { UserRound, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { useEffect, useState } from "react";
@@ -65,7 +66,6 @@ const Home = () => {
     },
   });
 
-  // Get unique sellers from transactions
   const activeSellers = Array.from(new Set(transactions.map(t => t.user_display_name).filter(Boolean))) as string[];
   
   useEffect(() => {
@@ -141,13 +141,6 @@ const Home = () => {
                 ? `Här kan du se statistiken från ${format(selectedDate, 'd MMMM', { locale: sv })}.`
                 : 'Här kan du se statistiken från idag.'}
             </p>
-            <button 
-              onClick={() => navigate('/settings')}
-              className="flex items-center gap-2 mt-2 text-gray-400 hover:text-primary transition-colors"
-            >
-              <Settings size={24} />
-              <span>Inställningar för dagen</span>
-            </button>
           </div>
           <div className="flex items-center gap-3">
             <Popover>

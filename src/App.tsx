@@ -8,7 +8,6 @@ import { BottomNav } from "./components/BottomNav";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Home from "./pages/Home";
-import Competitions from "./pages/Competitions";
 import Leaderboard from "./pages/Leaderboard";
 import Settings from "./pages/Settings";
 import Learn from "./pages/Learn";
@@ -64,7 +63,6 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
     };
   }, [navigate]);
 
-  // Show nothing while checking authentication
   if (isAuthenticated === null) {
     return null;
   }
@@ -82,11 +80,6 @@ const AppContent = () => {
         <Route path="/" element={
           <PrivateRoute>
             <Home />
-          </PrivateRoute>
-        } />
-        <Route path="/competitions" element={
-          <PrivateRoute>
-            <Competitions />
           </PrivateRoute>
         } />
         <Route path="/leaderboard" element={
