@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useParams } from "react-router-dom";
@@ -129,7 +128,7 @@ const StaffMember = () => {
       <PageLayout>
         <button 
           onClick={() => navigate(-1)}
-          className="text-gray-400 hover:text-primary transition-colors mb-6"
+          className="mb-4"
         >
           <ArrowLeft size={24} />
         </button>
@@ -152,15 +151,13 @@ const StaffMember = () => {
 
   return (
     <PageLayout>
-      <div className="flex items-center gap-2 mb-6">
-        <button 
-          onClick={() => navigate(-1)}
-          className="text-gray-400 hover:text-primary transition-colors"
-        >
-          <ArrowLeft size={24} />
-        </button>
-        <h1 className="text-2xl font-bold">{decodeURIComponent(memberData.displayName)}</h1>
-      </div>
+      <button 
+        onClick={() => navigate(-1)}
+        className="mb-4"
+      >
+        <ArrowLeft size={24} />
+      </button>
+      <h1 className="text-2xl font-bold mb-6">{decodeURIComponent(memberData.displayName)}</h1>
 
       <div className="space-y-4">
         <StaffStats stats={statsData} />
