@@ -39,6 +39,7 @@ const HallOfFame = () => {
       const { data: sales, error } = await supabase
         .from("total_purchases")
         .select("*")
+        .not("refunded", "eq", true)  // Exkludera återbetalade köp
         .order("timestamp", { ascending: true });
 
       if (error) throw error;
@@ -49,24 +50,6 @@ const HallOfFame = () => {
         sale.user_display_name && 
         visibleStaffNames.has(sale.user_display_name)
       );
-
-      // Helper function to check if a sale has a same-day refund by the same seller
-      const hasSameDayRefundBySameSeller = (sale: TotalPurchase, allSales: TotalPurchase[]) => {
-        const saleDate = new Date(sale.timestamp);
-        return allSales.some(otherSale => {
-          if (otherSale.amount >= 0) return false; // Only look at negative (refund) transactions
-          
-          const refundDate = new Date(otherSale.timestamp);
-          const isSameDay = saleDate.getFullYear() === refundDate.getFullYear() &&
-                          saleDate.getMonth() === refundDate.getMonth() &&
-                          saleDate.getDate() === refundDate.getDate();
-          
-          const isSameSeller = sale.user_display_name === otherSale.user_display_name;
-          const isSameAmount = Math.abs(Number(sale.amount)) === Math.abs(Number(otherSale.amount));
-          
-          return isSameDay && isSameSeller && isSameAmount;
-        });
-      };
 
       // Helper function to get unique top sellers
       const getUniqueTopSellers = (sellers: TopSeller[]): TopSeller[] => {
@@ -83,9 +66,9 @@ const HallOfFame = () => {
         return uniqueSellers;
       };
 
-      // 1. Highest single sales (filtering out same-day refunds by same seller)
+      // 1. Highest single sales
       const allSalesByPoints = visibleSales
-        .filter(sale => sale.amount > 0 && !hasSameDayRefundBySameSeller(sale, visibleSales))
+        .filter(sale => sale.amount > 0)
         .map(sale => ({
           name: sale.user_display_name || 'Okänd',
           points: calculateTotalPoints([sale]),
@@ -96,7 +79,7 @@ const HallOfFame = () => {
 
       const topSales = getUniqueTopSellers(allSalesByPoints);
 
-      // 2. Best months (using all valid sales)
+      // 2. Best months
       const monthlyTotals = visibleSales
         .filter(sale => sale.amount > 0)
         .reduce((acc, sale) => {
@@ -129,7 +112,7 @@ const HallOfFame = () => {
 
       const topMonths = getUniqueTopSellers(allMonthlyTopSellers);
 
-      // 3. Best days (using all valid sales)
+      // 3. Best days
       const dailyTotals = visibleSales
         .filter(sale => sale.amount > 0)
         .reduce((acc, sale) => {
