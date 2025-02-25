@@ -1,3 +1,4 @@
+
 import { UserRound, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -32,10 +33,32 @@ const Home = () => {
   const navigate = useNavigate();
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [username, setUsername] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedSeller, setSelectedSeller] = useState("all");
+
+  // Fetch latest transaction date
+  const { data: latestDate } = useQuery({
+    queryKey: ['latestTransactionDate'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('total_purchases')
+        .select('timestamp')
+        .order('timestamp', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+      if (!data || data.length === 0) return new Date();
+      
+      return new Date(data[0].timestamp);
+    },
+    onSuccess: (date) => {
+      if (!selectedDate) {
+        setSelectedDate(date);
+      }
+    }
+  });
   
-  const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+  const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(latestDate || new Date(), 'yyyy-MM-dd');
   const { data: leaderboardData, isLoading: isLeaderboardLoading } = useLeaderboardData('daily', formattedDate);
 
   const { data: transactions = [], isLoading: isTransactionsLoading } = useQuery({
@@ -120,13 +143,7 @@ const Home = () => {
     }
   };
 
-  const getLeaderboardTitle = () => {
-    if (selectedDate) {
-      const dateToShow = new Date(formattedDate);
-      return `Topplista ${format(dateToShow, 'd MMMM', { locale: sv })}`;
-    }
-    return `Topplista ${format(new Date(), 'd MMMM', { locale: sv })}`;
-  };
+  const displayDate = selectedDate || latestDate || new Date();
 
   return (
     <PageLayout>
@@ -137,9 +154,7 @@ const Home = () => {
               Välkommen{username ? ` ${username}` : ''}
             </h1>
             <p className="text-gray-400 text-lg text-left">
-              {selectedDate 
-                ? `Här kan du se statistiken från ${format(selectedDate, 'd MMMM', { locale: sv })}.`
-                : 'Här kan du se statistiken från idag.'}
+              Här kan du se statistiken från {format(displayDate, 'd MMMM', { locale: sv })}.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -158,6 +173,7 @@ const Home = () => {
                   mode="single"
                   selected={selectedDate}
                   onSelect={handleDateSelect}
+                  defaultMonth={displayDate}
                   initialFocus
                   className="bg-card rounded-md"
                 />
@@ -183,7 +199,7 @@ const Home = () => {
         
         <div className="mt-8">
           <LeaderboardSection
-            title={getLeaderboardTitle()}
+            title={`Topplista ${format(displayDate, 'd MMMM', { locale: sv })}`}
             data={leaderboardData?.dailyLeaders}
             isLoading={isLeaderboardLoading}
             onUserClick={(userName) => navigate(`/staff/${encodeURIComponent(userName)}`)}
