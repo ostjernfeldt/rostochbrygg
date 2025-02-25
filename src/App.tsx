@@ -96,7 +96,7 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
   }
 
   // If route requires admin access and user is not admin, redirect to leaderboard
-  if (requireAdmin && userRole === 'user') {
+  if (requireAdmin && userRole !== 'admin') {
     return <Navigate to="/leaderboard" replace />;
   }
 
