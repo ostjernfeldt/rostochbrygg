@@ -9,18 +9,48 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+
+const useUserRole = () => {
+  return useQuery({
+    queryKey: ["userRole"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
+
+      return roleData?.role || "user";
+    },
+  });
+};
 
 export const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const { data: userRole } = useUserRole();
 
-  const menuItems = [
-    { path: "/", label: "Idag" },
-    { path: "/leaderboard", label: "Topplista" },
-    { path: "/hall-of-fame", label: "Hall of Fame" },
-    { path: "/staff", label: "Personal" },
-  ];
+  const getMenuItems = () => {
+    const baseItems = [
+      { path: "/leaderboard", label: "Topplista" },
+      { path: "/hall-of-fame", label: "Hall of Fame" },
+      { path: "/staff", label: "Personal" },
+    ];
+
+    // Only show "Idag" for admin users
+    if (userRole === 'admin') {
+      return [{ path: "/", label: "Idag" }, ...baseItems];
+    }
+
+    return baseItems;
+  };
+
+  const menuItems = getMenuItems();
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
