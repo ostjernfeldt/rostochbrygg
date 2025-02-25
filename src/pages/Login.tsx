@@ -48,7 +48,7 @@ const Login = () => {
         
         const { data: roleData, error: roleError } = await supabase
           .from("user_roles")
-          .select("*")  // Ändrat från "role" till "*" för att se all data
+          .select("role")
           .eq("user_id", data.user.id)
           .single();
 
@@ -60,25 +60,14 @@ const Login = () => {
           throw new Error("Kunde inte verifiera användarrollen");
         }
 
-        if (!roleData || roleData.role !== 'admin') {
-          console.log("User role is not admin:", roleData?.role);
+        // Kontrollera att användaren har admin-roll
+        if (!roleData?.role || roleData.role !== 'admin') {
+          console.log("User is not admin:", roleData?.role);
           await supabase.auth.signOut();
           throw new Error("Behörighet saknas: Endast administratörer kan logga in här.");
         }
 
         console.log("Admin role verified:", roleData);
-      }
-
-      // Om allt är ok, uppdatera sessionen
-      if (data.session) {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token
-        });
-        
-        if (sessionError) {
-          console.error("Session persistence error:", sessionError);
-        }
       }
 
       toast({
