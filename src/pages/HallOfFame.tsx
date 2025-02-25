@@ -2,12 +2,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
-import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { sv } from "date-fns/locale";
 import { processTransactions } from "@/components/transactions/TransactionProcessor";
 import { calculatePoints } from "@/utils/pointsCalculation";
 import { Trophy, Calendar, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+interface TopSeller {
+  name: string;
+  points: number;
+  date?: string;
+  month?: string;
+}
 
 const HallOfFame = () => {
   const navigate = useNavigate();
@@ -42,13 +49,13 @@ const HallOfFame = () => {
       }));
 
       // 2. Best months
-      const monthlyTotals = validSales.reduce((acc: Record<string, any>, sale) => {
+      const monthlyTotals: Record<string, { points: number; sellers: Record<string, number> }> = validSales.reduce((acc, sale) => {
         const date = new Date(sale.timestamp);
         const monthKey = format(date, 'yyyy-MM');
         if (!acc[monthKey]) {
           acc[monthKey] = {
             points: 0,
-            sellers: {} as Record<string, number>
+            sellers: {}
           };
         }
         const points = calculatePoints(Number(sale.amount));
@@ -62,12 +69,12 @@ const HallOfFame = () => {
         }
         
         return acc;
-      }, {});
+      }, {} as Record<string, { points: number; sellers: Record<string, number> }>);
 
       const topMonths = Object.entries(monthlyTotals)
-        .map(([monthKey, data]: [string, any]) => {
+        .map(([monthKey, data]) => {
           const bestSeller = Object.entries(data.sellers)
-            .sort(([, a]: [string, any], [, b]: [string, any]) => b - a)[0];
+            .sort((a, b) => Number(b[1]) - Number(a[1]))[0];
           
           return {
             month: format(parseISO(monthKey), 'MMMM yyyy', { locale: sv }),
@@ -76,17 +83,17 @@ const HallOfFame = () => {
             sellerPoints: bestSeller ? bestSeller[1] : 0
           };
         })
-        .sort((a, b) => b.sellerPoints - a.sellerPoints)
+        .sort((a, b) => Number(b.sellerPoints) - Number(a.sellerPoints))
         .slice(0, 3);
 
       // 3. Best days
-      const dailyTotals = validSales.reduce((acc: Record<string, any>, sale) => {
+      const dailyTotals: Record<string, { points: number; sellers: Record<string, number> }> = validSales.reduce((acc, sale) => {
         const date = new Date(sale.timestamp);
         const dateKey = format(date, 'yyyy-MM-dd');
         if (!acc[dateKey]) {
           acc[dateKey] = {
             points: 0,
-            sellers: {} as Record<string, number>
+            sellers: {}
           };
         }
         const points = calculatePoints(Number(sale.amount));
@@ -100,12 +107,12 @@ const HallOfFame = () => {
         }
         
         return acc;
-      }, {});
+      }, {} as Record<string, { points: number; sellers: Record<string, number> }>);
 
       const topDays = Object.entries(dailyTotals)
-        .map(([dateKey, data]: [string, any]) => {
+        .map(([dateKey, data]) => {
           const bestSeller = Object.entries(data.sellers)
-            .sort(([, a]: [string, any], [, b]: [string, any]) => b - a)[0];
+            .sort((a, b) => Number(b[1]) - Number(a[1]))[0];
           
           return {
             date: format(parseISO(dateKey), 'd MMMM yyyy', { locale: sv }),
@@ -114,7 +121,7 @@ const HallOfFame = () => {
             sellerPoints: bestSeller ? bestSeller[1] : 0
           };
         })
-        .sort((a, b) => b.sellerPoints - a.sellerPoints)
+        .sort((a, b) => Number(b.sellerPoints) - Number(a.sellerPoints))
         .slice(0, 3);
 
       return {
@@ -128,7 +135,7 @@ const HallOfFame = () => {
   const LeaderboardCard = ({ title, icon: Icon, data, type }: { 
     title: string; 
     icon: any;
-    data: { name: string; points: number; date?: string; month?: string }[];
+    data: TopSeller[];
     type: 'sale' | 'month' | 'day';
   }) => (
     <div className="bg-card/50 rounded-xl p-6 border border-primary/20">
