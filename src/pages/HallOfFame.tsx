@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
@@ -48,20 +49,31 @@ const HallOfFame = () => {
           !sale.refunded
         );
 
-      // 1. Highest single sales (using calculateTotalPoints)
-      const sortedBySalePoints = [...processedSales].sort((a, b) => {
-        const pointsA = calculateTotalPoints([a]);
-        const pointsB = calculateTotalPoints([b]);
-        return pointsB - pointsA;
-      });
+      // Helper function to get unique top sellers
+      const getUniqueTopSellers = (sellers: TopSeller[]): TopSeller[] => {
+        const uniqueSellers: TopSeller[] = [];
+        const seenNames = new Set<string>();
+        
+        for (const seller of sellers) {
+          if (!seenNames.has(seller.name) && uniqueSellers.length < 3) {
+            uniqueSellers.push(seller);
+            seenNames.add(seller.name);
+          }
+        }
+        
+        return uniqueSellers;
+      };
 
-      const topSales = sortedBySalePoints.slice(0, 3).map(sale => ({
+      // 1. Highest single sales (using calculateTotalPoints)
+      const allSalesByPoints = [...processedSales].map(sale => ({
         name: sale.user_display_name || 'Okänd',
         points: calculateTotalPoints([sale]),
         date: format(new Date(sale.timestamp), 'd MMMM yyyy', { locale: sv })
-      }));
+      })).sort((a, b) => b.points - a.points);
 
-      // 2. Best months (using calculateTotalPoints)
+      const topSales = getUniqueTopSellers(allSalesByPoints);
+
+      // 2. Best months
       const monthlyTotals = processedSales.reduce((acc, sale) => {
         const monthKey = format(new Date(sale.timestamp), 'yyyy-MM');
         if (!acc[monthKey]) {
@@ -80,25 +92,19 @@ const HallOfFame = () => {
         return acc;
       }, {} as Record<string, { sellers: Record<string, typeof processedSales>, totalPoints: number }>);
 
-      const topMonths = Object.entries(monthlyTotals)
-        .map(([monthKey, data]) => {
-          const bestSeller = Object.entries(data.sellers)
-            .map(([name, sales]) => ({
-              name,
-              points: calculateTotalPoints(sales)
-            }))
-            .sort((a, b) => b.points - a.points)[0];
-          
-          return {
-            month: format(parseISO(monthKey), 'MMMM yyyy', { locale: sv }),
-            points: bestSeller.points,
-            name: bestSeller.name
-          };
-        })
-        .sort((a, b) => b.points - a.points)
-        .slice(0, 3);
+      const allMonthlyTopSellers = Object.entries(monthlyTotals)
+        .flatMap(([monthKey, data]) => 
+          Object.entries(data.sellers).map(([name, sales]) => ({
+            name,
+            points: calculateTotalPoints(sales),
+            month: format(parseISO(monthKey), 'MMMM yyyy', { locale: sv })
+          }))
+        )
+        .sort((a, b) => b.points - a.points);
 
-      // 3. Best days (using calculateTotalPoints)
+      const topMonths = getUniqueTopSellers(allMonthlyTopSellers);
+
+      // 3. Best days
       const dailyTotals = processedSales.reduce((acc, sale) => {
         const dateKey = format(new Date(sale.timestamp), 'yyyy-MM-dd');
         if (!acc[dateKey]) {
@@ -117,23 +123,17 @@ const HallOfFame = () => {
         return acc;
       }, {} as Record<string, { sellers: Record<string, typeof processedSales>, totalPoints: number }>);
 
-      const topDays = Object.entries(dailyTotals)
-        .map(([dateKey, data]) => {
-          const bestSeller = Object.entries(data.sellers)
-            .map(([name, sales]) => ({
-              name,
-              points: calculateTotalPoints(sales)
-            }))
-            .sort((a, b) => b.points - a.points)[0];
-          
-          return {
-            date: format(parseISO(dateKey), 'd MMMM yyyy', { locale: sv }),
-            points: bestSeller.points,
-            name: bestSeller.name
-          };
-        })
-        .sort((a, b) => b.points - a.points)
-        .slice(0, 3);
+      const allDailyTopSellers = Object.entries(dailyTotals)
+        .flatMap(([dateKey, data]) => 
+          Object.entries(data.sellers).map(([name, sales]) => ({
+            name,
+            points: calculateTotalPoints(sales),
+            date: format(parseISO(dateKey), 'd MMMM yyyy', { locale: sv })
+          }))
+        )
+        .sort((a, b) => b.points - a.points);
+
+      const topDays = getUniqueTopSellers(allDailyTopSellers);
 
       return {
         topSales,
