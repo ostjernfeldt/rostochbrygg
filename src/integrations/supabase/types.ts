@@ -42,66 +42,6 @@ export type Database = {
         }
         Relationships: []
       }
-      bonus_records: {
-        Row: {
-          amount: number
-          bonus_date: string
-          created_at: string | null
-          description: string | null
-          id: string
-          updated_at: string | null
-          user_display_name: string
-        }
-        Insert: {
-          amount?: number
-          bonus_date: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          updated_at?: string | null
-          user_display_name: string
-        }
-        Update: {
-          amount?: number
-          bonus_date?: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          updated_at?: string | null
-          user_display_name?: string
-        }
-        Relationships: []
-      }
-      challenges: {
-        Row: {
-          created_at: string | null
-          end_date: string
-          id: string
-          reward: number
-          start_date: string
-          type: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          end_date: string
-          id?: string
-          reward: number
-          start_date: string
-          type: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          end_date?: string
-          id?: string
-          reward?: number
-          start_date?: string
-          type?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       legacy_purchases: {
         Row: {
           Amount: string | null
@@ -162,81 +102,6 @@ export type Database = {
           "Gross Tax"?: string | null
           "Gross Value"?: string | null
           id?: string
-          "Payment Type"?: string | null
-          "Product Name"?: string | null
-          "Purchase Number"?: string | null
-          "Purchase UUID"?: string | null
-          "Refund UUID"?: string | null
-          Refunded?: string | null
-          "Tax Amount"?: string | null
-          Timestamp?: string | null
-          "Unit Price"?: string | null
-          updated_at?: string | null
-          "User Display Name"?: string | null
-          "VAT Amount"?: string | null
-        }
-        Relationships: []
-      }
-      legacy_purchases_backup: {
-        Row: {
-          Amount: string | null
-          Cost: string | null
-          created_at: string | null
-          Currency: string | null
-          "Discount Amount": string | null
-          "Discount Quantity": string | null
-          "Discount Value": string | null
-          "Gross Tax": string | null
-          "Gross Value": string | null
-          id: string | null
-          "Payment Type": string | null
-          "Product Name": string | null
-          "Purchase Number": string | null
-          "Purchase UUID": string | null
-          "Refund UUID": string | null
-          Refunded: string | null
-          "Tax Amount": string | null
-          Timestamp: string | null
-          "Unit Price": string | null
-          updated_at: string | null
-          "User Display Name": string | null
-          "VAT Amount": string | null
-        }
-        Insert: {
-          Amount?: string | null
-          Cost?: string | null
-          created_at?: string | null
-          Currency?: string | null
-          "Discount Amount"?: string | null
-          "Discount Quantity"?: string | null
-          "Discount Value"?: string | null
-          "Gross Tax"?: string | null
-          "Gross Value"?: string | null
-          id?: string | null
-          "Payment Type"?: string | null
-          "Product Name"?: string | null
-          "Purchase Number"?: string | null
-          "Purchase UUID"?: string | null
-          "Refund UUID"?: string | null
-          Refunded?: string | null
-          "Tax Amount"?: string | null
-          Timestamp?: string | null
-          "Unit Price"?: string | null
-          updated_at?: string | null
-          "User Display Name"?: string | null
-          "VAT Amount"?: string | null
-        }
-        Update: {
-          Amount?: string | null
-          Cost?: string | null
-          created_at?: string | null
-          Currency?: string | null
-          "Discount Amount"?: string | null
-          "Discount Quantity"?: string | null
-          "Discount Value"?: string | null
-          "Gross Tax"?: string | null
-          "Gross Value"?: string | null
-          id?: string | null
           "Payment Type"?: string | null
           "Product Name"?: string | null
           "Purchase Number"?: string | null
@@ -394,45 +259,6 @@ export type Database = {
           user_display_name?: string | null
           user_uuid?: string | null
           vat_amount?: string | null
-        }
-        Relationships: []
-      }
-      salaries: {
-        Row: {
-          base_salary: number
-          bonus: number | null
-          commission_rate: number
-          created_at: string | null
-          id: string
-          period_end: string
-          period_start: string
-          updated_at: string | null
-          user_display_name: string
-          vacation_pay: number | null
-        }
-        Insert: {
-          base_salary?: number
-          bonus?: number | null
-          commission_rate?: number
-          created_at?: string | null
-          id?: string
-          period_end: string
-          period_start: string
-          updated_at?: string | null
-          user_display_name: string
-          vacation_pay?: number | null
-        }
-        Update: {
-          base_salary?: number
-          bonus?: number | null
-          commission_rate?: number
-          created_at?: string | null
-          id?: string
-          period_end?: string
-          period_start?: string
-          updated_at?: string | null
-          user_display_name?: string
-          vacation_pay?: number | null
         }
         Relationships: []
       }
