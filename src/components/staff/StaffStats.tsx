@@ -30,6 +30,13 @@ export const StaffStats = ({ stats }: StaffStatsProps) => {
         animationDelay="400ms"
       />
       <StatCard
+        title="Högsta sälj"
+        value={`${Math.round(stats.bestDay.points)} p`}
+        userName=""
+        subtitle={format(new Date(stats.bestDay.date), "d MMM yyyy", { locale: sv })}
+        animationDelay="800ms"
+      />
+      <StatCard
         title="Bästa säljdagen"
         subtitle={format(new Date(stats.bestDay.date), "d MMM yyyy", { locale: sv })}
         value={`${Math.round(stats.bestDay.points)} p`}
