@@ -1,8 +1,10 @@
+
 import { useCountAnimation } from "@/hooks/useCountAnimation";
 import { useSalesData } from "@/hooks/useSalesData";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { SellerStatsDialog } from "./SellerStatsDialog";
+import { calculateTotalPoints } from "@/utils/pointsCalculation";
 
 interface SalesStatsProps {
   shouldAnimate?: boolean;
@@ -13,17 +15,31 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
   const navigate = useNavigate();
   const { data: salesData, isLoading } = useSalesData(selectedDate);
   const [dialogType, setDialogType] = useState<"sales" | "average" | null>(null);
+
+  const calculateStats = () => {
+    if (!salesData?.transactions) return { totalPoints: 0, averagePoints: 0 };
+    
+    const validTransactions = salesData.transactions.filter(t => !t.refunded);
+    const totalPoints = calculateTotalPoints(validTransactions);
+    const averagePoints = validTransactions.length > 0 
+      ? Math.round(totalPoints / validTransactions.length) 
+      : 0;
+
+    return { totalPoints, averagePoints };
+  };
+
+  const { totalPoints, averagePoints } = calculateStats();
   
-  const animatedSalesAmount = useCountAnimation(
-    shouldAnimate ? (salesData?.totalAmount || 0) : 0,
+  const animatedTotalPoints = useCountAnimation(
+    shouldAnimate ? totalPoints : 0,
     2000
   );
   const animatedSalesCount = useCountAnimation(
     shouldAnimate ? (salesData?.salesCount || 0) : 0,
     2000
   );
-  const animatedAverageValue = useCountAnimation(
-    shouldAnimate ? (salesData?.averageValue || 0) : 0,
+  const animatedAveragePoints = useCountAnimation(
+    shouldAnimate ? averagePoints : 0,
     2000
   );
 
@@ -31,7 +47,7 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
     return (
       <>
         <div className="stat-card animate-pulse">
-          <span className="text-gray-400 text-lg">Total försäljning</span>
+          <span className="text-gray-400 text-lg">Total poäng</span>
           <div className="h-10 bg-gray-200 rounded mt-1"></div>
         </div>
         <div className="stat-card animate-pulse">
@@ -39,7 +55,7 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
           <div className="h-10 bg-gray-200 rounded mt-1"></div>
         </div>
         <div className="stat-card animate-pulse">
-          <span className="text-gray-400 text-lg">Snittordervärde</span>
+          <span className="text-gray-400 text-lg">Snittpoäng</span>
           <div className="h-10 bg-gray-200 rounded mt-1"></div>
         </div>
       </>
@@ -50,8 +66,8 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
     return (
       <>
         <div className="stat-card">
-          <span className="text-gray-400 text-lg">Total försäljning</span>
-          <div className="text-4xl font-bold mt-1">SEK 0</div>
+          <span className="text-gray-400 text-lg">Total poäng</span>
+          <div className="text-4xl font-bold mt-1">0</div>
           <div className="mt-1 text-gray-400">Ingen data tillgänglig</div>
         </div>
         <div className="stat-card">
@@ -60,8 +76,8 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
           <div className="mt-1 text-gray-400">Ingen data tillgänglig</div>
         </div>
         <div className="stat-card">
-          <span className="text-gray-400 text-lg">Snittordervärde</span>
-          <div className="text-4xl font-bold mt-1">SEK 0</div>
+          <span className="text-gray-400 text-lg">Snittpoäng</span>
+          <div className="text-4xl font-bold mt-1">0</div>
           <div className="mt-1 text-gray-400">Ingen data tillgänglig</div>
         </div>
       </>
@@ -79,9 +95,9 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
         onClick={() => navigate(`/transactions${selectedDate ? `?date=${selectedDate}` : ''}`)}
         className="stat-card animate-fade-in [animation-delay:200ms] hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
       >
-        <span className="text-gray-400 text-lg">Total försäljning</span>
+        <span className="text-gray-400 text-lg">Total poäng</span>
         <div className="text-4xl font-bold mt-1">
-          SEK {shouldAnimate ? animatedSalesAmount.toLocaleString() : salesData.totalAmount.toLocaleString()}
+          {shouldAnimate ? Math.round(animatedTotalPoints) : totalPoints} p
         </div>
         <div className={`mt-1 ${salesData.percentageChanges.totalAmount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
           {formatPercentage(salesData.percentageChanges.totalAmount)} från förra gången
@@ -105,9 +121,9 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
         onClick={() => setDialogType("average")}
         className="stat-card animate-fade-in [animation-delay:600ms] hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
       >
-        <span className="text-gray-400 text-lg">Snittordervärde</span>
+        <span className="text-gray-400 text-lg">Snittpoäng</span>
         <div className="text-4xl font-bold mt-1">
-          SEK {shouldAnimate ? animatedAverageValue : Math.round(salesData.averageValue)}
+          {shouldAnimate ? Math.round(animatedAveragePoints) : averagePoints} p
         </div>
         <div className={`mt-1 ${salesData.percentageChanges.averageValue >= 0 ? 'text-green-500' : 'text-red-500'}`}>
           {formatPercentage(salesData.percentageChanges.averageValue)} från förra gången

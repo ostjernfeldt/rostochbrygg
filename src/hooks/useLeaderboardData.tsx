@@ -1,17 +1,19 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
-import { processTransactions, getValidSalesCount, getValidTotalAmount } from "@/components/transactions/TransactionProcessor";
+import { processTransactions, getValidSalesCount } from "@/components/transactions/TransactionProcessor";
 import { TotalPurchase } from "@/types/purchase";
+import { calculateTotalPoints } from "@/utils/pointsCalculation";
 
 interface UserSales {
   "User Display Name": string;
-  totalAmount: number;
+  points: number;
   salesCount: number;
 }
 
 interface UserTotals {
-  totalAmount: number;
+  points: number;
   salesCount: number;
 }
 
@@ -108,10 +110,10 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
           return Object.entries(userTotals)
             .map(([name, userSales]) => ({
               "User Display Name": name,
-              totalAmount: getValidTotalAmount(userSales),
+              points: calculateTotalPoints(userSales),
               salesCount: getValidSalesCount(userSales)
             }))
-            .sort((a, b) => b.totalAmount - a.totalAmount);
+            .sort((a, b) => b.points - a.points);
         };
 
         const leaders = calculateLeaders(sales);

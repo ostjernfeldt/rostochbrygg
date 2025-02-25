@@ -1,3 +1,4 @@
+
 import { LeaderboardItem } from "./LeaderboardItem";
 import { LeaderboardFilter } from "./LeaderboardFilter";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 interface UserSales {
   "User Display Name": string;
-  totalAmount: number;
+  points: number;
   salesCount: number;
 }
 
@@ -39,7 +40,7 @@ export const LeaderboardSection = ({
 
     const formattedData = data
       .map((user, index) => 
-        `${index + 1}. ${user["User Display Name"]}: ${user.totalAmount.toLocaleString()} kr`
+        `${index + 1}. ${user["User Display Name"]}: ${user.points} poäng`
       )
       .join('\n');
 
@@ -85,7 +86,7 @@ export const LeaderboardSection = ({
               rank={index + 1}
               displayName={user["User Display Name"]}
               salesCount={user.salesCount}
-              totalAmount={user.totalAmount}
+              points={user.points}
               onClick={() => onUserClick?.(user["User Display Name"])}
             />
           ))

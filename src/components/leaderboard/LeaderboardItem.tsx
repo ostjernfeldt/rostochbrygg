@@ -1,10 +1,11 @@
+
 import { useNavigate } from "react-router-dom";
 
 interface LeaderboardItemProps {
   rank: number;
   displayName: string;
   salesCount: number;
-  totalAmount: number;
+  points: number;
   percentageChange?: number;
   onClick?: () => void;
 }
@@ -13,7 +14,7 @@ export const LeaderboardItem = ({
   rank, 
   displayName, 
   salesCount, 
-  totalAmount,
+  points,
   percentageChange = 0,
   onClick 
 }: LeaderboardItemProps) => {
@@ -58,7 +59,7 @@ export const LeaderboardItem = ({
           </div>
         </div>
         <span className="text-cyan-400 font-semibold">
-          SEK {totalAmount.toLocaleString()}
+          {points} poäng
         </span>
       </div>
     </div>

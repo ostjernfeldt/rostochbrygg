@@ -1,5 +1,7 @@
+
 import { format } from "date-fns";
 import { TotalPurchase } from "@/types/purchase";
+import { calculatePoints } from "@/utils/pointsCalculation";
 
 interface TransactionCardProps {
   transaction: TotalPurchase;
@@ -8,6 +10,7 @@ interface TransactionCardProps {
 export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   const isRefunded = transaction.refunded || transaction.amount < 0;
   const isRefund = transaction.amount < 0;
+  const points = calculatePoints(transaction.quantity);
   
   return (
     <div 
@@ -28,7 +31,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
         </div>
         <div className="flex flex-col items-end">
           <span className={`text-xl font-bold ${isRefunded ? 'text-red-500' : ''}`}>
-            SEK {Math.abs(Number(transaction.amount))?.toLocaleString()}
+            {Math.abs(points)} poäng
           </span>
           {isRefunded && (
             <span className="text-sm text-red-500">
@@ -43,7 +46,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
           <span className="text-gray-400">{transaction.payment_type || "Okänd betalningsmetod"}</span>
         </div>
         <div className="text-sm text-gray-400">
-          Produkt: {transaction.product_name || "Okänd produkt"}
+          Antal påsar: {transaction.quantity || 0}
         </div>
       </div>
     </div>
