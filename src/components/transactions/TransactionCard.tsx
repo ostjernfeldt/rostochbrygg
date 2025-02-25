@@ -14,7 +14,11 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const isRefunded = transaction.refunded || transaction.amount < 0;
   const isRefund = transaction.amount < 0;
-  const points = calculatePoints(transaction.quantity);
+  
+  // Calculate points based on products if available, otherwise fall back to quantity
+  const points = transaction.products && Array.isArray(transaction.products)
+    ? (transaction.products as Product[]).reduce((total, product) => total + calculateProductPoints(product), 0)
+    : calculatePoints(transaction.quantity);
   
   return (
     <>
@@ -101,9 +105,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
                 <div className="flex justify-between items-center pt-3 border-t">
                   <span className="font-semibold">Totalt:</span>
                   <span className="text-lg font-bold text-primary">
-                    {(transaction.products as Product[]).reduce((total, product) => 
-                      total + calculateProductPoints(product), 0
-                    )} poäng
+                    {points} poäng
                   </span>
                 </div>
               </div>
