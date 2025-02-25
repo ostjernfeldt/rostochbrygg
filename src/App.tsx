@@ -24,17 +24,39 @@ const useUserRole = () => {
   return useQuery({
     queryKey: ["userRole"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          console.error("Error fetching user:", userError);
+          return null;
+        }
+        
+        if (!user) {
+          console.log("No user found");
+          return null;
+        }
 
-      const { data: roleData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .single();
+        console.log("Fetching role for user:", user.id);
+        const { data: roleData, error: roleError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .single();
 
-      return roleData?.role || "user";
+        if (roleError) {
+          console.error("Error fetching user role:", roleError);
+          return "user";
+        }
+
+        console.log("User role data:", roleData);
+        return roleData?.role || "user";
+      } catch (error) {
+        console.error("Unexpected error in useUserRole:", error);
+        return "user";
+      }
     },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: 3
   });
 };
 
@@ -47,6 +69,8 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const { data: userRole, isLoading: isRoleLoading } = useUserRole();
+
+  console.log("PrivateRoute - userRole:", userRole, "requireAdmin:", requireAdmin);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -88,24 +112,29 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
   }, [navigate]);
 
   if (isAuthenticated === null || isRoleLoading) {
+    console.log("Loading auth state or role...");
     return null;
   }
 
   if (!isAuthenticated) {
+    console.log("Not authenticated, redirecting to login");
     return <Navigate to="/login" replace />;
   }
 
-  // If route requires admin access and user is not admin, redirect to leaderboard
   if (requireAdmin && userRole !== 'admin') {
+    console.log("User is not admin, redirecting to leaderboard");
     return <Navigate to="/leaderboard" replace />;
   }
 
+  console.log("Rendering protected content");
   return <>{children}</>;
 };
 
 const AppContent = () => {
   const location = useLocation();
-  const { data: userRole } = useUserRole();
+  const { data: userRole, isLoading } = useUserRole();
+
+  console.log("AppContent - Current userRole:", userRole, "isLoading:", isLoading);
 
   return (
     <div className="min-h-screen bg-background">
