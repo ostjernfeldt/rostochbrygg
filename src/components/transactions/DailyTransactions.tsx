@@ -17,9 +17,38 @@ export const DailyTransactions = ({
   selectedSeller,
   selectedDate 
 }: DailyTransactionsProps) => {
-  const filteredTransactions = selectedSeller === "all" 
-    ? transactions 
-    : transactions.filter(t => t.user_display_name === selectedSeller);
+  // Create a map for refund information
+  const refundMap = new Map<string, string>();
+  const refundedPaymentUuids = new Set<string>();
+  
+  // First pass: Find all refunds and their original payment UUIDs
+  transactions.forEach(transaction => {
+    if (transaction.refund_uuid) {
+      // Store the refund timestamp
+      refundMap.set(transaction.refund_uuid, transaction.timestamp);
+      // Mark this as a refunded transaction
+      refundedPaymentUuids.add(transaction.refund_uuid);
+    }
+  });
+
+  // Filter transactions based on seller and process refunds
+  const filteredTransactions = transactions
+    .filter(t => {
+      // First filter by seller
+      if (selectedSeller !== "all" && t.user_display_name !== selectedSeller) {
+        return false;
+      }
+      // Then remove refund transactions
+      if (t.refund_uuid) {
+        return false;
+      }
+      return true;
+    })
+    .map(transaction => ({
+      ...transaction,
+      refunded: transaction.payment_uuid ? refundedPaymentUuids.has(transaction.payment_uuid) : false,
+      refund_timestamp: transaction.payment_uuid ? refundMap.get(transaction.payment_uuid) : null
+    }));
 
   // Get the date from the first transaction, or use selectedDate, or fallback to current date
   const dateToShow = transactions.length > 0 
