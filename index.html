@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -31,6 +32,16 @@
     
     <!-- PWA manifest -->
     <link rel="manifest" href="/manifest.json" />
+
+    <!-- Redirect all routes to index.html -->
+    <script>
+      (function() {
+        const { pathname, origin } = window.location;
+        if (pathname !== '/' && !pathname.includes('.')) {
+          window.history.replaceState(null, null, pathname);
+        }
+      })();
+    </script>
   </head>
 
   <body>
