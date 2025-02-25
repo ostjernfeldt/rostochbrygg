@@ -6,53 +6,28 @@ import { sv } from "date-fns/locale";
 interface StaffStatsProps {
   stats: {
     salesCount: number;
-    averagePoints: number;  // Changed from averageValue
+    averagePoints: number;
     activeDays: number;
     firstSaleDate: string;
     bestDay: {
       date: string;
-      points: number;  // Changed from amount
+      points: number;
     };
     worstDay: {
       date: string;
-      points: number;  // Changed from amount
+      points: number;
     };
   };
 }
 
 export const StaffStats = ({ stats }: StaffStatsProps) => {
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3">
-      <StatCard
-        title="Antal sälj"
-        value={stats.salesCount}
-        userName=""
-        animationDelay="200ms"
-      />
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <StatCard
         title="Snittpoäng"
         value={`${Math.round(stats.averagePoints)} p`}
         userName=""
         animationDelay="400ms"
-      />
-      <StatCard
-        title="Aktiva dagar"
-        value={stats.activeDays}
-        userName=""
-        animationDelay="600ms"
-      />
-      <StatCard
-        title="Första sälj"
-        value={format(new Date(stats.firstSaleDate), "yyyy-MM-dd")}
-        userName=""
-        animationDelay="800ms"
-      />
-      <StatCard
-        title="Första säljdagen"
-        subtitle={format(new Date(stats.worstDay.date), "d MMM yyyy", { locale: sv })}
-        value={`${Math.round(stats.worstDay.points)} p`}
-        userName=""
-        animationDelay="1000ms"
       />
       <StatCard
         title="Bästa säljdagen"
