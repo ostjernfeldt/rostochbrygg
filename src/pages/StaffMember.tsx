@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useParams } from "react-router-dom";
@@ -87,10 +88,7 @@ const StaffMember = () => {
       return {
         ...memberStats,
         bestDay,
-        worstDay: {
-          date: firstSaleDate.toISOString(),
-          points: highestSingleTransaction
-        }
+        highestSingleTransaction
       };
     }
   });
@@ -129,7 +127,10 @@ const StaffMember = () => {
     activeDays: memberData.daysActive,
     firstSaleDate: memberData.firstSale.toISOString(),
     bestDay: memberData.bestDay,
-    worstDay: memberData.worstDay
+    worstDay: {
+      date: memberData.firstSale.toISOString(),
+      points: memberData.highestSingleTransaction
+    }
   };
 
   return (
