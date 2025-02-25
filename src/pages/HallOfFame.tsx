@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
@@ -312,20 +311,20 @@ const HallOfFame = () => {
         <LeaderboardCard
           title="Högsta sälj"
           icon={Trophy}
-          data={data.topSales}
+          data={data?.topSales || []}
           type="sale"
-        />
-        <LeaderboardCard
-          title="Bästa månad"
-          icon={Calendar}
-          data={data.topMonths}
-          type="month"
         />
         <LeaderboardCard
           title="Bästa dag"
           icon={Sun}
-          data={data.topDays}
+          data={data?.topDays || []}
           type="day"
+        />
+        <LeaderboardCard
+          title="Bästa månad"
+          icon={Calendar}
+          data={data?.topMonths || []}
+          type="month"
         />
       </div>
 
