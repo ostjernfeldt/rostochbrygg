@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useParams, useNavigate } from "react-router-dom";
@@ -55,10 +56,10 @@ const StaffMember = () => {
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
 
-      // Find highest single sale
+      // Find highest single sale by calculating total points for each individual sale
       const highestSingleSale = [...validSales].sort((a, b) => {
-        const pointsA = calculatePoints(a.amount);
-        const pointsB = calculatePoints(b.amount);
+        const pointsA = calculateTotalPoints([a]);
+        const pointsB = calculateTotalPoints([b]);
         return pointsB - pointsA;
       })[0];
 
@@ -66,7 +67,7 @@ const StaffMember = () => {
       const firstSaleDate = new Date(sortedSales[0].timestamp);
       console.log("First sale date:", firstSaleDate);
 
-      // Group sales by date and calculate points for each sale
+      // Group sales by date for daily totals
       const salesByDate = sortedSales.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
         const dateStr = new Date(sale.timestamp).toDateString();
         if (!acc[dateStr]) {
@@ -76,21 +77,18 @@ const StaffMember = () => {
         return acc;
       }, {});
 
-      // Calculate total points for each day using the same calculatePoints function
+      // Calculate daily totals using calculateTotalPoints for consistency
       const dailyTotals = Object.entries(salesByDate).map(([dateStr, dateSales]) => ({
         date: new Date(dateStr).toISOString(),
-        points: dateSales.reduce((total, sale) => total + calculatePoints(sale.amount), 0)
+        points: calculateTotalPoints(dateSales)
       }));
 
       // Sort days by points for best day
       const sortedDays = [...dailyTotals].sort((a, b) => b.points - a.points);
       const bestDay = sortedDays[0];
 
-      // Calculate total points for the first day using the same points calculation
-      const firstDayPoints = salesByDate[firstSaleDate.toDateString()].reduce(
-        (total, sale) => total + calculatePoints(sale.amount),
-        0
-      );
+      // Calculate first day points using calculateTotalPoints
+      const firstDayPoints = calculateTotalPoints(salesByDate[firstSaleDate.toDateString()]);
 
       const firstDay = {
         date: firstSaleDate.toISOString(),
@@ -121,7 +119,7 @@ const StaffMember = () => {
         bestDay,
         highestSale: {
           date: highestSingleSale.timestamp,
-          points: calculatePoints(highestSingleSale.amount)
+          points: calculateTotalPoints([highestSingleSale])
         },
         worstDay: firstDay
       };
