@@ -6,18 +6,23 @@ import { format, parseISO } from "date-fns";
 import { sv } from "date-fns/locale";
 import { processTransactions } from "@/components/transactions/TransactionProcessor";
 import { calculateTotalPoints } from "@/utils/pointsCalculation";
-import { Trophy, Calendar, Sun } from "lucide-react";
+import { Trophy, Calendar, Sun, List } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
+import { TotalPurchase } from "@/types/purchase";
 
 interface TopSeller {
   name: string;
   points: number;
   date?: string;
   month?: string;
+  transaction?: TotalPurchase;  // Added to store transaction details
 }
 
 const HallOfFame = () => {
   const navigate = useNavigate();
+  const [selectedTransaction, setSelectedTransaction] = useState<TotalPurchase | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["hallOfFame"],
@@ -68,7 +73,8 @@ const HallOfFame = () => {
       const allSalesByPoints = [...processedSales].map(sale => ({
         name: sale.user_display_name || 'Okänd',
         points: calculateTotalPoints([sale]),
-        date: format(new Date(sale.timestamp), 'd MMMM yyyy', { locale: sv })
+        date: format(new Date(sale.timestamp), 'd MMMM yyyy', { locale: sv }),
+        transaction: sale  // Store the full transaction data
       })).sort((a, b) => b.points - a.points);
 
       const topSales = getUniqueTopSellers(allSalesByPoints);
@@ -162,7 +168,13 @@ const HallOfFame = () => {
         {data.map((item, index) => (
           <div
             key={index}
-            onClick={() => item.name !== 'Okänd' && navigate(`/staff/${encodeURIComponent(item.name)}`)}
+            onClick={() => {
+              if (type === 'sale' && item.transaction) {
+                setSelectedTransaction(item.transaction);
+              } else if (item.name !== 'Okänd') {
+                navigate(`/staff/${encodeURIComponent(item.name)}`);
+              }
+            }}
             className="group flex items-center gap-4 p-4 bg-gradient-to-r from-card to-card/80 hover:from-card/80 hover:to-card/60 rounded-xl cursor-pointer transition-all duration-300 border border-white/5 hover:border-primary/20"
           >
             <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${
@@ -190,6 +202,59 @@ const HallOfFame = () => {
       </div>
     </div>
   );
+
+  const TransactionDialog = () => {
+    if (!selectedTransaction) return null;
+
+    return (
+      <Dialog open={!!selectedTransaction} onOpenChange={() => setSelectedTransaction(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <List className="h-5 w-5" />
+              Transaktionsdetaljer
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="text-sm text-gray-400">
+              {format(new Date(selectedTransaction.timestamp), "yyyy-MM-dd HH:mm")}
+            </div>
+            
+            {selectedTransaction.products && Array.isArray(selectedTransaction.products) ? (
+              <div className="space-y-3">
+                <h3 className="font-semibold">Produkter:</h3>
+                {selectedTransaction.products.map((product, index) => (
+                  <div key={index} className="bg-card p-3 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-sm text-gray-400">Antal: {product.quantity}</div>
+                      </div>
+                      <div className="text-primary font-semibold">
+                        {Math.round(calculateTotalPoints([{ ...selectedTransaction, products: [product] }]))} poäng
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className="flex justify-between items-center pt-3 border-t">
+                  <span className="font-semibold">Totalt:</span>
+                  <span className="text-lg font-bold text-primary">
+                    {Math.round(calculateTotalPoints([selectedTransaction]))} poäng
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-400">
+                Inga produktdetaljer tillgängliga
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
   if (isLoading || !data) {
     return (
@@ -235,6 +300,8 @@ const HallOfFame = () => {
           type="day"
         />
       </div>
+
+      <TransactionDialog />
     </PageLayout>
   );
 };
