@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useParams, useNavigate } from "react-router-dom";
@@ -67,7 +66,7 @@ const StaffMember = () => {
       const firstSaleDate = new Date(sortedSales[0].timestamp);
       console.log("First sale date:", firstSaleDate);
 
-      // Group sales by date for daily totals
+      // Group sales by date and calculate points for each sale
       const salesByDate = sortedSales.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
         const dateStr = new Date(sale.timestamp).toDateString();
         if (!acc[dateStr]) {
@@ -77,21 +76,20 @@ const StaffMember = () => {
         return acc;
       }, {});
 
-      // Calculate daily totals in points
+      // Calculate total points for each day using the same calculatePoints function
       const dailyTotals = Object.entries(salesByDate).map(([dateStr, dateSales]) => ({
         date: new Date(dateStr).toISOString(),
-        points: calculateTotalPoints(dateSales)
+        points: dateSales.reduce((total, sale) => total + calculatePoints(sale.amount), 0)
       }));
 
       // Sort days by points for best day
       const sortedDays = [...dailyTotals].sort((a, b) => b.points - a.points);
       const bestDay = sortedDays[0];
 
-      // Calculate total points for the first day
-      const firstDayPoints = calculateTotalPoints(
-        sortedSales.filter(sale => 
-          new Date(sale.timestamp).toDateString() === firstSaleDate.toDateString()
-        )
+      // Calculate total points for the first day using the same points calculation
+      const firstDayPoints = salesByDate[firstSaleDate.toDateString()].reduce(
+        (total, sale) => total + calculatePoints(sale.amount),
+        0
       );
 
       const firstDay = {
