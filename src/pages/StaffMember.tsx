@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useParams } from "react-router-dom";
@@ -41,7 +40,6 @@ const StaffMember = () => {
 
       // Get the first sale date
       const firstSaleDate = new Date(sortedSales[0].timestamp);
-      console.log("First sale date:", firstSaleDate);
 
       // Group sales by date for daily totals
       const salesByDate = sortedSales.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
@@ -63,17 +61,10 @@ const StaffMember = () => {
       const sortedDays = [...dailyTotals].sort((a, b) => b.points - a.points);
       const bestDay = sortedDays[0];
 
-      // Calculate total points for the first day
-      const firstDayPoints = calculateTotalPoints(
-        sortedSales.filter(sale => 
-          new Date(sale.timestamp).toDateString() === firstSaleDate.toDateString()
-        )
+      // Find highest single transaction
+      const highestSingleTransaction = Math.max(
+        ...validSales.map(sale => calculatePoints(sale.quantity))
       );
-
-      const firstDay = {
-        date: firstSaleDate.toISOString(),
-        points: firstDayPoints
-      };
 
       const totalAmount = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
       const totalPoints = calculateTotalPoints(validSales);
@@ -96,7 +87,10 @@ const StaffMember = () => {
       return {
         ...memberStats,
         bestDay,
-        worstDay: firstDay
+        worstDay: {
+          date: firstSaleDate.toISOString(),
+          points: highestSingleTransaction
+        }
       };
     }
   });
