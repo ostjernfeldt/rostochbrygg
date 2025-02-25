@@ -1,7 +1,7 @@
 
 import { format } from "date-fns";
 import { TotalPurchase, Product } from "@/types/purchase";
-import { calculatePoints } from "@/utils/pointsCalculation";
+import { calculatePoints, calculateProductPoints } from "@/utils/pointsCalculation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Info, List } from "lucide-react";
@@ -15,10 +15,6 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
   const isRefunded = transaction.refunded || transaction.amount < 0;
   const isRefund = transaction.amount < 0;
   const points = calculatePoints(transaction.quantity);
-  
-  const getProductPoints = (product: Product) => {
-    return Number(product.quantity) * 15;
-  };
   
   return (
     <>
@@ -96,7 +92,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
                         <div className="text-sm text-gray-400">Antal: {product.quantity}</div>
                       </div>
                       <div className="text-primary font-semibold">
-                        {getProductPoints(product)} poäng
+                        {calculateProductPoints(product)} poäng
                       </div>
                     </div>
                   </div>
@@ -106,7 +102,7 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
                   <span className="font-semibold">Totalt:</span>
                   <span className="text-lg font-bold text-primary">
                     {(transaction.products as Product[]).reduce((total, product) => 
-                      total + getProductPoints(product), 0
+                      total + calculateProductPoints(product), 0
                     )} poäng
                   </span>
                 </div>
