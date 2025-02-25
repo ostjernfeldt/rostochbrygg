@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -9,7 +8,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Home from "./pages/Home";
 import Leaderboard from "./pages/Leaderboard";
-import Settings from "./pages/Settings";
 import Learn from "./pages/Learn";
 import Article from "./pages/Article";
 import Login from "./pages/Login";
@@ -90,21 +88,6 @@ const AppContent = () => {
         <Route path="/hall-of-fame" element={
           <PrivateRoute>
             <HallOfFame />
-          </PrivateRoute>
-        } />
-        <Route path="/settings" element={
-          <PrivateRoute>
-            <Settings />
-          </PrivateRoute>
-        } />
-        <Route path="/learn" element={
-          <PrivateRoute>
-            <Learn />
-          </PrivateRoute>
-        } />
-        <Route path="/learn/:slug" element={
-          <PrivateRoute>
-            <Article />
           </PrivateRoute>
         } />
         <Route path="/transactions" element={
