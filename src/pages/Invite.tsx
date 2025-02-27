@@ -493,19 +493,19 @@ const Invite = () => {
     const isDeleting = deletingInvitation === invitation.id;
     
     return (
-      <div key={invitation.id} className="p-4 border rounded-md mb-3 bg-card">
-        <div className="flex justify-between items-center mb-2">
-          <span className="font-bold text-sm truncate max-w-[180px]">{invitation.email}</span>
-          <span className={`px-2 py-1 ${statusInfo.className} rounded-full text-xs`}>
+      <div key={invitation.id} className="p-3 border rounded-md mb-2 bg-card shadow-sm">
+        <div className="flex justify-between items-center mb-1">
+          <span className="font-medium text-sm truncate max-w-[160px]">{invitation.email}</span>
+          <span className={`px-1.5 py-0.5 ${statusInfo.className} rounded-full text-xs`}>
             {statusInfo.label}
           </span>
         </div>
         
-        <div className="text-xs text-muted-foreground mb-3">
-          Skapad: {format(new Date(invitation.created_at), 'yyyy-MM-dd')}
+        <div className="text-xs text-muted-foreground mb-2">
+          {format(new Date(invitation.created_at), 'yyyy-MM-dd')}
         </div>
         
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-1 justify-end">
           {isDeleting ? (
             <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
           ) : (
@@ -513,18 +513,20 @@ const Invite = () => {
               {!isUsed && (
                 <>
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm"
                     onClick={() => copyToClipboard(inviteLink, invitation.id)}
                     disabled={regenerateLoading === invitation.id}
+                    className="h-7 px-2"
                   >
                     {copied === invitation.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                   </Button>
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm"
                     onClick={() => regenerateInviteLink(invitation)}
                     disabled={regenerateLoading === invitation.id}
+                    className="h-7 px-2"
                   >
                     {regenerateLoading === invitation.id ? 
                       <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div> : 
@@ -536,34 +538,35 @@ const Invite = () => {
               {isUsed && (
                 <>
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm"
                     onClick={() => {
                       setResetPasswordEmail(invitation.email);
                       setShowResetPasswordDialog(true);
                       setGeneratedResetLink(null);
                     }}
+                    className="h-7 px-2"
                   >
                     <Key className="h-3 w-3" />
                   </Button>
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm"
                     onClick={() => {
                       setDeleteAccountEmail(invitation.email);
                       setShowDeleteAccountDialog(true);
                     }}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    className="h-7 px-2 text-destructive"
                   >
                     <UserX className="h-3 w-3" />
                   </Button>
                 </>
               )}
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 size="sm"
                 onClick={() => confirmDeleteInvitation(invitation)}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="h-7 px-2 text-destructive"
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
@@ -581,17 +584,17 @@ const Invite = () => {
     const isDeleting = deletingInvitation === invitation.id;
     
     return (
-      <div key={invitation.id} className="grid grid-cols-12 p-3 text-sm items-center">
-        <div className="col-span-4 font-medium">{invitation.email}</div>
+      <div key={invitation.id} className="grid grid-cols-12 p-3 text-sm items-center hover:bg-card/50 transition-colors">
+        <div className="col-span-4 font-medium truncate">{invitation.email}</div>
         <div className="col-span-3 text-muted-foreground">
           {format(new Date(invitation.created_at), 'yyyy-MM-dd')}
         </div>
         <div className="col-span-3">
-          <span className={`px-2 py-1 ${statusInfo.className} rounded-full text-xs`}>
+          <span className={`px-2 py-0.5 ${statusInfo.className} rounded-full text-xs`}>
             {statusInfo.label}
           </span>
         </div>
-        <div className="col-span-2 flex gap-2">
+        <div className="col-span-2 flex gap-1 justify-end">
           {isDeleting ? (
             <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
           ) : (
@@ -599,18 +602,20 @@ const Invite = () => {
               {!isUsed && (
                 <>
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm"
                     onClick={() => copyToClipboard(inviteLink, invitation.id)}
                     disabled={regenerateLoading === invitation.id}
+                    className="h-7 w-7 p-0"
                   >
                     {copied === invitation.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                   </Button>
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm"
                     onClick={() => regenerateInviteLink(invitation)}
                     disabled={regenerateLoading === invitation.id}
+                    className="h-7 w-7 p-0"
                   >
                     {regenerateLoading === invitation.id ? 
                       <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div> : 
@@ -622,7 +627,7 @@ const Invite = () => {
               {isUsed && (
                 <>
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm"
                     title="Återställ lösenord"
                     onClick={() => {
@@ -630,28 +635,29 @@ const Invite = () => {
                       setShowResetPasswordDialog(true);
                       setGeneratedResetLink(null);
                     }}
+                    className="h-7 w-7 p-0"
                   >
                     <Key className="h-3 w-3" />
                   </Button>
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm"
                     title="Ta bort konto"
                     onClick={() => {
                       setDeleteAccountEmail(invitation.email);
                       setShowDeleteAccountDialog(true);
                     }}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    className="h-7 w-7 p-0 text-destructive"
                   >
                     <UserX className="h-3 w-3" />
                   </Button>
                 </>
               )}
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 size="sm"
                 onClick={() => confirmDeleteInvitation(invitation)}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="h-7 w-7 p-0 text-destructive"
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
@@ -665,7 +671,7 @@ const Invite = () => {
   if (isLoggedIn === false) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-sm shadow-md">
           <CardHeader>
             <CardTitle>Åtkomst nekad</CardTitle>
             <CardDescription>
@@ -686,32 +692,32 @@ const Invite = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-3xl">
-        <CardHeader>
-          <CardTitle>Bjud in säljare</CardTitle>
+    <div className="min-h-screen flex flex-col items-center justify-center p-3 bg-background">
+      <Card className="w-full max-w-xl shadow-md">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xl">Inbjudningar</CardTitle>
           <CardDescription>
             Hantera inbjudningar för nya säljare
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="create" className="w-full">
-            <TabsList className={`mb-4 ${isMobile ? "w-full" : ""}`}>
-              <TabsTrigger value="create" className={isMobile ? "flex-1" : ""}>Skapa ny inbjudan</TabsTrigger>
-              <TabsTrigger value="manage" className={isMobile ? "flex-1" : ""}>Hantera inbjudningar</TabsTrigger>
-              <TabsTrigger value="account" className={isMobile ? "flex-1" : ""}>Hantera konton</TabsTrigger>
+            <TabsList className="w-full mb-4">
+              <TabsTrigger value="create" className="flex-1">Skapa</TabsTrigger>
+              <TabsTrigger value="manage" className="flex-1">Hantera</TabsTrigger>
+              <TabsTrigger value="account" className="flex-1">Konton</TabsTrigger>
             </TabsList>
             
             <TabsContent value="create">
               {errorMessage && (
-                <Alert variant="destructive" className="mb-4">
+                <Alert variant="destructive" className="mb-3">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>{errorMessage}</AlertDescription>
                 </Alert>
               )}
               
-              <form onSubmit={handleInvite} className="space-y-4">
-                <div className="space-y-2">
+              <form onSubmit={handleInvite} className="space-y-3">
+                <div>
                   <Input
                     type="email"
                     placeholder="Säljarens e-postadress"
@@ -719,6 +725,7 @@ const Invite = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     disabled={isLoading}
+                    className="bg-card/50"
                   />
                 </div>
                 
@@ -731,44 +738,43 @@ const Invite = () => {
                 </Button>
 
                 {generatedLink && (
-                  <div className="mt-4 p-4 bg-muted rounded-md">
+                  <div className="mt-3 p-3 bg-card/30 rounded-md">
                     <p className="text-sm font-medium mb-2">Inbjudningslänk:</p>
                     <div className="relative">
-                      <div className="text-sm break-all bg-background p-3 rounded border mb-2 max-h-24 overflow-y-auto">
+                      <div className="text-xs break-all bg-card/50 p-2 rounded border mb-2 max-h-20 overflow-y-auto">
                         {generatedLink}
                       </div>
                       <Button
                         type="button"
-                        variant="outline"
-                        className="w-full flex items-center justify-center gap-2"
+                        variant="secondary"
+                        className="w-full flex items-center justify-center gap-2 h-8 text-xs"
                         onClick={() => copyToClipboard(generatedLink)}
                       >
                         {copied === "new" ? (
                           <>
-                            <Check className="h-4 w-4" />
+                            <Check className="h-3 w-3" />
                             Kopierad
                           </>
                         ) : (
                           <>
-                            <Copy className="h-4 w-4" />
+                            <Copy className="h-3 w-3" />
                             Kopiera länk
                           </>
                         )}
                       </Button>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Denna länk är giltig i 7 dagar. Säljaren kommer att kunna välja sitt lösenord när de registrerar sig.
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Länken är giltig i 7 dagar
                     </p>
                     
-                    <div className="mt-4 border-t pt-4">
-                      <p className="text-sm font-medium mb-2">För testning:</p>
+                    <div className="mt-3 border-t pt-3">
                       <Button
                         type="button"
-                        variant="secondary"
-                        className="w-full text-sm"
+                        variant="outline"
+                        className="w-full text-xs h-8"
                         onClick={() => window.open(generatedLink, '_blank')}
                       >
-                        Öppna länken i ny flik
+                        Öppna i ny flik
                       </Button>
                     </div>
                   </div>
@@ -778,24 +784,24 @@ const Invite = () => {
             
             <TabsContent value="manage">
               {isLoadingInvitations ? (
-                <div className="flex justify-center my-8">
-                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <div className="flex justify-center my-6">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : invitations.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Inga inbjudningar har skapats än.
+                <div className="text-center py-6 text-muted-foreground text-sm">
+                  Inga inbjudningar har skapats
                 </div>
               ) : isMobile ? (
                 <div className="space-y-2">
                   {invitations.map(renderMobileInvitationItem)}
                 </div>
               ) : (
-                <div className="border rounded-md">
-                  <div className="grid grid-cols-12 bg-muted p-3 border-b text-sm font-medium">
+                <div className="border rounded-md overflow-hidden">
+                  <div className="grid grid-cols-12 bg-card/30 p-2 border-b text-xs font-medium">
                     <div className="col-span-4">E-post</div>
                     <div className="col-span-3">Skapad</div>
                     <div className="col-span-3">Status</div>
-                    <div className="col-span-2">Åtgärd</div>
+                    <div className="col-span-2 text-right">Åtgärd</div>
                   </div>
                   <div className="divide-y">
                     {invitations.map(renderDesktopInvitationItem)}
@@ -805,51 +811,54 @@ const Invite = () => {
               
               <Button 
                 variant="outline" 
-                className="mt-4 w-full md:w-auto"
+                size="sm"
+                className="mt-3 w-full"
                 onClick={fetchInvitations}
                 disabled={isLoadingInvitations}
               >
-                {isLoadingInvitations ? "Uppdaterar..." : "Uppdatera lista"}
+                {isLoadingInvitations ? "Uppdaterar..." : "Uppdatera"}
               </Button>
             </TabsContent>
 
             <TabsContent value="account">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Återställ lösenord</CardTitle>
-                    <CardDescription>
-                      Skapa en länk för lösenordsåterställning till en säljare
+              <div className="grid grid-cols-1 gap-3 mb-3">
+                <Card className="border-white/10 shadow-sm">
+                  <CardHeader className="p-3 pb-1">
+                    <CardTitle className="text-base">Återställ lösenord</CardTitle>
+                    <CardDescription className="text-xs">
+                      Skapa en återställningslänk för en säljare
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-3 pt-0">
                     <Button 
                       variant="outline"
-                      className="w-full"
+                      size="sm"
+                      className="w-full text-sm h-8"
                       onClick={() => {
                         setShowResetPasswordDialog(true);
                         setGeneratedResetLink(null);
                       }}
                     >
-                      <Key className="h-4 w-4 mr-2" /> Skapa återställningslänk
+                      <Key className="h-3 w-3 mr-1" /> Skapa återställningslänk
                     </Button>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Ta bort konto</CardTitle>
-                    <CardDescription>
+                <Card className="border-white/10 shadow-sm">
+                  <CardHeader className="p-3 pb-1">
+                    <CardTitle className="text-base">Ta bort konto</CardTitle>
+                    <CardDescription className="text-xs">
                       Ta bort en säljares konto permanent
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-3 pt-0">
                     <Button 
                       variant="outline"
-                      className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                      size="sm"
+                      className="w-full text-sm h-8 text-destructive"
                       onClick={() => setShowDeleteAccountDialog(true)}
                     >
-                      <UserX className="h-4 w-4 mr-2" /> Ta bort konto
+                      <UserX className="h-3 w-3 mr-1" /> Ta bort konto
                     </Button>
                   </CardContent>
                 </Card>
@@ -861,11 +870,11 @@ const Invite = () => {
 
       {/* Delete Invitation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle>Ta bort inbjudan</AlertDialogTitle>
             <AlertDialogDescription>
-              Är du säker på att du vill ta bort inbjudan för {invitationToDelete?.email}? Denna åtgärd kan inte ångras.
+              Är du säker på att du vill ta bort inbjudan för {invitationToDelete?.email}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -879,57 +888,56 @@ const Invite = () => {
 
       {/* Reset Password Dialog */}
       <Dialog open={showResetPasswordDialog} onOpenChange={setShowResetPasswordDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Återställ lösenord</DialogTitle>
             <DialogDescription>
-              Ange e-postadressen för kontot som behöver ett nytt lösenord.
+              Ange e-postadressen för kontot
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-3">
             <Input
               type="email"
               placeholder="E-postadress"
               value={resetPasswordEmail}
               onChange={(e) => setResetPasswordEmail(e.target.value)}
               disabled={isProcessingReset}
+              className="bg-card/50"
             />
             
             {generatedResetLink && (
-              <div className="mt-4 p-4 bg-muted rounded-md">
-                <p className="text-sm font-medium mb-2">Återställningslänk:</p>
+              <div className="mt-3 p-3 bg-card/30 rounded-md">
+                <p className="text-xs font-medium mb-1">Återställningslänk:</p>
                 <div className="relative">
-                  <div className="text-sm break-all bg-background p-3 rounded border mb-2 max-h-24 overflow-y-auto">
+                  <div className="text-xs break-all bg-card/50 p-2 rounded border mb-2 max-h-20 overflow-y-auto">
                     {generatedResetLink}
                   </div>
                   <Button
                     type="button"
-                    variant="outline"
-                    className="w-full flex items-center justify-center gap-2"
+                    variant="secondary"
+                    className="w-full flex items-center justify-center gap-2 h-8 text-xs"
                     onClick={() => copyToClipboard(generatedResetLink)}
                   >
                     {copied === "reset" ? (
                       <>
-                        <Check className="h-4 w-4" />
+                        <Check className="h-3 w-3" />
                         Kopierad
                       </>
                     ) : (
                       <>
-                        <Copy className="h-4 w-4" />
+                        <Copy className="h-3 w-3" />
                         Kopiera länk
                       </>
                     )}
                   </Button>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Skicka denna länk till säljaren för att återställa lösenordet.
-                </p>
               </div>
             )}
           </div>
           <DialogFooter>
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setShowResetPasswordDialog(false)}
               disabled={isProcessingReset}
             >
@@ -937,12 +945,13 @@ const Invite = () => {
             </Button>
             {!generatedResetLink && (
               <Button 
+                size="sm"
                 onClick={generateResetPasswordLink}
                 disabled={isProcessingReset}
               >
                 {isProcessingReset ? (
                   <>
-                    <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-3 h-3 mr-1 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     Genererar...
                   </>
                 ) : (
@@ -956,28 +965,30 @@ const Invite = () => {
 
       {/* Delete Account Dialog */}
       <Dialog open={showDeleteAccountDialog} onOpenChange={setShowDeleteAccountDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Ta bort konto</DialogTitle>
             <DialogDescription>
-              Ange e-postadressen för kontot som ska tas bort permanent. Denna åtgärd kan inte ångras.
+              Ange e-postadressen för kontot som ska tas bort
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-3">
             <Input
               type="email"
               placeholder="E-postadress"
               value={deleteAccountEmail}
               onChange={(e) => setDeleteAccountEmail(e.target.value)}
               disabled={isProcessingDelete}
+              className="bg-card/50"
             />
-            <p className="text-sm text-destructive mt-2">
-              Varning: Detta kommer att ta bort användarkontot och all tillhörande data permanent.
+            <p className="text-xs text-destructive mt-2">
+              Varning: Detta tar bort kontot permanent
             </p>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setShowDeleteAccountDialog(false)}
               disabled={isProcessingDelete}
             >
@@ -985,12 +996,13 @@ const Invite = () => {
             </Button>
             <Button 
               variant="destructive"
+              size="sm"
               onClick={handleDeleteAccount}
               disabled={isProcessingDelete}
             >
               {isProcessingDelete ? (
                 <>
-                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-3 h-3 mr-1 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   Tar bort...
                 </>
               ) : (
