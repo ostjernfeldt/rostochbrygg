@@ -33,20 +33,7 @@ const Register = () => {
       try {
         console.log("Validating token:", token);
         
-        // Fetch directly from invitations table to debug
-        const { data: invitationData, error: invitationError } = await supabase
-          .from('invitations')
-          .select('*')
-          .eq('invitation_token', token)
-          .single();
-        
-        if (invitationError) {
-          console.error("Error fetching invitation:", invitationError);
-        } else {
-          console.log("Invitation data:", invitationData);
-        }
-
-        // Try the RPC function
+        // Validera token med Supabase-funktionen
         const { data, error } = await supabase
           .rpc('validate_invitation', { token });
 
