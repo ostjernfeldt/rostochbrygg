@@ -284,63 +284,25 @@ const Invite = () => {
     setShowDeleteDialog(false);
     
     try {
-      console.log("Deleting invitation with ID:", invitationId);
-      
-      // Försök med direkt RPC-anrop till en databasmetod (kan implementeras på supabase)
-      // Detta är ett alternativt sätt att utföra borttagning
-      // Om du inte har den anpassade funktionen ännu, använd metoden nedan
-      
-      // Försök med explicita parametrar för UUID
-      const { data: deleteData, error: deleteError, status } = await supabase
-        .from('invitations')
-        .delete()
-        .match({ id: invitationId });
-      
-      console.log("Delete response with match:", { deleteData, deleteError, status });
-      
-      if (deleteError) {
-        throw deleteError;
-      }
-      
-      // Verifiera borttagningen för att se om den faktiskt togs bort
-      const { data: checkData } = await supabase
-        .from('invitations')
-        .select('id')
-        .eq('id', invitationId);
-        
-      if (checkData && checkData.length > 0) {
-        console.log("Invitation still exists after delete, trying different approach");
-        
-        // Prova med alternativ metod genom att använda SQL direkt via RPC (kräver anpassad funktion)
-        // Detta är bara en pseudokod, du måste implementera funktionen på Supabase först
-        // const { error: rpcError } = await supabase.rpc('delete_invitation_by_id', { invitation_id: invitationId });
-        
-        // Om RPC inte är implementerad, prova ett tredje försök med annan syntaxmetod
-        const { error: thirdAttemptError } = await supabase
-          .from('invitations')
-          .delete()
-          .filter('id', 'eq', invitationId);
-          
-        if (thirdAttemptError) {
-          console.error("Third delete attempt failed:", thirdAttemptError);
-          throw thirdAttemptError;
-        }
-        
-        // Verifiera igen
-        const { data: finalCheckData } = await supabase
-          .from('invitations')
-          .select('id')
-          .eq('id', invitationId);
-          
-        if (finalCheckData && finalCheckData.length > 0) {
-          throw new Error("Kunde inte ta bort inbjudan efter flera försök");
-        }
-      }
-      
-      // 1. Uppdatera lokalt state direkt efter bekräftad borttagning
+      // 1. Uppdatera lokalt state direkt så att användaren får en omedelbar respons
       setInvitations(prevInvitations => 
         prevInvitations.filter(inv => inv.id !== invitationId)
       );
+      
+      console.log("Deleting invitation with ID:", invitationId);
+      
+      // 2. Genomför den faktiska borttagningen med ett enkelt anrop
+      const { error } = await supabase
+        .from('invitations')
+        .delete()
+        .eq('id', invitationId);
+      
+      if (error) {
+        console.error("Error deleting invitation:", error);
+        // Om något går fel, återställ UI och visa ett felmeddelande
+        fetchInvitations();
+        throw error;
+      }
       
       toast({
         title: "Inbjudan borttagen",
@@ -354,9 +316,6 @@ const Invite = () => {
         title: "Kunde inte ta bort inbjudan",
         description: error.message || "Ett fel uppstod när inbjudan skulle tas bort.",
       });
-      
-      // Hämta alla inbjudningar igen om borttagning misslyckades
-      fetchInvitations();
     } finally {
       setDeletingInvitation(null);
       setInvitationToDelete(null);
