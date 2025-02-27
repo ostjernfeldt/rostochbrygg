@@ -286,11 +286,6 @@ const Invite = () => {
     try {
       console.log("Deleting invitation with ID:", invitationId);
       
-      // Uppdatera först UI för direkt feedback
-      setInvitations(prevInvitations => 
-        prevInvitations.filter(inv => inv.id !== invitationId)
-      );
-      
       // Ta bort inbjudan direkt från databasen
       const { error: deleteError } = await supabase
         .from('invitations')
@@ -302,13 +297,15 @@ const Invite = () => {
         throw deleteError;
       }
       
+      // Uppdatera lokalt state när borttagningen lyckades
+      setInvitations(prevInvitations => 
+        prevInvitations.filter(inv => inv.id !== invitationId)
+      );
+      
       toast({
         title: "Inbjudan borttagen",
         description: `Inbjudan för ${invitationEmail} har tagits bort.`,
       });
-      
-      // Hämta inbjudningar igen för att säkerställa att UI är uppdaterat
-      await fetchInvitations();
       
     } catch (error: any) {
       console.error("Error during deletion:", error);
@@ -319,8 +316,8 @@ const Invite = () => {
         description: error.message || "Ett fel uppstod när inbjudan skulle tas bort.",
       });
       
-      // Hämta inbjudningar igen om något gick fel för att återställa UI
-      await fetchInvitations();
+      // Hämta inbjudningar igen om något gick fel
+      fetchInvitations();
     } finally {
       setDeletingInvitation(null);
       setInvitationToDelete(null);
