@@ -286,15 +286,16 @@ const Invite = () => {
     try {
       console.log("Deleting invitation with ID:", invitationId);
       
-      // Ta bort inbjudan direkt från databasen
-      const { error: deleteError } = await supabase
-        .from('invitations')
-        .delete()
-        .eq('id', invitationId);
+      // Använd den nya delete_invitation RPC-funktionen för att ta bort inbjudan
+      const { data, error, status } = await supabase.rpc('delete_invitation', {
+        invitation_id: invitationId
+      });
       
-      if (deleteError) {
-        console.error("Delete error:", deleteError);
-        throw deleteError;
+      console.log("RPC delete response:", { data, error, status });
+      
+      if (error) {
+        console.error("RPC delete error:", error);
+        throw error;
       }
       
       // Uppdatera lokalt state när borttagningen lyckades
