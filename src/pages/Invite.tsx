@@ -325,8 +325,9 @@ const Invite = () => {
       
       if (error) throw error;
       
-      // Ta bort från lokal data
-      setInvitations(invitations.filter(inv => inv.id !== invitationToDelete.id));
+      // Vänta på att borttagningen ska slutföras innan vi hämtar ny data
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await fetchInvitations();
       
       toast({
         title: "Inbjudan borttagen",
