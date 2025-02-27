@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { nanoid } from 'nanoid';
-import { Check, Copy, AlertTriangle, RefreshCw, Trash2, Key, UserX } from "lucide-react";
+import { Check, Copy, AlertTriangle, RefreshCw, Trash2, Key, UserX, ExternalLink } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
@@ -138,33 +138,34 @@ const Invite = () => {
     }
   };
 
-  const getFullAppUrl = () => {
-    // Produktions-URL - ska vara en absolut URL som fungerar på alla enheter
-    // Hämta från window.location för att få den faktiska domänen som används
+  // Extrahera domännamnet från URL:en
+  const getDomainName = () => {
+    // Hämta aktuell URL
     const currentUrl = window.location.href;
-    console.log("Current complete URL:", currentUrl);
+    console.log("Current URL:", currentUrl);
     
-    // Extrahera bas-URL:en (origin)
-    const originUrl = window.location.origin;
-    console.log("Origin URL:", originUrl);
-    
-    // Hämta hostname (domännamnet)
-    const hostname = window.location.hostname;
-    console.log("Hostname:", hostname);
-    
-    // Om vi använder localhost, ersätt med en publik URL om sådan finns
-    if (hostname === 'localhost' || hostname.includes('127.0.0.1')) {
-      console.log("Running on localhost - this might cause issues with links on mobile devices");
-      // Här kan du lägga till en hårdkodad produktions-URL om du vet vad den är
-      return originUrl;
+    // Skapa ett URL-objekt för enkel parsing
+    let url;
+    try {
+      url = new URL(currentUrl);
+      console.log("Parsed URL object:", url);
+    } catch (e) {
+      console.error("Failed to parse URL:", e);
+      return window.location.origin; // Fallback om URL inte kan tolkas
     }
     
-    // Kontrollera om vi kör på en development-preview (Lovable/Netlify/Vercel etc)
-    if (hostname.includes('preview') || hostname.includes('lovable.app')) {
-      console.log("Using preview URL");
-    }
+    // Hämta hostname och eventuell port
+    const hostname = url.hostname;
+    const port = url.port ? `:${url.port}` : '';
     
-    return originUrl;
+    console.log("Extracted hostname:", hostname);
+    console.log("Extracted port:", port);
+    
+    // Bygg bas-URL:en med protokoll, hostname och port
+    const baseUrl = `${url.protocol}//${hostname}${port}`;
+    console.log("Constructed base URL:", baseUrl);
+    
+    return baseUrl;
   };
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -223,10 +224,8 @@ const Invite = () => {
       console.log("Invitation created:", insertData);
 
       // Skapa inbjudningslänken med den korrekta URL:en
-      const baseUrl = getFullAppUrl();
-      // Använd absolut väg (ta bort eventuellt avslutande /)
-      const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-      const inviteLink = `${cleanBaseUrl}/#/register?token=${token}`;
+      const baseUrl = getDomainName();
+      const inviteLink = `${baseUrl}/#/register?token=${token}`;
       
       console.log("Generated invite link:", inviteLink);
       
@@ -269,10 +268,8 @@ const Invite = () => {
       if (error) throw error;
 
       // Skapa inbjudningslänken med den korrekta URL:en
-      const baseUrl = getFullAppUrl();
-      // Använd absolut väg (ta bort eventuellt avslutande /)
-      const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-      const inviteLink = `${cleanBaseUrl}/#/register?token=${newToken}`;
+      const baseUrl = getDomainName();
+      const inviteLink = `${baseUrl}/#/register?token=${newToken}`;
       
       setInvitations(invitations.map(inv => 
         inv.id === invitation.id 
@@ -318,10 +315,8 @@ const Invite = () => {
       const token = nanoid(32);
       
       // Skapa länken direkt utan att verifiera användaren eller kontakta Supabase
-      const baseUrl = getFullAppUrl();
-      // Använd absolut väg (ta bort eventuellt avslutande /)
-      const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-      const passwordResetLink = `${cleanBaseUrl}/#/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
+      const baseUrl = getDomainName();
+      const passwordResetLink = `${baseUrl}/#/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
       
       // Visa den genererade länken direkt
       setGeneratedResetLink(passwordResetLink);
@@ -479,9 +474,8 @@ const Invite = () => {
 
   const getInviteLink = (token: string) => {
     // Använd samma metod som när vi skapar länken för att säkerställa konsistens
-    const baseUrl = getFullAppUrl();
-    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-    return `${cleanBaseUrl}/#/register?token=${token}`;
+    const baseUrl = getDomainName();
+    return `${baseUrl}/#/register?token=${token}`;
   };
 
   const getStatusLabel = (invitation: Invitation) => {
@@ -771,39 +765,43 @@ const Invite = () => {
                       <div className="text-xs break-all bg-card/50 p-2 rounded border mb-2 max-h-20 overflow-y-auto">
                         {generatedLink}
                       </div>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className="w-full flex items-center justify-center gap-2 h-8 text-xs"
-                        onClick={() => copyToClipboard(generatedLink)}
-                      >
-                        {copied === "new" ? (
-                          <>
-                            <Check className="h-3 w-3" />
-                            Kopierad
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3 w-3" />
-                            Kopiera länk
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className="w-full flex items-center justify-center gap-2 h-8 text-xs"
+                          onClick={() => copyToClipboard(generatedLink)}
+                        >
+                          {copied === "new" ? (
+                            <>
+                              <Check className="h-3 w-3" />
+                              Kopierad
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3 w-3" />
+                              Kopiera länk
+                            </>
+                          )}
+                        </Button>
+                        
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full flex items-center justify-center gap-2 h-8 text-xs"
+                          onClick={() => {
+                            // Öppna länken direkt i en ny flik
+                            window.open(generatedLink, '_blank');
+                          }}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Testa länken
+                        </Button>
+                      </div>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
                       Länken är giltig i 7 dagar
                     </p>
-                    
-                    <div className="mt-3 border-t pt-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full text-xs h-8"
-                        onClick={() => window.open(generatedLink, '_blank')}
-                      >
-                        Öppna i ny flik
-                      </Button>
-                    </div>
                   </div>
                 )}
               </form>

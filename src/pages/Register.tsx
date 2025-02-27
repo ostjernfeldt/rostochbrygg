@@ -22,7 +22,7 @@ const Register = () => {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Log av alla URLSearchParams för att se vad vi faktiskt får
+    // Detaljerad loggning av URL-parametrar för att hjälpa vid felsökning
     console.log("All URLSearchParams:");
     for (const [key, value] of searchParams.entries()) {
       console.log(`${key}: ${value}`);
@@ -32,6 +32,7 @@ const Register = () => {
     console.log("Current URL:", window.location.href);
     console.log("Search params string:", window.location.search);
     console.log("Hash:", window.location.hash);
+    console.log("Current pathname:", window.location.pathname);
 
     const validateToken = async () => {
       // Kontrollera om token finns i URL:en
