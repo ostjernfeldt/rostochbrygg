@@ -144,13 +144,52 @@ const AppContent = () => {
 
   console.log("AppContent - Current location:", location.pathname);
   console.log("AppContent - Current userRole:", userRole, "isLoading:", isLoading);
-
-  // Extrahera token från URL om den finns i hash-format
+  
+  // Hantera token i URL för register-routen
   useEffect(() => {
-    const hash = location.hash;
-    // Om URL:en har ett format som /#/register?token=xyz, hantera det speciellt
-    if (hash && hash.includes('#/register?token=')) {
-      console.log("Found register with token in hash:", hash);
+    // Om vi är på rot-sidan och det finns ett token i URL:en, dirigera om till register-sidan
+    if (location.pathname === '/' || location.pathname === '') {
+      const url = window.location.href;
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(location.hash.replace('#', ''));
+      
+      // Kontrollera om token finns i URL:en
+      if (searchParams.has('token') || hashParams.has('token') || url.includes('token=')) {
+        console.log("Found token in URL, redirecting to register page");
+        
+        // Extrahera token
+        let token = searchParams.get('token') || hashParams.get('token');
+        
+        // Om token inte hittades i params, försök extrahera från URL-strängen
+        if (!token && url.includes('token=')) {
+          const tokenMatch = url.match(/token=([^&?#]+)/);
+          if (tokenMatch && tokenMatch[1]) {
+            token = tokenMatch[1];
+          }
+        }
+        
+        // Om token hittades, dirigera om till register med token som parameter
+        if (token) {
+          window.location.href = `/#/register?token=${encodeURIComponent(token)}`;
+        }
+      }
+    }
+    
+    // Hantera specifikt hash-routing format som innehåller token
+    if (location.hash && location.hash.includes('#/register?token=')) {
+      console.log("Found register with token in hash:", location.hash);
+      
+      // Extrahera token
+      const registerHashMatch = location.hash.match(/#\/register\?token=([^&?#]+)/);
+      if (registerHashMatch && registerHashMatch[1]) {
+        const token = registerHashMatch[1];
+        console.log("Extracted token from hash:", token);
+        
+        // Se till att URL:en är korrekt formaterad för vår routing
+        if (location.pathname !== '/register') {
+          window.location.href = `/#/register?token=${encodeURIComponent(token)}`;
+        }
+      }
     }
   }, [location]);
   
