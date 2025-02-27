@@ -284,30 +284,45 @@ const Invite = () => {
     setShowDeleteDialog(false);
     
     try {
-      // 1. Uppdatera lokalt state direkt så att användaren får en omedelbar respons
+      console.log("Deleting invitation with ID:", invitationId);
+      
+      // Uppdatera först UI för direkt feedback
       setInvitations(prevInvitations => 
         prevInvitations.filter(inv => inv.id !== invitationId)
       );
       
-      console.log("Deleting invitation with ID:", invitationId);
+      // Använd anpassad RPC-metod för att ta bort via Server - denna metod kan vara mer 
+      // pålitlig för att hantera UUID-formaten korrekt på serversidan
+      const { data, error, status } = await supabase.rpc('delete_invitation', {
+        invitation_id: invitationId
+      });
       
-      // 2. Genomför den faktiska borttagningen med ett enkelt anrop
-      const { error } = await supabase
-        .from('invitations')
-        .delete()
-        .eq('id', invitationId);
+      console.log("RPC delete response:", { data, error, status });
       
       if (error) {
-        console.error("Error deleting invitation:", error);
-        // Om något går fel, återställ UI och visa ett felmeddelande
-        fetchInvitations();
-        throw error;
+        console.error("RPC delete error:", error);
+        
+        // Fallback till direkt DELETE-metod om RPC misslyckas
+        console.log("Trying direct DELETE as fallback");
+        const { error: deleteError } = await supabase
+          .from('invitations')
+          .delete()
+          .eq('id', invitationId);
+        
+        if (deleteError) {
+          console.error("Direct delete error:", deleteError);
+          throw deleteError;
+        }
       }
       
       toast({
         title: "Inbjudan borttagen",
         description: `Inbjudan för ${invitationEmail} har tagits bort.`,
       });
+      
+      // Hämta inbjudningar igen för att säkerställa att UI är uppdaterat
+      await fetchInvitations();
+      
     } catch (error: any) {
       console.error("Error during deletion:", error);
       
@@ -316,6 +331,9 @@ const Invite = () => {
         title: "Kunde inte ta bort inbjudan",
         description: error.message || "Ett fel uppstod när inbjudan skulle tas bort.",
       });
+      
+      // Hämta inbjudningar igen om något gick fel för att återställa UI
+      await fetchInvitations();
     } finally {
       setDeletingInvitation(null);
       setInvitationToDelete(null);
