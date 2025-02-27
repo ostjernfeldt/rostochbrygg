@@ -11,6 +11,7 @@ import Home from "./pages/Home";
 import Leaderboard from "./pages/Leaderboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
 import Invite from "./pages/Invite";
 import TransactionList from "./pages/TransactionList";
 import Staff from "./pages/Staff";
@@ -157,6 +158,11 @@ const AppContent = () => {
             <Register />
           </PublicRoute>
         } />
+        <Route path="/reset-password" element={
+          <PublicRoute>
+            <ResetPassword />
+          </PublicRoute>
+        } />
         <Route path="/" element={
           <PrivateRoute requireAdmin={true}>
             <Home />
@@ -196,7 +202,10 @@ const AppContent = () => {
           userRole === 'admin' ? <Navigate to="/" replace /> : <Navigate to="/leaderboard" replace />
         } />
       </Routes>
-      {location.pathname !== '/login' && location.pathname !== '/register' && <BottomNav />}
+      {location.pathname !== '/login' && 
+       location.pathname !== '/register' && 
+       location.pathname !== '/reset-password' && 
+       <BottomNav />}
     </div>
   );
 };

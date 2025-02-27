@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { nanoid } from 'nanoid';
-import { Check, Copy, AlertTriangle, RefreshCw, Trash2 } from "lucide-react";
+import { Check, Copy, AlertTriangle, RefreshCw, Trash2, Key, UserX } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
@@ -21,6 +22,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Invitation = {
   id: string;
@@ -47,6 +56,12 @@ const Invite = () => {
   const [deletingInvitation, setDeletingInvitation] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [invitationToDelete, setInvitationToDelete] = useState<Invitation | null>(null);
+  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
+  const [resetPasswordEmail, setResetPasswordEmail] = useState("");
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [deleteAccountEmail, setDeleteAccountEmail] = useState("");
+  const [isProcessingReset, setIsProcessingReset] = useState(false);
+  const [isProcessingDelete, setIsProcessingDelete] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -259,6 +274,105 @@ const Invite = () => {
     }
   };
 
+  const handleResetPassword = async () => {
+    setIsProcessingReset(true);
+    try {
+      if (!resetPasswordEmail.trim() || !resetPasswordEmail.includes('@')) {
+        throw new Error("Vänligen ange en giltig e-postadress");
+      }
+
+      const baseUrl = getFullAppUrl();
+      const redirectUrl = `${baseUrl}/#/reset-password`;
+      
+      // Skicka lösenordsåterställningslänk via Supabase
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        resetPasswordEmail.trim(),
+        { redirectTo: redirectUrl }
+      );
+
+      if (error) throw error;
+
+      toast({
+        title: "Lösenordsåterställning skickad!",
+        description: `En återställningslänk har skickats till ${resetPasswordEmail}.`,
+      });
+
+      setShowResetPasswordDialog(false);
+      setResetPasswordEmail("");
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      toast({
+        variant: "destructive",
+        title: "Kunde inte skicka återställningslänk",
+        description: error.message || "Ett fel uppstod. Försök igen senare.",
+      });
+    } finally {
+      setIsProcessingReset(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsProcessingDelete(true);
+    try {
+      if (!deleteAccountEmail.trim() || !deleteAccountEmail.includes('@')) {
+        throw new Error("Vänligen ange en giltig e-postadress");
+      }
+
+      // Hämta användarinformation baserat på e-post
+      const { data: userData, error: userError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('email', deleteAccountEmail.trim())
+        .single();
+
+      if (userError) {
+        console.error("Error finding user:", userError);
+        if (userError.code === 'PGRST116') {
+          throw new Error(`Hittade ingen användare med e-postadressen ${deleteAccountEmail}`);
+        }
+        throw userError;
+      }
+
+      if (!userData?.user_id) {
+        throw new Error(`Hittade ingen användare med e-postadressen ${deleteAccountEmail}`);
+      }
+
+      // Använd admin-API för att ta bort användarkontot
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(
+        userData.user_id
+      );
+
+      if (deleteError) throw deleteError;
+
+      toast({
+        title: "Konto borttaget",
+        description: `Användarkontot för ${deleteAccountEmail} har tagits bort.`,
+      });
+
+      setShowDeleteAccountDialog(false);
+      setDeleteAccountEmail("");
+    } catch (error: any) {
+      console.error("Delete account error:", error);
+      
+      // Om vi får 403 Forbidden så saknar vi admin-behörighet, försök med ett annat sätt
+      if (error.status === 403 || error.message.includes("insufficient_permissions")) {
+        toast({
+          variant: "destructive",
+          title: "Behörighetsproblem",
+          description: "Du har inte behörighet att ta bort användare direkt. Kontakta system-administratören för att ta bort detta konto.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Kunde inte ta bort konto",
+          description: error.message || "Ett fel uppstod. Försök igen senare.",
+        });
+      }
+    } finally {
+      setIsProcessingDelete(false);
+    }
+  };
+
   const confirmDeleteInvitation = (invitation: Invitation) => {
     setInvitationToDelete(invitation);
     setShowDeleteDialog(true);
@@ -410,6 +524,31 @@ const Invite = () => {
                   </Button>
                 </>
               )}
+              {isUsed && (
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setResetPasswordEmail(invitation.email);
+                      setShowResetPasswordDialog(true);
+                    }}
+                  >
+                    <Key className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setDeleteAccountEmail(invitation.email);
+                      setShowDeleteAccountDialog(true);
+                    }}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <UserX className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
               <Button 
                 variant="outline" 
                 size="sm"
@@ -470,6 +609,33 @@ const Invite = () => {
                   </Button>
                 </>
               )}
+              {isUsed && (
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    title="Återställ lösenord"
+                    onClick={() => {
+                      setResetPasswordEmail(invitation.email);
+                      setShowResetPasswordDialog(true);
+                    }}
+                  >
+                    <Key className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    title="Ta bort konto"
+                    onClick={() => {
+                      setDeleteAccountEmail(invitation.email);
+                      setShowDeleteAccountDialog(true);
+                    }}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <UserX className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
               <Button 
                 variant="outline" 
                 size="sm"
@@ -522,6 +688,7 @@ const Invite = () => {
             <TabsList className={`mb-4 ${isMobile ? "w-full" : ""}`}>
               <TabsTrigger value="create" className={isMobile ? "flex-1" : ""}>Skapa ny inbjudan</TabsTrigger>
               <TabsTrigger value="manage" className={isMobile ? "flex-1" : ""}>Hantera inbjudningar</TabsTrigger>
+              <TabsTrigger value="account" className={isMobile ? "flex-1" : ""}>Hantera konton</TabsTrigger>
             </TabsList>
             
             <TabsContent value="create">
@@ -634,10 +801,51 @@ const Invite = () => {
                 {isLoadingInvitations ? "Uppdaterar..." : "Uppdatera lista"}
               </Button>
             </TabsContent>
+
+            <TabsContent value="account">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Återställ lösenord</CardTitle>
+                    <CardDescription>
+                      Skicka en länk för lösenordsåterställning till en säljare
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button 
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setShowResetPasswordDialog(true)}
+                    >
+                      <Key className="h-4 w-4 mr-2" /> Återställ lösenord
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Ta bort konto</CardTitle>
+                    <CardDescription>
+                      Ta bort en säljares konto permanent
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button 
+                      variant="outline"
+                      className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => setShowDeleteAccountDialog(true)}
+                    >
+                      <UserX className="h-4 w-4 mr-2" /> Ta bort konto
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
 
+      {/* Delete Invitation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -654,6 +862,96 @@ const Invite = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={showResetPasswordDialog} onOpenChange={setShowResetPasswordDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Återställ lösenord</DialogTitle>
+            <DialogDescription>
+              Ange e-postadressen för kontot som behöver ett nytt lösenord. En återställningslänk kommer att skickas via e-post.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              type="email"
+              placeholder="E-postadress"
+              value={resetPasswordEmail}
+              onChange={(e) => setResetPasswordEmail(e.target.value)}
+              disabled={isProcessingReset}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowResetPasswordDialog(false)}
+              disabled={isProcessingReset}
+            >
+              Avbryt
+            </Button>
+            <Button 
+              onClick={handleResetPassword}
+              disabled={isProcessingReset}
+            >
+              {isProcessingReset ? (
+                <>
+                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Skickar...
+                </>
+              ) : (
+                "Skicka återställningslänk"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Account Dialog */}
+      <Dialog open={showDeleteAccountDialog} onOpenChange={setShowDeleteAccountDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ta bort konto</DialogTitle>
+            <DialogDescription>
+              Ange e-postadressen för kontot som ska tas bort permanent. Denna åtgärd kan inte ångras.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              type="email"
+              placeholder="E-postadress"
+              value={deleteAccountEmail}
+              onChange={(e) => setDeleteAccountEmail(e.target.value)}
+              disabled={isProcessingDelete}
+            />
+            <p className="text-sm text-destructive mt-2">
+              Varning: Detta kommer att ta bort användarkontot och all tillhörande data permanent.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteAccountDialog(false)}
+              disabled={isProcessingDelete}
+            >
+              Avbryt
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={isProcessingDelete}
+            >
+              {isProcessingDelete ? (
+                <>
+                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Tar bort...
+                </>
+              ) : (
+                "Ta bort konto"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
