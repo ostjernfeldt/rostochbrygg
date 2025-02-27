@@ -144,6 +144,7 @@ const AppContent = () => {
   const location = useLocation();
   const { data: userRole, isLoading } = useUserRole();
 
+  console.log("AppContent - Current location:", location.pathname);
   console.log("AppContent - Current userRole:", userRole, "isLoading:", isLoading);
 
   return (
@@ -206,7 +207,7 @@ const AppContent = () => {
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename="/">
         <TooltipProvider>
           <Toaster />
           <Sonner />
