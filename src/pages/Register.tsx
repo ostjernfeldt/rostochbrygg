@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 const Register = () => {
   const [searchParams] = useSearchParams();
@@ -17,16 +19,13 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(true);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     const validateToken = async () => {
       if (!token) {
-        toast({
-          variant: "destructive",
-          title: "Ogiltig länk",
-          description: "Inbjudningslänken saknas eller är ogiltig.",
-        });
-        navigate("/login");
+        setValidationError("Inbjudningslänken saknas eller är ogiltig.");
+        setIsValidating(false);
         return;
       }
 
@@ -36,6 +35,10 @@ const Register = () => {
 
         if (error) throw error;
 
+        if (!data || data.length === 0) {
+          throw new Error("Inbjudningslänken kunde inte valideras.");
+        }
+
         const [validation] = data;
         if (!validation?.is_valid) {
           throw new Error("Inbjudningslänken har upphört eller redan använts.");
@@ -43,14 +46,11 @@ const Register = () => {
 
         setEmail(validation.email);
         setIsValidating(false);
+        setValidationError(null);
       } catch (error: any) {
         console.error("Token validation error:", error);
-        toast({
-          variant: "destructive",
-          title: "Ogiltig inbjudningslänk",
-          description: error.message || "Länken är ogiltig eller har upphört.",
-        });
-        navigate("/login");
+        setValidationError(error.message || "Inbjudningslänken saknas eller är ogiltig.");
+        setIsValidating(false);
       }
     };
 
@@ -97,8 +97,46 @@ const Register = () => {
 
   if (isValidating) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Validerar inbjudningslänk...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Validerar inbjudan</CardTitle>
+            <CardDescription>Vänligen vänta medan vi verifierar din inbjudningslänk...</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-center">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (validationError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Ogiltig länk</CardTitle>
+            <CardDescription>
+              Inbjudningslänken saknas eller är ogiltig.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert variant="destructive" className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Fel</AlertTitle>
+              <AlertDescription>{validationError}</AlertDescription>
+            </Alert>
+            <Button 
+              className="w-full" 
+              onClick={() => navigate("/login")}
+            >
+              Gå till inloggning
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

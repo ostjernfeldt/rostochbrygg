@@ -7,11 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { nanoid } from 'nanoid';
+import { Check, Copy } from "lucide-react";
 
 const Invite = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -20,6 +22,11 @@ const Invite = () => {
     setIsLoading(true);
     
     try {
+      // Validera e-postadressen
+      if (!email.trim() || !email.includes('@')) {
+        throw new Error("Vänligen ange en giltig e-postadress");
+      }
+
       // Skapa en unik token för inbjudan
       const token = nanoid(32);
       
@@ -51,6 +58,19 @@ const Invite = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    if (generatedLink) {
+      navigator.clipboard.writeText(generatedLink);
+      setCopied(true);
+      toast({
+        title: "Kopierad!",
+        description: "Inbjudningslänken har kopierats till urklipp.",
+      });
+      
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -87,21 +107,29 @@ const Invite = () => {
             {generatedLink && (
               <div className="mt-4 p-4 bg-muted rounded-md">
                 <p className="text-sm font-medium mb-2">Inbjudningslänk:</p>
-                <p className="text-sm break-all">{generatedLink}</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full mt-2"
-                  onClick={() => {
-                    navigator.clipboard.writeText(generatedLink);
-                    toast({
-                      title: "Kopierad!",
-                      description: "Inbjudningslänken har kopierats till urklipp.",
-                    });
-                  }}
-                >
-                  Kopiera länk
-                </Button>
+                <div className="relative">
+                  <div className="text-sm break-all bg-background p-3 rounded border mb-2 max-h-24 overflow-y-auto">
+                    {generatedLink}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full flex items-center justify-center gap-2"
+                    onClick={copyToClipboard}
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Kopierad
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" />
+                        Kopiera länk
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
           </form>
