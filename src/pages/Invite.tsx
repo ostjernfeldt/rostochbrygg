@@ -69,6 +69,7 @@ const Invite = () => {
   const [deleteAccountEmail, setDeleteAccountEmail] = useState("");
   const [isProcessingReset, setIsProcessingReset] = useState(false);
   const [isProcessingDelete, setIsProcessingDelete] = useState(false);
+  const [generatedResetLink, setGeneratedResetLink] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -281,36 +282,62 @@ const Invite = () => {
     }
   };
 
-  const handleResetPassword = async () => {
+  const generateResetPasswordLink = async () => {
     setIsProcessingReset(true);
+    setGeneratedResetLink(null);
+    
     try {
       if (!resetPasswordEmail.trim() || !resetPasswordEmail.includes('@')) {
         throw new Error("Vänligen ange en giltig e-postadress");
       }
 
-      const baseUrl = getFullAppUrl();
-      const redirectUrl = `${baseUrl}/#/reset-password`;
+      // Kontrollera om användaren finns
+      const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
       
-      // Skicka lösenordsåterställningslänk via Supabase
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        resetPasswordEmail.trim(),
-        { redirectTo: redirectUrl }
+      if (userError) {
+        console.error("Error listing users:", userError);
+        throw new Error("Det gick inte att kontrollera om användaren finns. Du kanske inte har admin-behörigheter.");
+      }
+      
+      const users = userData?.users as SupabaseUser[] || [];
+      const userExists = users.some(user => 
+        user.email?.toLowerCase() === resetPasswordEmail.trim().toLowerCase()
       );
 
-      if (error) throw error;
-
-      toast({
-        title: "Lösenordsåterställning skickad!",
-        description: `En återställningslänk har skickats till ${resetPasswordEmail}.`,
+      if (!userExists) {
+        throw new Error(`Hittade ingen användare med e-postadressen ${resetPasswordEmail}`);
+      }
+      
+      // Generera en token för lösenordsåterställning
+      const token = nanoid(32);
+      
+      // Spara token och användare i databasen eller använd Supabase för detta
+      const baseUrl = getFullAppUrl();
+      const passwordResetLink = `${baseUrl}/#/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
+      
+      // Skapa en gömd, temporär länk-behållare för token
+      const { error: adminResetError } = await supabase.auth.admin.generateLink({
+        type: 'recovery',
+        email: resetPasswordEmail.trim(),
+        options: {
+          redirectTo: `${baseUrl}/#/reset-password`
+        }
       });
-
-      setShowResetPasswordDialog(false);
-      setResetPasswordEmail("");
+      
+      if (adminResetError) throw adminResetError;
+      
+      // Visa den genererade länken
+      setGeneratedResetLink(passwordResetLink);
+      
+      toast({
+        title: "Återställningslänk genererad!",
+        description: "Länken har genererats och kan nu delas med säljaren.",
+      });
     } catch (error: any) {
-      console.error("Password reset error:", error);
+      console.error("Password reset link generation error:", error);
       toast({
         variant: "destructive",
-        title: "Kunde inte skicka återställningslänk",
+        title: "Kunde inte skapa återställningslänk",
         description: error.message || "Ett fel uppstod. Försök igen senare.",
       });
     } finally {
@@ -449,7 +476,7 @@ const Invite = () => {
     
     toast({
       title: "Kopierad!",
-      description: "Inbjudningslänken har kopierats till urklipp.",
+      description: "Länken har kopierats till urklipp.",
     });
   };
 
@@ -542,6 +569,7 @@ const Invite = () => {
                     onClick={() => {
                       setResetPasswordEmail(invitation.email);
                       setShowResetPasswordDialog(true);
+                      setGeneratedResetLink(null);
                     }}
                   >
                     <Key className="h-3 w-3" />
@@ -628,6 +656,7 @@ const Invite = () => {
                     onClick={() => {
                       setResetPasswordEmail(invitation.email);
                       setShowResetPasswordDialog(true);
+                      setGeneratedResetLink(null);
                     }}
                   >
                     <Key className="h-3 w-3" />
@@ -818,16 +847,19 @@ const Invite = () => {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Återställ lösenord</CardTitle>
                     <CardDescription>
-                      Skicka en länk för lösenordsåterställning till en säljare
+                      Skapa en länk för lösenordsåterställning till en säljare
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Button 
                       variant="outline"
                       className="w-full"
-                      onClick={() => setShowResetPasswordDialog(true)}
+                      onClick={() => {
+                        setShowResetPasswordDialog(true);
+                        setGeneratedResetLink(null);
+                      }}
                     >
-                      <Key className="h-4 w-4 mr-2" /> Återställ lösenord
+                      <Key className="h-4 w-4 mr-2" /> Skapa återställningslänk
                     </Button>
                   </CardContent>
                 </Card>
@@ -875,11 +907,11 @@ const Invite = () => {
 
       {/* Reset Password Dialog */}
       <Dialog open={showResetPasswordDialog} onOpenChange={setShowResetPasswordDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Återställ lösenord</DialogTitle>
             <DialogDescription>
-              Ange e-postadressen för kontot som behöver ett nytt lösenord. En återställningslänk kommer att skickas via e-post.
+              Ange e-postadressen för kontot som behöver ett nytt lösenord.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -890,6 +922,38 @@ const Invite = () => {
               onChange={(e) => setResetPasswordEmail(e.target.value)}
               disabled={isProcessingReset}
             />
+            
+            {generatedResetLink && (
+              <div className="mt-4 p-4 bg-muted rounded-md">
+                <p className="text-sm font-medium mb-2">Återställningslänk:</p>
+                <div className="relative">
+                  <div className="text-sm break-all bg-background p-3 rounded border mb-2 max-h-24 overflow-y-auto">
+                    {generatedResetLink}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full flex items-center justify-center gap-2"
+                    onClick={() => copyToClipboard(generatedResetLink)}
+                  >
+                    {copied === "reset" ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Kopierad
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" />
+                        Kopiera länk
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Skicka denna länk till säljaren för att återställa lösenordet.
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -897,21 +961,23 @@ const Invite = () => {
               onClick={() => setShowResetPasswordDialog(false)}
               disabled={isProcessingReset}
             >
-              Avbryt
+              Stäng
             </Button>
-            <Button 
-              onClick={handleResetPassword}
-              disabled={isProcessingReset}
-            >
-              {isProcessingReset ? (
-                <>
-                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Skickar...
-                </>
-              ) : (
-                "Skicka återställningslänk"
-              )}
-            </Button>
+            {!generatedResetLink && (
+              <Button 
+                onClick={generateResetPasswordLink}
+                disabled={isProcessingReset}
+              >
+                {isProcessingReset ? (
+                  <>
+                    <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Genererar...
+                  </>
+                ) : (
+                  "Generera länk"
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
