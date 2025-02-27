@@ -1,6 +1,6 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,13 +52,12 @@ const useUserRole = () => {
         return roleData?.role || "user";
       } catch (error) {
         console.error("Unexpected error in useUserRole:", error);
-        return null; // Ändrat från "user" till null för att hantera fallet där ingen session finns
+        return null;
       }
     },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 1000 * 60 * 5,
     retry: 3,
-    // Undvik att köra queryn om användaren inte är inloggad
-    enabled: false // Vi kommer manuellt att trigga detta när vi vet att en session finns
+    enabled: false
   });
 };
 
@@ -88,7 +87,6 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
         }
         
         setIsAuthenticated(true);
-        // Endast hämta användarroll om vi har en session
         refetch();
       } catch (error) {
         console.error("Session check error:", error);
@@ -107,7 +105,6 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
         navigate('/login');
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         setIsAuthenticated(true);
-        // Uppdatera användarrollen när auth-tillståndet ändras
         refetch();
       }
     });
@@ -207,13 +204,13 @@ const AppContent = () => {
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename="/">
+      <HashRouter>
         <TooltipProvider>
           <Toaster />
           <Sonner />
           <AppContent />
         </TooltipProvider>
-      </BrowserRouter>
+      </HashRouter>
     </QueryClientProvider>
   );
 };

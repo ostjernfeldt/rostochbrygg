@@ -30,6 +30,8 @@ const Register = () => {
     
     console.log("Token from searchParams:", token);
     console.log("Current URL:", window.location.href);
+    console.log("Search params string:", window.location.search);
+    console.log("Hash:", window.location.hash);
 
     const validateToken = async () => {
       // Kontrollera om token finns i URL:en

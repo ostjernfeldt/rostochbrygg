@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -116,17 +115,13 @@ const Invite = () => {
     }
   };
 
-  // Funktion för att generera den fullständiga URL:en med korrekt domän
   const getFullAppUrl = () => {
-    // Hämta hela den aktuella webbadressen
     const currentUrl = window.location.href;
     console.log("Current complete URL:", currentUrl);
     
-    // Hämta bara protokoll + värdnamn (utan sökväg eller parametrar)
     const baseUrl = window.location.origin;
     console.log("Base URL from origin:", baseUrl);
     
-    // Hämta bara värdnamnet
     const hostname = window.location.hostname;
     console.log("Hostname:", hostname);
     
@@ -188,9 +183,8 @@ const Invite = () => {
 
       console.log("Invitation created:", insertData);
 
-      // Använd den nya funktionen för att få korrekt URL
       const baseUrl = getFullAppUrl();
-      const inviteLink = `${baseUrl}/register?token=${token}`;
+      const inviteLink = `${baseUrl}/#/register?token=${token}`;
       console.log("Generated invite link:", inviteLink);
       
       setGeneratedLink(inviteLink);
@@ -231,9 +225,8 @@ const Invite = () => {
       
       if (error) throw error;
 
-      // Använd den nya funktionen för att få korrekt URL
       const baseUrl = getFullAppUrl();
-      const inviteLink = `${baseUrl}/register?token=${newToken}`;
+      const inviteLink = `${baseUrl}/#/register?token=${newToken}`;
       
       setInvitations(invitations.map(inv => 
         inv.id === invitation.id 
@@ -336,9 +329,8 @@ const Invite = () => {
   };
 
   const getInviteLink = (token: string) => {
-    // Använd den nya funktionen för att få korrekt URL
     const baseUrl = getFullAppUrl();
-    return `${baseUrl}/register?token=${token}`;
+    return `${baseUrl}/#/register?token=${token}`;
   };
 
   const getStatusLabel = (invitation: Invitation) => {
