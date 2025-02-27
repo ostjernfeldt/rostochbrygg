@@ -7,16 +7,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { nanoid } from 'nanoid';
-import { Check, Copy, AlertTriangle } from "lucide-react";
+import { Check, Copy, AlertTriangle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "date-fns";
+
+// Definiera en typ för inbjudningar
+type Invitation = {
+  id: string;
+  email: string;
+  created_at: string;
+  expires_at: string;
+  used_at: string | null;
+  invitation_token: string;
+};
 
 const Invite = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingInvitations, setIsLoadingInvitations] = useState(true);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [regenerateLoading, setRegenerateLoading] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -29,11 +44,37 @@ const Invite = () => {
         setIsLoggedIn(false);
       } else {
         setIsLoggedIn(!!data.session);
+        if (data.session) {
+          fetchInvitations();
+        }
       }
     };
 
     checkAuth();
   }, []);
+
+  const fetchInvitations = async () => {
+    setIsLoadingInvitations(true);
+    try {
+      const { data, error } = await supabase
+        .from('invitations')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      setInvitations(data || []);
+    } catch (error) {
+      console.error("Error fetching invitations:", error);
+      toast({
+        variant: "destructive",
+        title: "Kunde inte hämta inbjudningar",
+        description: "Ett fel uppstod när inbjudningarna skulle hämtas.",
+      });
+    } finally {
+      setIsLoadingInvitations(false);
+    }
+  };
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +143,9 @@ const Invite = () => {
       
       setGeneratedLink(inviteLink);
 
+      // Uppdatera listan med inbjudningar
+      fetchInvitations();
+
       // Rensa formuläret
       setEmail("");
 
@@ -122,17 +166,75 @@ const Invite = () => {
     }
   };
 
-  const copyToClipboard = () => {
-    if (generatedLink) {
-      navigator.clipboard.writeText(generatedLink);
-      setCopied(true);
-      toast({
-        title: "Kopierad!",
-        description: "Inbjudningslänken har kopierats till urklipp.",
-      });
+  const regenerateInviteLink = async (invitation: Invitation) => {
+    setRegenerateLoading(invitation.id);
+    try {
+      // Skapa en ny token
+      const newToken = nanoid(32);
       
-      setTimeout(() => setCopied(false), 2000);
+      // Uppdatera inbjudan i databasen
+      const { error } = await supabase
+        .from('invitations')
+        .update({
+          invitation_token: newToken,
+          // Förnya utgångsdatum om inbjudan har förfallit
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        })
+        .eq('id', invitation.id);
+      
+      if (error) throw error;
+
+      // Generera ny inbjudningslänk
+      const baseUrl = window.location.origin;
+      const inviteLink = `${baseUrl}/register?token=${newToken}`;
+      
+      // Uppdatera lokal data
+      setInvitations(invitations.map(inv => 
+        inv.id === invitation.id 
+          ? {...inv, invitation_token: newToken, expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()} 
+          : inv
+      ));
+
+      // Kopiera länkar automatiskt till urklipp
+      navigator.clipboard.writeText(inviteLink);
+      setCopied(invitation.id);
+      setTimeout(() => setCopied(null), 2000);
+
+      toast({
+        title: "Ny länk genererad!",
+        description: "En ny inbjudningslänk har skapats och kopierats till urklipp.",
+      });
+    } catch (error: any) {
+      console.error("Error regenerating invite link:", error);
+      toast({
+        variant: "destructive",
+        title: "Kunde inte generera ny länk",
+        description: error.message || "Ett fel uppstod. Försök igen senare.",
+      });
+    } finally {
+      setRegenerateLoading(null);
     }
+  };
+
+  const copyToClipboard = (link: string, id?: string) => {
+    navigator.clipboard.writeText(link);
+    if (id) {
+      setCopied(id);
+      setTimeout(() => setCopied(null), 2000);
+    } else {
+      setCopied("new");
+      setTimeout(() => setCopied(null), 2000);
+    }
+    
+    toast({
+      title: "Kopierad!",
+      description: "Inbjudningslänken har kopierats till urklipp.",
+    });
+  };
+
+  const getInviteLink = (token: string) => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/register?token=${token}`;
   };
 
   if (isLoggedIn === false) {
@@ -160,73 +262,168 @@ const Invite = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-3xl">
         <CardHeader>
           <CardTitle>Bjud in säljare</CardTitle>
           <CardDescription>
-            Skapa en inbjudningslänk för en ny säljare
+            Hantera inbjudningar för nya säljare
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {errorMessage && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{errorMessage}</AlertDescription>
-            </Alert>
-          )}
-          
-          <form onSubmit={handleInvite} className="space-y-4">
-            <div className="space-y-2">
-              <Input
-                type="email"
-                placeholder="Säljarens e-postadress"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
+          <Tabs defaultValue="create">
+            <TabsList className="mb-4">
+              <TabsTrigger value="create">Skapa ny inbjudan</TabsTrigger>
+              <TabsTrigger value="manage">Hantera inbjudningar</TabsTrigger>
+            </TabsList>
             
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? "Skapar..." : "Skapa inbjudningslänk"}
-            </Button>
-
-            {generatedLink && (
-              <div className="mt-4 p-4 bg-muted rounded-md">
-                <p className="text-sm font-medium mb-2">Inbjudningslänk:</p>
-                <div className="relative">
-                  <div className="text-sm break-all bg-background p-3 rounded border mb-2 max-h-24 overflow-y-auto">
-                    {generatedLink}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full flex items-center justify-center gap-2"
-                    onClick={copyToClipboard}
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="h-4 w-4" />
-                        Kopierad
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4" />
-                        Kopiera länk
-                      </>
-                    )}
-                  </Button>
+            <TabsContent value="create">
+              {errorMessage && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
+              )}
+              
+              <form onSubmit={handleInvite} className="space-y-4">
+                <div className="space-y-2">
+                  <Input
+                    type="email"
+                    placeholder="Säljarens e-postadress"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={isLoading}
+                  />
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Denna länk är giltig i 7 dagar. Säljaren kommer att kunna välja sitt lösenord när de registrerar sig.
-                </p>
-              </div>
-            )}
-          </form>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Skapar..." : "Skapa inbjudningslänk"}
+                </Button>
+
+                {generatedLink && (
+                  <div className="mt-4 p-4 bg-muted rounded-md">
+                    <p className="text-sm font-medium mb-2">Inbjudningslänk:</p>
+                    <div className="relative">
+                      <div className="text-sm break-all bg-background p-3 rounded border mb-2 max-h-24 overflow-y-auto">
+                        {generatedLink}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full flex items-center justify-center gap-2"
+                        onClick={() => copyToClipboard(generatedLink)}
+                      >
+                        {copied === "new" ? (
+                          <>
+                            <Check className="h-4 w-4" />
+                            Kopierad
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4" />
+                            Kopiera länk
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Denna länk är giltig i 7 dagar. Säljaren kommer att kunna välja sitt lösenord när de registrerar sig.
+                    </p>
+                  </div>
+                )}
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="manage">
+              {isLoadingInvitations ? (
+                <div className="flex justify-center my-8">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : invitations.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Inga inbjudningar har skapats än.
+                </div>
+              ) : (
+                <div className="border rounded-md">
+                  <div className="grid grid-cols-12 bg-muted p-3 border-b text-sm font-medium">
+                    <div className="col-span-4">E-post</div>
+                    <div className="col-span-3">Skapad</div>
+                    <div className="col-span-3">Status</div>
+                    <div className="col-span-2">Åtgärd</div>
+                  </div>
+                  <div className="divide-y">
+                    {invitations.map((invitation) => {
+                      const isExpired = new Date(invitation.expires_at) < new Date();
+                      const isUsed = invitation.used_at !== null;
+                      const inviteLink = getInviteLink(invitation.invitation_token);
+                      
+                      return (
+                        <div key={invitation.id} className="grid grid-cols-12 p-3 text-sm items-center">
+                          <div className="col-span-4 font-medium">{invitation.email}</div>
+                          <div className="col-span-3 text-muted-foreground">
+                            {format(new Date(invitation.created_at), 'yyyy-MM-dd')}
+                          </div>
+                          <div className="col-span-3">
+                            {isUsed ? (
+                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                                Använd
+                              </span>
+                            ) : isExpired ? (
+                              <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
+                                Utgången
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                                Aktiv
+                              </span>
+                            )}
+                          </div>
+                          <div className="col-span-2 flex gap-2">
+                            {!isUsed && (
+                              <>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => copyToClipboard(inviteLink, invitation.id)}
+                                  disabled={regenerateLoading === invitation.id}
+                                >
+                                  {copied === invitation.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => regenerateInviteLink(invitation)}
+                                  disabled={regenerateLoading === invitation.id}
+                                >
+                                  {regenerateLoading === invitation.id ? 
+                                    <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div> : 
+                                    <RefreshCw className="h-3 w-3" />
+                                  }
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={fetchInvitations}
+                disabled={isLoadingInvitations}
+              >
+                {isLoadingInvitations ? "Uppdaterar..." : "Uppdatera lista"}
+              </Button>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
