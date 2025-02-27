@@ -88,47 +88,8 @@ const Invite = () => {
         continue;
       }
       
-      // Kontrollera om det finns en användare med denna e-post i auth
-      try {
-        // Eftersom vi inte kan söka direkt i auth.users via API:et,
-        // använder vi user_roles för att försöka hitta om det finns en användare med denna e-post
-        const { data: userRoles, error: userRolesError } = await supabase
-          .from('user_roles')
-          .select('*')
-          .eq('user_id', invitation.email);
-          
-        if (userRolesError) {
-          console.error("Error checking user roles:", userRolesError);
-        }
-        
-        // Användaren har registrerats men inbjudan är inte markerad som använd
-        if (userRoles && userRoles.length > 0) {
-          statuses[invitation.id] = 'pending';
-          continue;
-        }
-        
-        // Kontrollera med en annan metod (genom profiles om det finns)
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', invitation.email);
-          
-        if (profilesError) {
-          console.error("Error checking profiles:", profilesError);
-        }
-        
-        if (profiles && profiles.length > 0) {
-          statuses[invitation.id] = 'pending';
-          continue;
-        }
-        
-        // Om vi inte kan bekräfta att användaren finns, markera som aktiv
-        statuses[invitation.id] = 'active';
-        
-      } catch (error) {
-        console.error("Error verifying invitation status:", error);
-        statuses[invitation.id] = 'active'; // Default om något går fel
-      }
+      // Sätt status som aktiv om inget av ovanstående villkor uppfylls
+      statuses[invitation.id] = 'active';
     }
     
     setInvitationStatuses(statuses);
@@ -343,30 +304,6 @@ const Invite = () => {
         throw error;
       }
       
-      // Försök ett alternativt angrepp om vi misstänker att det första inte fungerade
-      // Vissa gånger behöver vi bekräfta borttagning genom att kontrollera om posten fortfarande finns
-      const { data: checkData, error: checkError } = await supabase
-        .from('invitations')
-        .select('id')
-        .eq('id', invitationId);
-        
-      if (!checkError && checkData && checkData.length > 0) {
-        console.log("Invitation still exists after delete, trying UUID format");
-        // Försök igen med UUID-format explicit
-        const { error: secondDeleteError } = await supabase
-          .from('invitations')
-          .delete()
-          .filter('id', 'eq', invitationId);
-          
-        if (secondDeleteError) {
-          console.error("Second delete attempt failed:", secondDeleteError);
-        } else {
-          console.log("Second delete attempt succeeded");
-        }
-      } else {
-        console.log("Invitation successfully deleted on first attempt");
-      }
-      
       toast({
         title: "Inbjudan borttagen",
         description: `Inbjudan för ${invitationEmail} har tagits bort.`,
@@ -380,7 +317,7 @@ const Invite = () => {
         description: error.message || "Ett fel uppstod när inbjudan skulle tas bort.",
       });
       
-      // Återställ UI-state om borttagning misslyckades
+      // Hämta alla inbjudningar igen om borttagning misslyckades
       fetchInvitations();
     } finally {
       setDeletingInvitation(null);
