@@ -291,28 +291,15 @@ const Invite = () => {
         prevInvitations.filter(inv => inv.id !== invitationId)
       );
       
-      // Använd anpassad RPC-metod för att ta bort via Server - denna metod kan vara mer 
-      // pålitlig för att hantera UUID-formaten korrekt på serversidan
-      const { data, error, status } = await supabase.rpc('delete_invitation', {
-        invitation_id: invitationId
-      });
+      // Ta bort inbjudan direkt från databasen
+      const { error: deleteError } = await supabase
+        .from('invitations')
+        .delete()
+        .eq('id', invitationId);
       
-      console.log("RPC delete response:", { data, error, status });
-      
-      if (error) {
-        console.error("RPC delete error:", error);
-        
-        // Fallback till direkt DELETE-metod om RPC misslyckas
-        console.log("Trying direct DELETE as fallback");
-        const { error: deleteError } = await supabase
-          .from('invitations')
-          .delete()
-          .eq('id', invitationId);
-        
-        if (deleteError) {
-          console.error("Direct delete error:", deleteError);
-          throw deleteError;
-        }
+      if (deleteError) {
+        console.error("Delete error:", deleteError);
+        throw deleteError;
       }
       
       toast({

@@ -486,6 +486,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_invitation: {
+        Args: {
+          invitation_id: string
+        }
+        Returns: boolean
+      }
       get_user_role: {
         Args: {
           user_id: string
