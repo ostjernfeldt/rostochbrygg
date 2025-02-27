@@ -118,7 +118,7 @@ const Invite = () => {
       setInvitations(data || []);
       
       await verifyInvitationStatus(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching invitations:", error);
       toast({
         variant: "destructive",
@@ -318,28 +318,29 @@ const Invite = () => {
         throw new Error("Vänligen ange en giltig e-postadress");
       }
 
-      // Hämta användarinformation baserat på e-post
-      const { data: userData, error: userError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('email', deleteAccountEmail.trim())
-        .single();
+      // Här behöver vi söka efter användaren baserat på e-post i user_roles tabellen
+      // Vi kan dock inte använda email som kolumnnamn eftersom det inte finns direkt i tabellen
+      // Istället måste vi använda ett annat sätt för att hitta användaren
 
-      if (userError) {
-        console.error("Error finding user:", userError);
-        if (userError.code === 'PGRST116') {
-          throw new Error(`Hittade ingen användare med e-postadressen ${deleteAccountEmail}`);
-        }
-        throw userError;
+      // Försök att hitta användaren direkt via Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error("Error listing users:", authError);
+        throw new Error("Det gick inte att hämta användare. Du kanske inte har admin-behörigheter.");
       }
+      
+      const userToDelete = authData?.users?.find(user => 
+        user.email?.toLowerCase() === deleteAccountEmail.trim().toLowerCase()
+      );
 
-      if (!userData?.user_id) {
+      if (!userToDelete) {
         throw new Error(`Hittade ingen användare med e-postadressen ${deleteAccountEmail}`);
       }
 
       // Använd admin-API för att ta bort användarkontot
       const { error: deleteError } = await supabase.auth.admin.deleteUser(
-        userData.user_id
+        userToDelete.id
       );
 
       if (deleteError) throw deleteError;
@@ -448,8 +449,6 @@ const Invite = () => {
   };
 
   const getStatusLabel = (invitation: Invitation) => {
-    const status = invitationStatuses[invitation.id];
-    
     if (invitation.used_at !== null) {
       return {
         label: "Använd",
@@ -464,6 +463,7 @@ const Invite = () => {
       };
     }
     
+    const status = invitationStatuses[invitation.id];
     if (status === 'pending') {
       return {
         label: "Inloggning krävs",
