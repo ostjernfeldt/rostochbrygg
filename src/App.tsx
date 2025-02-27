@@ -145,6 +145,15 @@ const AppContent = () => {
   console.log("AppContent - Current location:", location.pathname);
   console.log("AppContent - Current userRole:", userRole, "isLoading:", isLoading);
 
+  // Extrahera token från URL om den finns i hash-format
+  useEffect(() => {
+    const hash = location.hash;
+    // Om URL:en har ett format som /#/register?token=xyz, hantera det speciellt
+    if (hash && hash.includes('#/register?token=')) {
+      console.log("Found register with token in hash:", hash);
+    }
+  }, [location]);
+  
   return (
     <div className="min-h-screen bg-background">
       <Routes>

@@ -138,34 +138,14 @@ const Invite = () => {
     }
   };
 
-  // Extrahera domännamnet från URL:en
-  const getDomainName = () => {
-    // Hämta aktuell URL
-    const currentUrl = window.location.href;
-    console.log("Current URL:", currentUrl);
+  // Skapa en absolut URL som fungerar överallt
+  const getAbsoluteUrl = () => {
+    // Prioritera att använda window.location.origin som är den mest pålitliga källan
+    const origin = window.location.origin;
+    console.log("Origin used for creating links:", origin);
     
-    // Skapa ett URL-objekt för enkel parsing
-    let url;
-    try {
-      url = new URL(currentUrl);
-      console.log("Parsed URL object:", url);
-    } catch (e) {
-      console.error("Failed to parse URL:", e);
-      return window.location.origin; // Fallback om URL inte kan tolkas
-    }
-    
-    // Hämta hostname och eventuell port
-    const hostname = url.hostname;
-    const port = url.port ? `:${url.port}` : '';
-    
-    console.log("Extracted hostname:", hostname);
-    console.log("Extracted port:", port);
-    
-    // Bygg bas-URL:en med protokoll, hostname och port
-    const baseUrl = `${url.protocol}//${hostname}${port}`;
-    console.log("Constructed base URL:", baseUrl);
-    
-    return baseUrl;
+    // Se till att URL:en har rätt format utan trailing slash
+    return origin;
   };
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -223,10 +203,9 @@ const Invite = () => {
 
       console.log("Invitation created:", insertData);
 
-      // Skapa inbjudningslänken med den korrekta URL:en
-      const baseUrl = getDomainName();
-      const inviteLink = `${baseUrl}/#/register?token=${token}`;
-      
+      // Skapa enkel URL utan hash-symbol i början
+      const baseUrl = getAbsoluteUrl();
+      const inviteLink = `${baseUrl}/register?token=${token}`;
       console.log("Generated invite link:", inviteLink);
       
       setGeneratedLink(inviteLink);
@@ -268,8 +247,8 @@ const Invite = () => {
       if (error) throw error;
 
       // Skapa inbjudningslänken med den korrekta URL:en
-      const baseUrl = getDomainName();
-      const inviteLink = `${baseUrl}/#/register?token=${newToken}`;
+      const baseUrl = getAbsoluteUrl();
+      const inviteLink = `${baseUrl}/register?token=${newToken}`;
       
       setInvitations(invitations.map(inv => 
         inv.id === invitation.id 
@@ -315,8 +294,8 @@ const Invite = () => {
       const token = nanoid(32);
       
       // Skapa länken direkt utan att verifiera användaren eller kontakta Supabase
-      const baseUrl = getDomainName();
-      const passwordResetLink = `${baseUrl}/#/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
+      const baseUrl = getAbsoluteUrl();
+      const passwordResetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
       
       // Visa den genererade länken direkt
       setGeneratedResetLink(passwordResetLink);
@@ -474,8 +453,8 @@ const Invite = () => {
 
   const getInviteLink = (token: string) => {
     // Använd samma metod som när vi skapar länken för att säkerställa konsistens
-    const baseUrl = getDomainName();
-    return `${baseUrl}/#/register?token=${token}`;
+    const baseUrl = getAbsoluteUrl();
+    return `${baseUrl}/register?token=${token}`;
   };
 
   const getStatusLabel = (invitation: Invitation) => {

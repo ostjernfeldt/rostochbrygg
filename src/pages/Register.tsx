@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,15 +11,28 @@ import { AlertTriangle } from "lucide-react";
 
 const Register = () => {
   const [searchParams] = useSearchParams();
-  const token = searchParams.get("token");
+  const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Försök hämta token från olika ställen
+  const tokenFromSearchParams = searchParams.get("token");
+  const hashParams = new URLSearchParams(location.hash.replace('#/register?', ''));
+  const tokenFromHash = hashParams.get("token");
+  const token = tokenFromSearchParams || tokenFromHash || extractTokenFromUrl();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Funktion för att extrahera token från URL:en direkt om andra metoder misslyckas
+  function extractTokenFromUrl() {
+    const url = window.location.href;
+    const tokenMatch = url.match(/[?&]token=([^&]+)/);
+    return tokenMatch ? tokenMatch[1] : null;
+  }
 
   useEffect(() => {
     // Detaljerad loggning av URL-parametrar för att hjälpa vid felsökning
@@ -28,10 +41,17 @@ const Register = () => {
       console.log(`${key}: ${value}`);
     }
     
-    console.log("Token from searchParams:", token);
+    console.log("Token sources:", {
+      tokenFromSearchParams: tokenFromSearchParams,
+      tokenFromHash: tokenFromHash,
+      extractedToken: extractTokenFromUrl(),
+      finalToken: token
+    });
+    
     console.log("Current URL:", window.location.href);
     console.log("Search params string:", window.location.search);
     console.log("Hash:", window.location.hash);
+    console.log("Location state:", location.state);
     console.log("Current pathname:", window.location.pathname);
 
     const validateToken = async () => {
@@ -102,7 +122,7 @@ const Register = () => {
     };
 
     validateToken();
-  }, [token, searchParams]);
+  }, [token, searchParams, location, tokenFromSearchParams, tokenFromHash]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
