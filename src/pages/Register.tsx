@@ -22,14 +22,25 @@ const Register = () => {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Log av alla URLSearchParams för att se vad vi faktiskt får
+    console.log("All URLSearchParams:");
+    for (const [key, value] of searchParams.entries()) {
+      console.log(`${key}: ${value}`);
+    }
+    
+    console.log("Token from searchParams:", token);
+    console.log("Current URL:", window.location.href);
+
     const validateToken = async () => {
+      // Kontrollera om token finns i URL:en
       if (!token) {
-        console.error("No token provided");
+        console.error("No token provided in URL");
         setValidationError("Inbjudningslänken saknas eller är ogiltig.");
         setIsValidating(false);
         return;
       }
 
+      // Fortsätt med validering
       try {
         console.log("Validating token:", token);
         
@@ -42,8 +53,14 @@ const Register = () => {
         
         if (invitationError) {
           console.error("Error fetching invitation:", invitationError);
+          if (invitationError.code === 'PGRST116') {
+            throw new Error("Inbjudningslänken hittades inte. Token: " + token);
+          }
         } else {
-          console.log("Invitation data:", invitationData);
+          console.log("Invitation data found:", invitationData);
+          if (!invitationData) {
+            throw new Error("Ingen inbjudan hittades med denna token.");
+          }
         }
         
         // Validera token med Supabase-funktionen
@@ -82,13 +99,17 @@ const Register = () => {
     };
 
     validateToken();
-  }, [token]);
+  }, [token, searchParams]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      if (!token) {
+        throw new Error("Inbjudningslänken är ogiltig. Försök igen eller kontakta administratören.");
+      }
+      
       console.log("Creating account with email:", email);
       
       // Skapa användarkonto
@@ -216,7 +237,7 @@ const Register = () => {
             <Button 
               type="submit" 
               className="w-full"
-              disabled={isLoading}
+              disabled={isLoading || !token}
             >
               {isLoading ? "Skapar konto..." : "Skapa konto"}
             </Button>
