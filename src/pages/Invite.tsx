@@ -22,6 +22,8 @@ type Invitation = {
   invitation_token: string;
 };
 
+type InvitationStatus = 'active' | 'expired' | 'used' | 'pending';
+
 const Invite = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -31,6 +33,7 @@ const Invite = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [invitationStatuses, setInvitationStatuses] = useState<Record<string, InvitationStatus>>({});
   const [regenerateLoading, setRegenerateLoading] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -53,6 +56,69 @@ const Invite = () => {
     checkAuth();
   }, []);
 
+  const verifyInvitationStatus = async (invitations: Invitation[]) => {
+    const statuses: Record<string, InvitationStatus> = {};
+    
+    // Kontrollera varje inbjudan
+    for (const invitation of invitations) {
+      // Om den redan är markerad som använd
+      if (invitation.used_at !== null) {
+        statuses[invitation.id] = 'used';
+        continue;
+      }
+      
+      // Om den har gått ut
+      if (new Date(invitation.expires_at) < new Date()) {
+        statuses[invitation.id] = 'expired';
+        continue;
+      }
+      
+      // Kontrollera om det finns en användare med denna e-post i auth
+      try {
+        // Eftersom vi inte kan söka direkt i auth.users via API:et,
+        // använder vi user_roles för att försöka hitta om det finns en användare med denna e-post
+        const { data: userRoles, error: userRolesError } = await supabase
+          .from('user_roles')
+          .select('*')
+          .eq('user_id', invitation.email);
+          
+        if (userRolesError) {
+          console.error("Error checking user roles:", userRolesError);
+        }
+        
+        // Användaren har registrerats men inbjudan är inte markerad som använd
+        if (userRoles && userRoles.length > 0) {
+          statuses[invitation.id] = 'pending';
+          continue;
+        }
+        
+        // Kontrollera med en annan metod (genom profiles om det finns)
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', invitation.email);
+          
+        if (profilesError) {
+          console.error("Error checking profiles:", profilesError);
+        }
+        
+        if (profiles && profiles.length > 0) {
+          statuses[invitation.id] = 'pending';
+          continue;
+        }
+        
+        // Om vi inte kan bekräfta att användaren finns, markera som aktiv
+        statuses[invitation.id] = 'active';
+        
+      } catch (error) {
+        console.error("Error verifying invitation status:", error);
+        statuses[invitation.id] = 'active'; // Default om något går fel
+      }
+    }
+    
+    setInvitationStatuses(statuses);
+  };
+
   const fetchInvitations = async () => {
     setIsLoadingInvitations(true);
     try {
@@ -64,6 +130,9 @@ const Invite = () => {
       if (error) throw error;
       
       setInvitations(data || []);
+      
+      // Verifiera status för varje inbjudan
+      await verifyInvitationStatus(data || []);
     } catch (error) {
       console.error("Error fetching invitations:", error);
       toast({
@@ -194,6 +263,12 @@ const Invite = () => {
           ? {...inv, invitation_token: newToken, expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()} 
           : inv
       ));
+      
+      // Uppdatera status för denna inbjudan
+      setInvitationStatuses({
+        ...invitationStatuses,
+        [invitation.id]: 'active'
+      });
 
       // Kopiera länkar automatiskt till urklipp
       navigator.clipboard.writeText(inviteLink);
@@ -235,6 +310,36 @@ const Invite = () => {
   const getInviteLink = (token: string) => {
     const baseUrl = window.location.origin;
     return `${baseUrl}/register?token=${token}`;
+  };
+
+  const getStatusLabel = (invitation: Invitation) => {
+    const status = invitationStatuses[invitation.id];
+    
+    if (invitation.used_at !== null) {
+      return {
+        label: "Använd",
+        className: "bg-green-100 text-green-800"
+      };
+    }
+    
+    if (new Date(invitation.expires_at) < new Date()) {
+      return {
+        label: "Utgången",
+        className: "bg-red-100 text-red-800"
+      };
+    }
+    
+    if (status === 'pending') {
+      return {
+        label: "Inloggning krävs",
+        className: "bg-yellow-100 text-yellow-800"
+      };
+    }
+    
+    return {
+      label: "Aktiv",
+      className: "bg-blue-100 text-blue-800"
+    };
   };
 
   if (isLoggedIn === false) {
@@ -357,9 +462,9 @@ const Invite = () => {
                   </div>
                   <div className="divide-y">
                     {invitations.map((invitation) => {
-                      const isExpired = new Date(invitation.expires_at) < new Date();
-                      const isUsed = invitation.used_at !== null;
+                      const statusInfo = getStatusLabel(invitation);
                       const inviteLink = getInviteLink(invitation.invitation_token);
+                      const isUsed = invitation.used_at !== null;
                       
                       return (
                         <div key={invitation.id} className="grid grid-cols-12 p-3 text-sm items-center">
@@ -368,19 +473,9 @@ const Invite = () => {
                             {format(new Date(invitation.created_at), 'yyyy-MM-dd')}
                           </div>
                           <div className="col-span-3">
-                            {isUsed ? (
-                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                                Använd
-                              </span>
-                            ) : isExpired ? (
-                              <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
-                                Utgången
-                              </span>
-                            ) : (
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                                Aktiv
-                              </span>
-                            )}
+                            <span className={`px-2 py-1 ${statusInfo.className} rounded-full text-xs`}>
+                              {statusInfo.label}
+                            </span>
                           </div>
                           <div className="col-span-2 flex gap-2">
                             {!isUsed && (
