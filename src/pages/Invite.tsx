@@ -7,10 +7,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { nanoid } from 'nanoid';
-import { Check, Copy, AlertTriangle, RefreshCw } from "lucide-react";
+import { Check, Copy, AlertTriangle, RefreshCw, Trash2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Definiera en typ för inbjudningar
 type Invitation = {
@@ -35,6 +45,9 @@ const Invite = () => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [invitationStatuses, setInvitationStatuses] = useState<Record<string, InvitationStatus>>({});
   const [regenerateLoading, setRegenerateLoading] = useState<string | null>(null);
+  const [deletingInvitation, setDeletingInvitation] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [invitationToDelete, setInvitationToDelete] = useState<Invitation | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -291,6 +304,45 @@ const Invite = () => {
     }
   };
 
+  const confirmDeleteInvitation = (invitation: Invitation) => {
+    setInvitationToDelete(invitation);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteInvitation = async () => {
+    if (!invitationToDelete) return;
+    
+    setDeletingInvitation(invitationToDelete.id);
+    setShowDeleteDialog(false);
+    
+    try {
+      const { error } = await supabase
+        .from('invitations')
+        .delete()
+        .eq('id', invitationToDelete.id);
+      
+      if (error) throw error;
+      
+      // Ta bort från lokal data
+      setInvitations(invitations.filter(inv => inv.id !== invitationToDelete.id));
+      
+      toast({
+        title: "Inbjudan borttagen",
+        description: `Inbjudan för ${invitationToDelete.email} har tagits bort.`,
+      });
+    } catch (error: any) {
+      console.error("Error deleting invitation:", error);
+      toast({
+        variant: "destructive",
+        title: "Kunde inte ta bort inbjudan",
+        description: error.message || "Ett fel uppstod när inbjudan skulle tas bort.",
+      });
+    } finally {
+      setDeletingInvitation(null);
+      setInvitationToDelete(null);
+    }
+  };
+
   const copyToClipboard = (link: string, id?: string) => {
     navigator.clipboard.writeText(link);
     if (id) {
@@ -465,6 +517,7 @@ const Invite = () => {
                       const statusInfo = getStatusLabel(invitation);
                       const inviteLink = getInviteLink(invitation.invitation_token);
                       const isUsed = invitation.used_at !== null;
+                      const isDeleting = deletingInvitation === invitation.id;
                       
                       return (
                         <div key={invitation.id} className="grid grid-cols-12 p-3 text-sm items-center">
@@ -478,26 +531,40 @@ const Invite = () => {
                             </span>
                           </div>
                           <div className="col-span-2 flex gap-2">
-                            {!isUsed && (
+                            {isDeleting ? (
+                              <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
                               <>
+                                {!isUsed && (
+                                  <>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => copyToClipboard(inviteLink, invitation.id)}
+                                      disabled={regenerateLoading === invitation.id}
+                                    >
+                                      {copied === invitation.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                    </Button>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => regenerateInviteLink(invitation)}
+                                      disabled={regenerateLoading === invitation.id}
+                                    >
+                                      {regenerateLoading === invitation.id ? 
+                                        <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div> : 
+                                        <RefreshCw className="h-3 w-3" />
+                                      }
+                                    </Button>
+                                  </>
+                                )}
                                 <Button 
                                   variant="outline" 
                                   size="sm"
-                                  onClick={() => copyToClipboard(inviteLink, invitation.id)}
-                                  disabled={regenerateLoading === invitation.id}
+                                  onClick={() => confirmDeleteInvitation(invitation)}
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                 >
-                                  {copied === invitation.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => regenerateInviteLink(invitation)}
-                                  disabled={regenerateLoading === invitation.id}
-                                >
-                                  {regenerateLoading === invitation.id ? 
-                                    <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div> : 
-                                    <RefreshCw className="h-3 w-3" />
-                                  }
+                                  <Trash2 className="h-3 w-3" />
                                 </Button>
                               </>
                             )}
@@ -521,6 +588,23 @@ const Invite = () => {
           </Tabs>
         </CardContent>
       </Card>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ta bort inbjudan</AlertDialogTitle>
+            <AlertDialogDescription>
+              Är du säker på att du vill ta bort inbjudan för {invitationToDelete?.email}? Denna åtgärd kan inte ångras.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteInvitation} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Ta bort
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
