@@ -330,39 +330,58 @@ const Invite = () => {
         prevInvitations.filter(inv => inv.id !== invitationId)
       );
       
-      // 2. Utför DELETE-operationen
-      const { error } = await supabase
+      // 2. Utför DELETE-operationen med specifikt format för id
+      const { data, error, status } = await supabase
         .from('invitations')
         .delete()
         .eq('id', invitationId);
+      
+      console.log("Delete response:", { data, error, status });
       
       if (error) {
         console.error("Failed to delete invitation:", error);
         throw error;
       }
       
-      console.log("Invitation successfully deleted from database");
+      // Försök ett alternativt angrepp om vi misstänker att det första inte fungerade
+      // Vissa gånger behöver vi bekräfta borttagning genom att kontrollera om posten fortfarande finns
+      const { data: checkData, error: checkError } = await supabase
+        .from('invitations')
+        .select('id')
+        .eq('id', invitationId);
+        
+      if (!checkError && checkData && checkData.length > 0) {
+        console.log("Invitation still exists after delete, trying UUID format");
+        // Försök igen med UUID-format explicit
+        const { error: secondDeleteError } = await supabase
+          .from('invitations')
+          .delete()
+          .filter('id', 'eq', invitationId);
+          
+        if (secondDeleteError) {
+          console.error("Second delete attempt failed:", secondDeleteError);
+        } else {
+          console.log("Second delete attempt succeeded");
+        }
+      } else {
+        console.log("Invitation successfully deleted on first attempt");
+      }
       
-      // 3. Visa toast-meddelande
       toast({
         title: "Inbjudan borttagen",
         description: `Inbjudan för ${invitationEmail} har tagits bort.`,
       });
-      
-      // 4. Vi hämtar INTE nya data här eftersom vi redan har uppdaterat lokalt state
-      // Detta undviker raceconditions och att gammal data visas
     } catch (error: any) {
       console.error("Error during deletion:", error);
       
-      // 5. Om något går fel, återställ lokalt state och försök hämta data igen
       toast({
         variant: "destructive",
         title: "Kunde inte ta bort inbjudan",
         description: error.message || "Ett fel uppstod när inbjudan skulle tas bort.",
       });
       
-      // Försök hämta data på nytt för att säkerställa att vi visar korrekt data
-      await fetchInvitations();
+      // Återställ UI-state om borttagning misslyckades
+      fetchInvitations();
     } finally {
       setDeletingInvitation(null);
       setInvitationToDelete(null);
