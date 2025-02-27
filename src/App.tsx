@@ -9,8 +9,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Home from "./pages/Home";
 import Leaderboard from "./pages/Leaderboard";
-import Learn from "./pages/Learn";
-import Article from "./pages/Article";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Invite from "./pages/Invite";
@@ -54,11 +52,13 @@ const useUserRole = () => {
         return roleData?.role || "user";
       } catch (error) {
         console.error("Unexpected error in useUserRole:", error);
-        return "user";
+        return null; // Ändrat från "user" till null för att hantera fallet där ingen session finns
       }
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    retry: 3
+    retry: 3,
+    // Undvik att köra queryn om användaren inte är inloggad
+    enabled: false // Vi kommer manuellt att trigga detta när vi vet att en session finns
   });
 };
 
@@ -70,7 +70,7 @@ interface PrivateRouteProps {
 const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const { data: userRole, isLoading: isRoleLoading } = useUserRole();
+  const { data: userRole, isLoading: isRoleLoading, refetch } = useUserRole();
 
   console.log("PrivateRoute - userRole:", userRole, "requireAdmin:", requireAdmin);
 
@@ -88,6 +88,8 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
         }
         
         setIsAuthenticated(true);
+        // Endast hämta användarroll om vi har en session
+        refetch();
       } catch (error) {
         console.error("Session check error:", error);
         setIsAuthenticated(false);
@@ -105,15 +107,17 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
         navigate('/login');
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         setIsAuthenticated(true);
+        // Uppdatera användarrollen när auth-tillståndet ändras
+        refetch();
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, refetch]);
 
-  if (isAuthenticated === null || isRoleLoading) {
+  if (isAuthenticated === null || (isAuthenticated && isRoleLoading)) {
     console.log("Loading auth state or role...");
     return null;
   }
@@ -132,6 +136,10 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
   return <>{children}</>;
 };
 
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>;
+};
+
 const AppContent = () => {
   const location = useLocation();
   const { data: userRole, isLoading } = useUserRole();
@@ -141,8 +149,16 @@ const AppContent = () => {
   return (
     <div className="min-h-screen bg-background">
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        } />
+        <Route path="/register" element={
+          <PublicRoute>
+            <Register />
+          </PublicRoute>
+        } />
         <Route path="/" element={
           <PrivateRoute requireAdmin={true}>
             <Home />
