@@ -146,7 +146,7 @@ const Invite = () => {
     
     // Om vi har en deployed-app på en specifik domän, använd den direkt
     // Detta ger oss en ren URL utan hash-routing vilket fungerar bättre i alla webbläsare
-    return origin;
+    return origin.replace(/\/$/, ''); // Ta bort trailing slash om den finns
   };
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -204,10 +204,10 @@ const Invite = () => {
 
       console.log("Invitation created:", insertData);
 
-      // Skapa en standardformat-URL som fungerar i alla miljöer 
-      // Vi använder /#/register istället för /register för att vara säkra på att hash-routing fungerar
+      // Vi använder en enkel direktlänk-format utan hash-routing
+      // Detta format fungerar bättre på mobila enheter och i inkognitoläge
       const baseUrl = getAbsoluteUrl();
-      const inviteLink = `${baseUrl}/#/register?token=${token}`;
+      const inviteLink = `${baseUrl}/register?token=${token}`;
       console.log("Generated invite link:", inviteLink);
       
       setGeneratedLink(inviteLink);
@@ -248,9 +248,9 @@ const Invite = () => {
       
       if (error) throw error;
 
-      // Skapa inbjudningslänken med den korrekta URL:en
+      // Skapa inbjudningslänken med en direkt URL utan hash-routing
       const baseUrl = getAbsoluteUrl();
-      const inviteLink = `${baseUrl}/#/register?token=${newToken}`;
+      const inviteLink = `${baseUrl}/register?token=${newToken}`;
       
       setInvitations(invitations.map(inv => 
         inv.id === invitation.id 
@@ -297,7 +297,7 @@ const Invite = () => {
       
       // Skapa länken direkt utan att verifiera användaren eller kontakta Supabase
       const baseUrl = getAbsoluteUrl();
-      const passwordResetLink = `${baseUrl}/#/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
+      const passwordResetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
       
       // Visa den genererade länken direkt
       setGeneratedResetLink(passwordResetLink);
@@ -456,7 +456,7 @@ const Invite = () => {
   const getInviteLink = (token: string) => {
     // Använd samma metod som när vi skapar länken för att säkerställa konsistens
     const baseUrl = getAbsoluteUrl();
-    return `${baseUrl}/#/register?token=${token}`;
+    return `${baseUrl}/register?token=${token}`;
   };
 
   const getStatusLabel = (invitation: Invitation) => {
