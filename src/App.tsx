@@ -17,6 +17,7 @@ import TransactionList from "./pages/TransactionList";
 import Staff from "./pages/Staff";
 import StaffMember from "./pages/StaffMember";
 import HallOfFame from "./pages/HallOfFame";
+import Index from "./pages/Index";
 import { useQuery } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -164,6 +165,11 @@ const AppContent = () => {
           </PublicRoute>
         } />
         <Route path="/" element={
+          <PrivateRoute>
+            <Index />
+          </PrivateRoute>
+        } />
+        <Route path="/dashboard" element={
           <PrivateRoute requireAdmin={true}>
             <Home />
           </PrivateRoute>
@@ -199,7 +205,7 @@ const AppContent = () => {
           </PrivateRoute>
         } />
         <Route path="*" element={
-          userRole === 'admin' ? <Navigate to="/" replace /> : <Navigate to="/leaderboard" replace />
+          userRole === 'admin' ? <Navigate to="/dashboard" replace /> : <Navigate to="/leaderboard" replace />
         } />
       </Routes>
       {location.pathname !== '/login' && 
