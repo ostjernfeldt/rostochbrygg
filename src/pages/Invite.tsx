@@ -138,13 +138,14 @@ const Invite = () => {
     }
   };
 
-  // Skapa en absolut URL som fungerar överallt
+  // Funktion för att skapa absoluta URL:er som fungerar i alla miljöer
   const getAbsoluteUrl = () => {
-    // Prioritera att använda window.location.origin som är den mest pålitliga källan
+    // Använd window.location.origin som är standardiserat och fungerar i alla miljöer
     const origin = window.location.origin;
     console.log("Origin used for creating links:", origin);
     
-    // Se till att URL:en har rätt format utan trailing slash
+    // Om vi har en deployed-app på en specifik domän, använd den direkt
+    // Detta ger oss en ren URL utan hash-routing vilket fungerar bättre i alla webbläsare
     return origin;
   };
 
@@ -203,9 +204,10 @@ const Invite = () => {
 
       console.log("Invitation created:", insertData);
 
-      // Skapa enkel URL utan hash-symbol i början
+      // Skapa en standardformat-URL som fungerar i alla miljöer 
+      // Vi använder /#/register istället för /register för att vara säkra på att hash-routing fungerar
       const baseUrl = getAbsoluteUrl();
-      const inviteLink = `${baseUrl}/register?token=${token}`;
+      const inviteLink = `${baseUrl}/#/register?token=${token}`;
       console.log("Generated invite link:", inviteLink);
       
       setGeneratedLink(inviteLink);
@@ -248,7 +250,7 @@ const Invite = () => {
 
       // Skapa inbjudningslänken med den korrekta URL:en
       const baseUrl = getAbsoluteUrl();
-      const inviteLink = `${baseUrl}/register?token=${newToken}`;
+      const inviteLink = `${baseUrl}/#/register?token=${newToken}`;
       
       setInvitations(invitations.map(inv => 
         inv.id === invitation.id 
@@ -295,7 +297,7 @@ const Invite = () => {
       
       // Skapa länken direkt utan att verifiera användaren eller kontakta Supabase
       const baseUrl = getAbsoluteUrl();
-      const passwordResetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
+      const passwordResetLink = `${baseUrl}/#/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
       
       // Visa den genererade länken direkt
       setGeneratedResetLink(passwordResetLink);
@@ -454,7 +456,7 @@ const Invite = () => {
   const getInviteLink = (token: string) => {
     // Använd samma metod som när vi skapar länken för att säkerställa konsistens
     const baseUrl = getAbsoluteUrl();
-    return `${baseUrl}/register?token=${token}`;
+    return `${baseUrl}/#/register?token=${token}`;
   };
 
   const getStatusLabel = (invitation: Invitation) => {
@@ -778,9 +780,10 @@ const Invite = () => {
                         </Button>
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Länken är giltig i 7 dagar
-                    </p>
+                    <div className="mt-3 text-xs text-muted-foreground space-y-1">
+                      <p>Länken är giltig i 7 dagar</p>
+                      <p className="text-amber-600 font-medium">OBS! Länken kan endast användas en gång.</p>
+                    </div>
                   </div>
                 )}
               </form>
