@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// Definiera en typ för inbjudningar
 type Invitation = {
   id: string;
   email: string;
@@ -54,7 +52,6 @@ const Invite = () => {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Kontrollera om användaren är inloggad
     const checkAuth = async () => {
       const { data, error } = await supabase.auth.getSession();
       if (error) {
@@ -74,21 +71,17 @@ const Invite = () => {
   const verifyInvitationStatus = async (invitations: Invitation[]) => {
     const statuses: Record<string, InvitationStatus> = {};
     
-    // Kontrollera varje inbjudan
     for (const invitation of invitations) {
-      // Om den redan är markerad som använd
       if (invitation.used_at !== null) {
         statuses[invitation.id] = 'used';
         continue;
       }
       
-      // Om den har gått ut
       if (new Date(invitation.expires_at) < new Date()) {
         statuses[invitation.id] = 'expired';
         continue;
       }
       
-      // Sätt status som aktiv om inget av ovanstående villkor uppfylls
       statuses[invitation.id] = 'active';
     }
     
@@ -109,7 +102,6 @@ const Invite = () => {
       console.log("Received invitations:", data);
       setInvitations(data || []);
       
-      // Verifiera status för varje inbjudan
       await verifyInvitationStatus(data || []);
     } catch (error) {
       console.error("Error fetching invitations:", error);
@@ -129,12 +121,10 @@ const Invite = () => {
     setErrorMessage(null);
     
     try {
-      // Validera e-postadressen
       if (!email.trim() || !email.includes('@')) {
         throw new Error("Vänligen ange en giltig e-postadress");
       }
 
-      // Kontrollera om användaren är inloggad
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
       
@@ -145,7 +135,6 @@ const Invite = () => {
 
       console.log("Creating invitation for email:", email, "by user:", userId);
 
-      // Kontrollera om e-postadressen redan är registrerad
       const { data: existingUsers, error: existingError } = await supabase
         .from('invitations')
         .select('*')
@@ -162,11 +151,9 @@ const Invite = () => {
         throw new Error("Det finns redan en aktiv inbjudan för denna e-postadress");
       }
 
-      // Skapa en unik token för inbjudan
       const token = nanoid(32);
       console.log("Generated token:", token);
       
-      // Spara inbjudan i databasen
       const { data: insertData, error: insertError } = await supabase
         .from('invitations')
         .insert({
@@ -183,17 +170,14 @@ const Invite = () => {
 
       console.log("Invitation created:", insertData);
 
-      // Generera inbjudningslänken med absolut URL
       const baseUrl = window.location.origin;
       const inviteLink = `${baseUrl}/register?token=${token}`;
       console.log("Generated invite link:", inviteLink);
       
       setGeneratedLink(inviteLink);
 
-      // Uppdatera listan med inbjudningar
       fetchInvitations();
 
-      // Rensa formuläret
       setEmail("");
 
       toast({
@@ -216,39 +200,32 @@ const Invite = () => {
   const regenerateInviteLink = async (invitation: Invitation) => {
     setRegenerateLoading(invitation.id);
     try {
-      // Skapa en ny token
       const newToken = nanoid(32);
       
-      // Uppdatera inbjudan i databasen
       const { error } = await supabase
         .from('invitations')
         .update({
           invitation_token: newToken,
-          // Förnya utgångsdatum om inbjudan har förfallit
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
         })
         .eq('id', invitation.id);
       
       if (error) throw error;
 
-      // Generera ny inbjudningslänk
       const baseUrl = window.location.origin;
       const inviteLink = `${baseUrl}/register?token=${newToken}`;
       
-      // Uppdatera lokal data
       setInvitations(invitations.map(inv => 
         inv.id === invitation.id 
           ? {...inv, invitation_token: newToken, expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()} 
           : inv
       ));
       
-      // Uppdatera status för denna inbjudan
       setInvitationStatuses({
         ...invitationStatuses,
         [invitation.id]: 'active'
       });
 
-      // Kopiera länkar automatiskt till urklipp
       navigator.clipboard.writeText(inviteLink);
       setCopied(invitation.id);
       setTimeout(() => setCopied(null), 2000);
@@ -286,7 +263,6 @@ const Invite = () => {
     try {
       console.log("Deleting invitation with ID:", invitationId);
       
-      // Använd den nya delete_invitation RPC-funktionen för att ta bort inbjudan
       const { data, error, status } = await supabase.rpc('delete_invitation', {
         invitation_id: invitationId
       });
@@ -298,7 +274,6 @@ const Invite = () => {
         throw error;
       }
       
-      // Uppdatera lokalt state när borttagningen lyckades
       setInvitations(prevInvitations => 
         prevInvitations.filter(inv => inv.id !== invitationId)
       );
@@ -317,7 +292,6 @@ const Invite = () => {
         description: error.message || "Ett fel uppstod när inbjudan skulle tas bort.",
       });
       
-      // Hämta inbjudningar igen om något gick fel
       fetchInvitations();
     } finally {
       setDeletingInvitation(null);
@@ -376,7 +350,6 @@ const Invite = () => {
     };
   };
 
-  // Renderingslogik för mobil lista
   const renderMobileInvitationItem = (invitation: Invitation) => {
     const statusInfo = getStatusLabel(invitation);
     const inviteLink = getInviteLink(invitation.invitation_token);
@@ -438,8 +411,7 @@ const Invite = () => {
       </div>
     );
   };
-  
-  // Renderingslogik för desktop lista
+
   const renderDesktopInvitationItem = (invitation: Invitation) => {
     const statusInfo = getStatusLabel(invitation);
     const inviteLink = getInviteLink(invitation.invitation_token);
@@ -596,6 +568,18 @@ const Invite = () => {
                     <p className="text-sm text-muted-foreground mt-2">
                       Denna länk är giltig i 7 dagar. Säljaren kommer att kunna välja sitt lösenord när de registrerar sig.
                     </p>
+                    
+                    <div className="mt-4 border-t pt-4">
+                      <p className="text-sm font-medium mb-2">För testning:</p>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full text-sm"
+                        onClick={() => window.open(generatedLink, '_blank')}
+                      >
+                        Öppna länken i ny flik
+                      </Button>
+                    </div>
                   </div>
                 )}
               </form>
@@ -611,12 +595,10 @@ const Invite = () => {
                   Inga inbjudningar har skapats än.
                 </div>
               ) : isMobile ? (
-                // Mobil vy
                 <div className="space-y-2">
                   {invitations.map(renderMobileInvitationItem)}
                 </div>
               ) : (
-                // Desktop vy
                 <div className="border rounded-md">
                   <div className="grid grid-cols-12 bg-muted p-3 border-b text-sm font-medium">
                     <div className="col-span-4">E-post</div>
