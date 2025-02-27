@@ -138,15 +138,14 @@ const Invite = () => {
     }
   };
 
-  // Funktion för att skapa absoluta URL:er som fungerar i alla miljöer
+  // Skapa en absolut URL som fungerar överallt
   const getAbsoluteUrl = () => {
-    // Använd window.location.origin som är standardiserat och fungerar i alla miljöer
+    // Prioritera att använda window.location.origin som är den mest pålitliga källan
     const origin = window.location.origin;
     console.log("Origin used for creating links:", origin);
     
-    // Om vi har en deployed-app på en specifik domän, använd den direkt
-    // Detta ger oss en ren URL utan hash-routing vilket fungerar bättre i alla webbläsare
-    return origin.replace(/\/$/, ''); // Ta bort trailing slash om den finns
+    // Se till att URL:en har rätt format utan trailing slash
+    return origin;
   };
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -204,8 +203,7 @@ const Invite = () => {
 
       console.log("Invitation created:", insertData);
 
-      // Vi använder en enkel direktlänk-format utan hash-routing
-      // Detta format fungerar bättre på mobila enheter och i inkognitoläge
+      // Skapa enkel URL utan hash-symbol i början
       const baseUrl = getAbsoluteUrl();
       const inviteLink = `${baseUrl}/register?token=${token}`;
       console.log("Generated invite link:", inviteLink);
@@ -248,7 +246,7 @@ const Invite = () => {
       
       if (error) throw error;
 
-      // Skapa inbjudningslänken med en direkt URL utan hash-routing
+      // Skapa inbjudningslänken med den korrekta URL:en
       const baseUrl = getAbsoluteUrl();
       const inviteLink = `${baseUrl}/register?token=${newToken}`;
       
@@ -780,10 +778,9 @@ const Invite = () => {
                         </Button>
                       </div>
                     </div>
-                    <div className="mt-3 text-xs text-muted-foreground space-y-1">
-                      <p>Länken är giltig i 7 dagar</p>
-                      <p className="text-amber-600 font-medium">OBS! Länken kan endast användas en gång.</p>
-                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Länken är giltig i 7 dagar
+                    </p>
                   </div>
                 )}
               </form>
