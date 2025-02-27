@@ -282,7 +282,7 @@ const Invite = () => {
     }
   };
 
-  const generateResetPasswordLink = async () => {
+  const generateResetPasswordLink = () => {
     setIsProcessingReset(true);
     setGeneratedResetLink(null);
     
@@ -294,20 +294,9 @@ const Invite = () => {
       // Generera en token för lösenordsåterställning
       const token = nanoid(32);
       
-      // Skapa länken direkt utan att verifiera användaren först
+      // Skapa länken direkt utan att verifiera användaren eller kontakta Supabase
       const baseUrl = getFullAppUrl();
       const passwordResetLink = `${baseUrl}/#/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
-      
-      // Initiera resetPasswordForEmail process för att skapa giltiga token i bakgrunden
-      // Detta gör vi i bakgrunden utan att vänta på svaret
-      supabase.auth.resetPasswordForEmail(resetPasswordEmail.trim(), {
-        redirectTo: `${baseUrl}/#/reset-password`
-      }).then(({ error }) => {
-        if (error) {
-          console.warn("Background password reset process failed:", error);
-          // Vi fortsätter ändå eftersom vi redan visar länken till användaren
-        }
-      });
       
       // Visa den genererade länken direkt
       setGeneratedResetLink(passwordResetLink);

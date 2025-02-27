@@ -65,30 +65,51 @@ const ResetPassword = () => {
         throw new Error("Lösenordet måste vara minst 6 tecken långt.");
       }
 
-      // Om vi har en token och e-post från URL:en, använd en annan metod
+      // Om vi har en token och e-post från URL:en
       if (token && email) {
-        console.log("Using custom reset method with token and email");
-        // Här skulle vi kunna implementera en egen lösning med token och e-post
-        // Men eftersom Supabase inte stöder detta direkt, går vi tillbaka till standardmetoden
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password: "tempPassword123", // Detta kommer att misslyckas, vilket är förväntat
-        });
+        console.log("Using manual reset method with token and email");
         
-        console.log("SignIn attempt (expected to fail):", signInError);
-        
-        // Fortsätt med lösenordsåterställning via e-post
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin + "/#/reset-password",
-        });
-        
-        if (error) throw error;
-        
-        setSuccess(true);
-        toast({
-          title: "Återställningsinstruktioner skickade",
-          description: `Vi har skickat lösenordsåterställningsinstruktioner till ${email}. Vänligen kolla din e-post.`,
-        });
+        // Direktuppdatering via Supabase Admin API om möjligt, annars be användaren kontakta support
+        try {
+          // Försök att logga in användaren först
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: "old-password-attempt" // Detta kommer troligen att misslyckas, vilket är OK
+          });
+          
+          console.log("Sign-in attempt:", signInError ? "Failed (expected)" : "Succeeded");
+          
+          // Oavsett om inloggningen lyckades, försök uppdatera lösenordet
+          const { error: updateError } = await supabase.auth.updateUser({
+            password: password
+          });
+          
+          if (updateError) {
+            console.error("Update password error:", updateError);
+            throw new Error("Kunde inte uppdatera lösenordet. Kontakta support för hjälp.");
+          }
+          
+          setSuccess(true);
+          toast({
+            title: "Lösenordet har uppdaterats!",
+            description: "Ditt nya lösenord har sparats. Du kan nu logga in.",
+          });
+          
+          // Automatisk omdirigering efter lyckad återställning
+          setTimeout(() => {
+            navigate("/login");
+          }, 3000);
+        } catch (error: any) {
+          console.error("Manual reset error:", error);
+          setError("Kunde inte uppdatera lösenordet. Var god försök igen eller kontakta support.");
+          
+          // Visa ett mer användarvänligt meddelande
+          toast({
+            variant: "destructive",
+            title: "Återställning misslyckades",
+            description: "Du behöver kontakta administratören för att få hjälp med att återställa ditt lösenord.",
+          });
+        }
       } else {
         // Standardmetod med Supabase-token
         const { error } = await supabase.auth.updateUser({
@@ -182,15 +203,9 @@ const ResetPassword = () => {
               <Alert className="mb-4">
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <AlertTitle>Lösenord uppdaterat</AlertTitle>
-                {email ? (
-                  <AlertDescription>
-                    Vi har skickat lösenordsåterställningsinstruktioner till din e-post. Vänligen kontrollera din inkorg.
-                  </AlertDescription>
-                ) : (
-                  <AlertDescription>
-                    Ditt lösenord har uppdaterats framgångsrikt. Du kommer att omdirigeras till inloggningssidan...
-                  </AlertDescription>
-                )}
+                <AlertDescription>
+                  Ditt lösenord har uppdaterats framgångsrikt. Du kommer att omdirigeras till inloggningssidan...
+                </AlertDescription>
               </Alert>
               <Button
                 className="w-full"
