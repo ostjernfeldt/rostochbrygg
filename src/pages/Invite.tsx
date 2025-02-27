@@ -11,6 +11,7 @@ import { Check, Copy, AlertTriangle, RefreshCw, Trash2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +51,7 @@ const Invite = () => {
   const [invitationToDelete, setInvitationToDelete] = useState<Invitation | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     // Kontrollera om användaren är inloggad
@@ -394,6 +396,130 @@ const Invite = () => {
     };
   };
 
+  // Renderingslogik för mobil lista
+  const renderMobileInvitationItem = (invitation: Invitation) => {
+    const statusInfo = getStatusLabel(invitation);
+    const inviteLink = getInviteLink(invitation.invitation_token);
+    const isUsed = invitation.used_at !== null;
+    const isDeleting = deletingInvitation === invitation.id;
+    
+    return (
+      <div key={invitation.id} className="p-4 border rounded-md mb-3 bg-card">
+        <div className="flex justify-between items-center mb-2">
+          <span className="font-bold text-sm truncate max-w-[180px]">{invitation.email}</span>
+          <span className={`px-2 py-1 ${statusInfo.className} rounded-full text-xs`}>
+            {statusInfo.label}
+          </span>
+        </div>
+        
+        <div className="text-xs text-muted-foreground mb-3">
+          Skapad: {format(new Date(invitation.created_at), 'yyyy-MM-dd')}
+        </div>
+        
+        <div className="flex gap-2 justify-end">
+          {isDeleting ? (
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <>
+              {!isUsed && (
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => copyToClipboard(inviteLink, invitation.id)}
+                    disabled={regenerateLoading === invitation.id}
+                  >
+                    {copied === invitation.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => regenerateInviteLink(invitation)}
+                    disabled={regenerateLoading === invitation.id}
+                  >
+                    {regenerateLoading === invitation.id ? 
+                      <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div> : 
+                      <RefreshCw className="h-3 w-3" />
+                    }
+                  </Button>
+                </>
+              )}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => confirmDeleteInvitation(invitation)}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+  
+  // Renderingslogik för desktop lista
+  const renderDesktopInvitationItem = (invitation: Invitation) => {
+    const statusInfo = getStatusLabel(invitation);
+    const inviteLink = getInviteLink(invitation.invitation_token);
+    const isUsed = invitation.used_at !== null;
+    const isDeleting = deletingInvitation === invitation.id;
+    
+    return (
+      <div key={invitation.id} className="grid grid-cols-12 p-3 text-sm items-center">
+        <div className="col-span-4 font-medium">{invitation.email}</div>
+        <div className="col-span-3 text-muted-foreground">
+          {format(new Date(invitation.created_at), 'yyyy-MM-dd')}
+        </div>
+        <div className="col-span-3">
+          <span className={`px-2 py-1 ${statusInfo.className} rounded-full text-xs`}>
+            {statusInfo.label}
+          </span>
+        </div>
+        <div className="col-span-2 flex gap-2">
+          {isDeleting ? (
+            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <>
+              {!isUsed && (
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => copyToClipboard(inviteLink, invitation.id)}
+                    disabled={regenerateLoading === invitation.id}
+                  >
+                    {copied === invitation.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => regenerateInviteLink(invitation)}
+                    disabled={regenerateLoading === invitation.id}
+                  >
+                    {regenerateLoading === invitation.id ? 
+                      <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div> : 
+                      <RefreshCw className="h-3 w-3" />
+                    }
+                  </Button>
+                </>
+              )}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => confirmDeleteInvitation(invitation)}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (isLoggedIn === false) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
@@ -427,10 +553,10 @@ const Invite = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="create">
-            <TabsList className="mb-4">
-              <TabsTrigger value="create">Skapa ny inbjudan</TabsTrigger>
-              <TabsTrigger value="manage">Hantera inbjudningar</TabsTrigger>
+          <Tabs defaultValue="create" className="w-full">
+            <TabsList className={`mb-4 ${isMobile ? "w-full" : ""}`}>
+              <TabsTrigger value="create" className={isMobile ? "flex-1" : ""}>Skapa ny inbjudan</TabsTrigger>
+              <TabsTrigger value="manage" className={isMobile ? "flex-1" : ""}>Hantera inbjudningar</TabsTrigger>
             </TabsList>
             
             <TabsContent value="create">
@@ -504,7 +630,13 @@ const Invite = () => {
                 <div className="text-center py-8 text-muted-foreground">
                   Inga inbjudningar har skapats än.
                 </div>
+              ) : isMobile ? (
+                // Mobil vy
+                <div className="space-y-2">
+                  {invitations.map(renderMobileInvitationItem)}
+                </div>
               ) : (
+                // Desktop vy
                 <div className="border rounded-md">
                   <div className="grid grid-cols-12 bg-muted p-3 border-b text-sm font-medium">
                     <div className="col-span-4">E-post</div>
@@ -513,72 +645,14 @@ const Invite = () => {
                     <div className="col-span-2">Åtgärd</div>
                   </div>
                   <div className="divide-y">
-                    {invitations.map((invitation) => {
-                      const statusInfo = getStatusLabel(invitation);
-                      const inviteLink = getInviteLink(invitation.invitation_token);
-                      const isUsed = invitation.used_at !== null;
-                      const isDeleting = deletingInvitation === invitation.id;
-                      
-                      return (
-                        <div key={invitation.id} className="grid grid-cols-12 p-3 text-sm items-center">
-                          <div className="col-span-4 font-medium">{invitation.email}</div>
-                          <div className="col-span-3 text-muted-foreground">
-                            {format(new Date(invitation.created_at), 'yyyy-MM-dd')}
-                          </div>
-                          <div className="col-span-3">
-                            <span className={`px-2 py-1 ${statusInfo.className} rounded-full text-xs`}>
-                              {statusInfo.label}
-                            </span>
-                          </div>
-                          <div className="col-span-2 flex gap-2">
-                            {isDeleting ? (
-                              <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                              <>
-                                {!isUsed && (
-                                  <>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => copyToClipboard(inviteLink, invitation.id)}
-                                      disabled={regenerateLoading === invitation.id}
-                                    >
-                                      {copied === invitation.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                                    </Button>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => regenerateInviteLink(invitation)}
-                                      disabled={regenerateLoading === invitation.id}
-                                    >
-                                      {regenerateLoading === invitation.id ? 
-                                        <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div> : 
-                                        <RefreshCw className="h-3 w-3" />
-                                      }
-                                    </Button>
-                                  </>
-                                )}
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => confirmDeleteInvitation(invitation)}
-                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {invitations.map(renderDesktopInvitationItem)}
                   </div>
                 </div>
               )}
               
               <Button 
                 variant="outline" 
-                className="mt-4"
+                className="mt-4 w-full md:w-auto"
                 onClick={fetchInvitations}
                 disabled={isLoadingInvitations}
               >
