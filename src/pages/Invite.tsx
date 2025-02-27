@@ -55,6 +55,8 @@ const Invite = () => {
         throw new Error("Du måste vara inloggad för att skapa inbjudningar");
       }
 
+      console.log("Creating invitation for email:", email, "by user:", userId);
+
       // Kontrollera om e-postadressen redan är registrerad
       const { data: existingUsers, error: existingError } = await supabase
         .from('invitations')
@@ -62,29 +64,42 @@ const Invite = () => {
         .eq('email', email.trim())
         .is('used_at', null);
       
-      if (existingError) throw existingError;
+      if (existingError) {
+        console.error("Error checking existing invitations:", existingError);
+        throw existingError;
+      }
       
       if (existingUsers && existingUsers.length > 0) {
+        console.log("Found existing invitation:", existingUsers);
         throw new Error("Det finns redan en aktiv inbjudan för denna e-postadress");
       }
 
       // Skapa en unik token för inbjudan
       const token = nanoid(32);
+      console.log("Generated token:", token);
       
       // Spara inbjudan i databasen
-      const { error: insertError } = await supabase
+      const { data: insertData, error: insertError } = await supabase
         .from('invitations')
         .insert({
           email: email.trim(),
           invitation_token: token,
           created_by: userId
-        });
+        })
+        .select();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("Error inserting invitation:", insertError);
+        throw insertError;
+      }
+
+      console.log("Invitation created:", insertData);
 
       // Generera inbjudningslänken med absolut URL
       const baseUrl = window.location.origin;
       const inviteLink = `${baseUrl}/register?token=${token}`;
+      console.log("Generated invite link:", inviteLink);
+      
       setGeneratedLink(inviteLink);
 
       // Rensa formuläret

@@ -24,26 +24,53 @@ const Register = () => {
   useEffect(() => {
     const validateToken = async () => {
       if (!token) {
+        console.error("No token provided");
         setValidationError("Inbjudningslänken saknas eller är ogiltig.");
         setIsValidating(false);
         return;
       }
 
       try {
+        console.log("Validating token:", token);
+        
+        // Fetch directly from invitations table to debug
+        const { data: invitationData, error: invitationError } = await supabase
+          .from('invitations')
+          .select('*')
+          .eq('invitation_token', token)
+          .single();
+        
+        if (invitationError) {
+          console.error("Error fetching invitation:", invitationError);
+        } else {
+          console.log("Invitation data:", invitationData);
+        }
+
+        // Try the RPC function
         const { data, error } = await supabase
           .rpc('validate_invitation', { token });
 
-        if (error) throw error;
+        if (error) {
+          console.error("RPC error:", error);
+          throw error;
+        }
+        
+        console.log("Validation result:", data);
 
         if (!data || data.length === 0) {
+          console.error("No validation data returned");
           throw new Error("Inbjudningslänken kunde inte valideras.");
         }
 
         const [validation] = data;
-        if (!validation?.is_valid) {
+        console.log("Validation details:", validation);
+        
+        if (!validation || !validation.is_valid) {
+          console.error("Token not valid:", validation);
           throw new Error("Inbjudningslänken har upphört eller redan använts.");
         }
 
+        console.log("Setting email to:", validation.email);
         setEmail(validation.email);
         setIsValidating(false);
         setValidationError(null);
@@ -55,28 +82,44 @@ const Register = () => {
     };
 
     validateToken();
-  }, [token, navigate, toast]);
+  }, [token]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      console.log("Creating account with email:", email);
+      
       // Skapa användarkonto
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
       });
 
-      if (signUpError) throw signUpError;
-      if (!signUpData?.user) throw new Error("No user data received");
+      if (signUpError) {
+        console.error("Sign up error:", signUpError);
+        throw signUpError;
+      }
+      
+      if (!signUpData?.user) {
+        console.error("No user data received");
+        throw new Error("No user data received");
+      }
+
+      console.log("User created successfully:", signUpData.user.id);
 
       // Markera inbjudan som använd
       const { error: markUsedError } = await supabase
         .rpc('mark_invitation_used', { token });
 
-      if (markUsedError) throw markUsedError;
+      if (markUsedError) {
+        console.error("Error marking invitation as used:", markUsedError);
+        throw markUsedError;
+      }
 
+      console.log("Invitation marked as used");
+      
       toast({
         title: "Registrering lyckades!",
         description: "Ditt konto har skapats. Du kan nu logga in.",
