@@ -142,18 +142,20 @@ const AppContent = () => {
   const location = useLocation();
   const { data: userRole, isLoading } = useUserRole();
 
-  console.log("AppContent - Current location:", location.pathname);
-  console.log("AppContent - Current userRole:", userRole, "isLoading:", isLoading);
+  console.log("AppContent - Current location:", location.pathname, location.search, location.hash);
 
-  // Extrahera token från URL om den finns i hash-format
   useEffect(() => {
-    const hash = location.hash;
-    // Om URL:en har ett format som /#/register?token=xyz, hantera det speciellt
-    if (hash && hash.includes('#/register?token=')) {
-      console.log("Found register with token in hash:", hash);
+    // Kontrollera om det finns en token i URL:en
+    const params = new URLSearchParams(location.search);
+    const hashParams = new URLSearchParams(location.hash.replace('#', ''));
+    const token = params.get('token') || hashParams.get('token');
+
+    if (token && location.pathname === '/') {
+      console.log("Found token, redirecting to register page:", token);
+      window.location.href = `/#/register?token=${encodeURIComponent(token)}`;
     }
   }, [location]);
-  
+
   return (
     <div className="min-h-screen bg-background">
       <Routes>
@@ -208,7 +210,7 @@ const AppContent = () => {
           </PrivateRoute>
         } />
         <Route path="*" element={
-          userRole === 'admin' ? <Navigate to="/" replace /> : <Navigate to="/leaderboard" replace />
+          <Navigate to={userRole === 'admin' ? "/" : "/leaderboard"} replace />
         } />
       </Routes>
       {location.pathname !== '/login' && 
