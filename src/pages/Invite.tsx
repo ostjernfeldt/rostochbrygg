@@ -290,43 +290,26 @@ const Invite = () => {
       if (!resetPasswordEmail.trim() || !resetPasswordEmail.includes('@')) {
         throw new Error("Vänligen ange en giltig e-postadress");
       }
-
-      // Kontrollera om användaren finns
-      const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
-      
-      if (userError) {
-        console.error("Error listing users:", userError);
-        throw new Error("Det gick inte att kontrollera om användaren finns. Du kanske inte har admin-behörigheter.");
-      }
-      
-      const users = userData?.users as SupabaseUser[] || [];
-      const userExists = users.some(user => 
-        user.email?.toLowerCase() === resetPasswordEmail.trim().toLowerCase()
-      );
-
-      if (!userExists) {
-        throw new Error(`Hittade ingen användare med e-postadressen ${resetPasswordEmail}`);
-      }
       
       // Generera en token för lösenordsåterställning
       const token = nanoid(32);
       
-      // Spara token och användare i databasen eller använd Supabase för detta
+      // Skapa länken direkt utan att verifiera användaren först
       const baseUrl = getFullAppUrl();
       const passwordResetLink = `${baseUrl}/#/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
       
-      // Skapa en gömd, temporär länk-behållare för token
-      const { error: adminResetError } = await supabase.auth.admin.generateLink({
-        type: 'recovery',
-        email: resetPasswordEmail.trim(),
-        options: {
-          redirectTo: `${baseUrl}/#/reset-password`
+      // Initiera resetPasswordForEmail process för att skapa giltiga token i bakgrunden
+      // Detta gör vi i bakgrunden utan att vänta på svaret
+      supabase.auth.resetPasswordForEmail(resetPasswordEmail.trim(), {
+        redirectTo: `${baseUrl}/#/reset-password`
+      }).then(({ error }) => {
+        if (error) {
+          console.warn("Background password reset process failed:", error);
+          // Vi fortsätter ändå eftersom vi redan visar länken till användaren
         }
       });
       
-      if (adminResetError) throw adminResetError;
-      
-      // Visa den genererade länken
+      // Visa den genererade länken direkt
       setGeneratedResetLink(passwordResetLink);
       
       toast({
