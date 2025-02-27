@@ -138,20 +138,15 @@ const Invite = () => {
     }
   };
 
-  // Ny förbättrad funktion för att skapa absoluta URL:er
-  const createInvitationLink = (token: string) => {
-    // Hämta basURLn (utan efterföljande slash)
-    const baseUrl = window.location.origin.replace(/\/$/, '');
+  // Funktion för att skapa absoluta URL:er som fungerar i alla miljöer
+  const getAbsoluteUrl = () => {
+    // Använd window.location.origin som är standardiserat och fungerar i alla miljöer
+    const origin = window.location.origin;
+    console.log("Origin used for creating links:", origin);
     
-    // Bygg upp den fullständiga URL:en med token som en query parameter
-    // Format: https://example.com/register?token=abc123
-    // Den här metoden fungerar för både produktions- och utvecklingsmiljöer
-    const directLinkFormat = `${baseUrl}/register?token=${token}`;
-    
-    // Logga för felsökning
-    console.log("Generated invitation link:", directLinkFormat);
-    
-    return directLinkFormat;
+    // Om vi har en deployed-app på en specifik domän, använd den direkt
+    // Detta ger oss en ren URL utan hash-routing vilket fungerar bättre i alla webbläsare
+    return origin;
   };
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -209,8 +204,11 @@ const Invite = () => {
 
       console.log("Invitation created:", insertData);
 
-      // Använd den förbättrade funktionen för att generera länkar
-      const inviteLink = createInvitationLink(token);
+      // Skapa en standardformat-URL som fungerar i alla miljöer 
+      // Vi använder /#/register istället för /register för att vara säkra på att hash-routing fungerar
+      const baseUrl = getAbsoluteUrl();
+      const inviteLink = `${baseUrl}/#/register?token=${token}`;
+      console.log("Generated invite link:", inviteLink);
       
       setGeneratedLink(inviteLink);
 
@@ -250,8 +248,9 @@ const Invite = () => {
       
       if (error) throw error;
 
-      // Använd den förbättrade funktionen för att generera länkar
-      const inviteLink = createInvitationLink(newToken);
+      // Skapa inbjudningslänken med den korrekta URL:en
+      const baseUrl = getAbsoluteUrl();
+      const inviteLink = `${baseUrl}/#/register?token=${newToken}`;
       
       setInvitations(invitations.map(inv => 
         inv.id === invitation.id 
@@ -296,9 +295,9 @@ const Invite = () => {
       // Generera en token för lösenordsåterställning
       const token = nanoid(32);
       
-      // Skapa länken med den förbättrade metoden
-      const baseUrl = window.location.origin.replace(/\/$/, '');
-      const passwordResetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
+      // Skapa länken direkt utan att verifiera användaren eller kontakta Supabase
+      const baseUrl = getAbsoluteUrl();
+      const passwordResetLink = `${baseUrl}/#/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
       
       // Visa den genererade länken direkt
       setGeneratedResetLink(passwordResetLink);
@@ -455,8 +454,9 @@ const Invite = () => {
   };
 
   const getInviteLink = (token: string) => {
-    // Använd den förbättrade funktionen för att generera länkar
-    return createInvitationLink(token);
+    // Använd samma metod som när vi skapar länken för att säkerställa konsistens
+    const baseUrl = getAbsoluteUrl();
+    return `${baseUrl}/#/register?token=${token}`;
   };
 
   const getStatusLabel = (invitation: Invitation) => {
@@ -783,7 +783,6 @@ const Invite = () => {
                     <div className="mt-3 text-xs text-muted-foreground space-y-1">
                       <p>Länken är giltig i 7 dagar</p>
                       <p className="text-amber-600 font-medium">OBS! Länken kan endast användas en gång.</p>
-                      <p className="text-blue-600 font-medium">Viktig information: Använd inte incognito när du testar länken.</p>
                     </div>
                   </div>
                 )}

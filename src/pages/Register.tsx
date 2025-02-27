@@ -19,71 +19,46 @@ const Register = () => {
   const tokenFromSearchParams = searchParams.get("token");
   const hashParams = new URLSearchParams(location.hash.replace('#/register?', ''));
   const tokenFromHash = hashParams.get("token");
-  const tokenFromUrl = extractTokenFromUrl();
-  const token = tokenFromSearchParams || tokenFromHash || tokenFromUrl;
+  const token = tokenFromSearchParams || tokenFromHash || extractTokenFromUrl();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
-  // Ny state för att visa detaljer i debug-läge
-  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   // Funktion för att extrahera token från URL:en direkt om andra metoder misslyckas
   function extractTokenFromUrl() {
     const url = window.location.href;
-    
-    // Logga hela URL:en för felsökning
-    console.log("Full URL:", url);
-    
-    // Prova olika regex-mönster för att hitta token i olika URL-format
-    const patterns = [
-      /[?&]token=([^&#]+)/,
-      /#\/register\?token=([^&#]+)/,
-      /token=([^&#]+)/
-    ];
-    
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match && match[1]) {
-        console.log(`Found token using pattern ${pattern}:`, match[1]);
-        return match[1];
-      }
-    }
-    
-    return null;
+    const tokenMatch = url.match(/[?&]token=([^&]+)/);
+    return tokenMatch ? tokenMatch[1] : null;
   }
 
   useEffect(() => {
     // Detaljerad loggning av URL-parametrar för att hjälpa vid felsökning
-    const debugData = {
-      tokenFromSearchParams,
-      tokenFromHash,
-      tokenFromUrl,
-      finalToken: token,
-      fullUrl: window.location.href,
-      searchString: window.location.search,
-      hashString: window.location.hash,
-      pathname: window.location.pathname
-    };
+    console.log("All URLSearchParams:");
+    for (const [key, value] of searchParams.entries()) {
+      console.log(`${key}: ${value}`);
+    }
     
-    console.log("Debug data:", debugData);
-    setDebugInfo(debugData);
+    console.log("Token sources:", {
+      tokenFromSearchParams: tokenFromSearchParams,
+      tokenFromHash: tokenFromHash,
+      extractedToken: extractTokenFromUrl(),
+      finalToken: token
+    });
+    
+    console.log("Current URL:", window.location.href);
+    console.log("Search params string:", window.location.search);
+    console.log("Hash:", window.location.hash);
+    console.log("Location state:", location.state);
+    console.log("Current pathname:", window.location.pathname);
 
     const validateToken = async () => {
       // Kontrollera om token finns i URL:en
       if (!token) {
         console.error("No token provided in URL");
         setValidationError("Inbjudningslänken saknas eller är ogiltig.");
-        setIsValidating(false);
-        return;
-      }
-
-      // Kontrollera token-format
-      if (!/^[a-zA-Z0-9_-]+$/.test(token)) {
-        console.error("Invalid token format:", token);
-        setValidationError("Felaktigt format på inbjudningstoken.");
         setIsValidating(false);
         return;
       }
@@ -102,17 +77,14 @@ const Register = () => {
         if (invitationError) {
           console.error("Error fetching invitation:", invitationError);
           if (invitationError.code === 'PGRST116') {
-            throw new Error(`Inbjudningslänken hittades inte. Token: ${token}`);
+            throw new Error("Inbjudningslänken hittades inte. Token: " + token);
           }
-          throw invitationError;
+        } else {
+          console.log("Invitation data found:", invitationData);
+          if (!invitationData) {
+            throw new Error("Ingen inbjudan hittades med denna token.");
+          }
         }
-        
-        if (!invitationData) {
-          console.error("No invitation data found");
-          throw new Error("Ingen inbjudan hittades med denna token.");
-        }
-        
-        console.log("Invitation data found:", invitationData);
         
         // Validera token med Supabase-funktionen
         const { data, error } = await supabase
@@ -149,13 +121,8 @@ const Register = () => {
       }
     };
 
-    // Kort fördröjning för att säkerställa att sidan är helt laddad
-    const timer = setTimeout(() => {
-      validateToken();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [token, searchParams, location, tokenFromSearchParams, tokenFromHash, tokenFromUrl]);
+    validateToken();
+  }, [token, searchParams, location, tokenFromSearchParams, tokenFromHash]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -255,16 +222,6 @@ const Register = () => {
             >
               Gå till inloggning
             </Button>
-            
-            {/* Visa debug-information om det finns ett fel */}
-            {debugInfo && (
-              <div className="mt-4 p-3 bg-gray-100 rounded-md text-xs overflow-auto">
-                <div className="font-semibold mb-1">Debug-information:</div>
-                <div className="whitespace-pre-wrap">
-                  {JSON.stringify(debugInfo, null, 2)}
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
