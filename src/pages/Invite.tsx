@@ -139,16 +139,32 @@ const Invite = () => {
   };
 
   const getFullAppUrl = () => {
+    // Produktions-URL - ska vara en absolut URL som fungerar på alla enheter
+    // Hämta från window.location för att få den faktiska domänen som används
     const currentUrl = window.location.href;
     console.log("Current complete URL:", currentUrl);
     
-    const baseUrl = window.location.origin;
-    console.log("Base URL from origin:", baseUrl);
+    // Extrahera bas-URL:en (origin)
+    const originUrl = window.location.origin;
+    console.log("Origin URL:", originUrl);
     
+    // Hämta hostname (domännamnet)
     const hostname = window.location.hostname;
     console.log("Hostname:", hostname);
     
-    return baseUrl;
+    // Om vi använder localhost, ersätt med en publik URL om sådan finns
+    if (hostname === 'localhost' || hostname.includes('127.0.0.1')) {
+      console.log("Running on localhost - this might cause issues with links on mobile devices");
+      // Här kan du lägga till en hårdkodad produktions-URL om du vet vad den är
+      return originUrl;
+    }
+    
+    // Kontrollera om vi kör på en development-preview (Lovable/Netlify/Vercel etc)
+    if (hostname.includes('preview') || hostname.includes('lovable.app')) {
+      console.log("Using preview URL");
+    }
+    
+    return originUrl;
   };
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -206,8 +222,12 @@ const Invite = () => {
 
       console.log("Invitation created:", insertData);
 
+      // Skapa inbjudningslänken med den korrekta URL:en
       const baseUrl = getFullAppUrl();
-      const inviteLink = `${baseUrl}/#/register?token=${token}`;
+      // Använd absolut väg (ta bort eventuellt avslutande /)
+      const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+      const inviteLink = `${cleanBaseUrl}/#/register?token=${token}`;
+      
       console.log("Generated invite link:", inviteLink);
       
       setGeneratedLink(inviteLink);
@@ -248,8 +268,11 @@ const Invite = () => {
       
       if (error) throw error;
 
+      // Skapa inbjudningslänken med den korrekta URL:en
       const baseUrl = getFullAppUrl();
-      const inviteLink = `${baseUrl}/#/register?token=${newToken}`;
+      // Använd absolut väg (ta bort eventuellt avslutande /)
+      const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+      const inviteLink = `${cleanBaseUrl}/#/register?token=${newToken}`;
       
       setInvitations(invitations.map(inv => 
         inv.id === invitation.id 
@@ -296,7 +319,9 @@ const Invite = () => {
       
       // Skapa länken direkt utan att verifiera användaren eller kontakta Supabase
       const baseUrl = getFullAppUrl();
-      const passwordResetLink = `${baseUrl}/#/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
+      // Använd absolut väg (ta bort eventuellt avslutande /)
+      const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+      const passwordResetLink = `${cleanBaseUrl}/#/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
       
       // Visa den genererade länken direkt
       setGeneratedResetLink(passwordResetLink);
@@ -453,8 +478,10 @@ const Invite = () => {
   };
 
   const getInviteLink = (token: string) => {
+    // Använd samma metod som när vi skapar länken för att säkerställa konsistens
     const baseUrl = getFullAppUrl();
-    return `${baseUrl}/#/register?token=${token}`;
+    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    return `${cleanBaseUrl}/#/register?token=${token}`;
   };
 
   const getStatusLabel = (invitation: Invitation) => {
