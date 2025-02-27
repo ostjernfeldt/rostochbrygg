@@ -42,6 +42,13 @@ type Invitation = {
 
 type InvitationStatus = 'active' | 'expired' | 'used' | 'pending';
 
+// Definiera en typ för användarobjektet som returneras från admin API
+type SupabaseUser = {
+  id: string;
+  email?: string | null;
+  // Lägg till andra egenskaper om de behövs
+};
+
 const Invite = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -323,14 +330,17 @@ const Invite = () => {
       // Istället måste vi använda ett annat sätt för att hitta användaren
 
       // Försök att hitta användaren direkt via Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+      const { data, error: authError } = await supabase.auth.admin.listUsers();
       
       if (authError) {
         console.error("Error listing users:", authError);
         throw new Error("Det gick inte att hämta användare. Du kanske inte har admin-behörigheter.");
       }
       
-      const userToDelete = authData?.users?.find(user => 
+      // Explicit typkonvertering för att säkerställa att TypeScript förstår strukturen
+      const users = data?.users as SupabaseUser[] || [];
+      
+      const userToDelete = users.find(user => 
         user.email?.toLowerCase() === deleteAccountEmail.trim().toLowerCase()
       );
 
