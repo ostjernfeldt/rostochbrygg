@@ -56,19 +56,15 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
         if (anySalesError) throw anySalesError;
 
         if (!anySales || anySales.length === 0) {
-          console.log("No sales found at all, returning staff members with zero sales");
+          console.log("No sales found at all, returning empty array");
           
-          // Create default leaders with zero sales for all staff members
-          const defaultLeaders = visibleStaff.map(staff => ({
-            "User Display Name": staff.user_display_name,
-            points: 0,
-            salesCount: 0
-          }));
+          // Return empty leaders list since we want to show a placeholder message
+          const emptyLeaders: UserSales[] = [];
           
           return {
-            dailyLeaders: type === 'daily' ? defaultLeaders : [],
-            weeklyLeaders: type === 'weekly' ? defaultLeaders : [],
-            monthlyLeaders: type === 'monthly' ? defaultLeaders : [],
+            dailyLeaders: type === 'daily' ? emptyLeaders : [],
+            weeklyLeaders: type === 'weekly' ? emptyLeaders : [],
+            monthlyLeaders: type === 'monthly' ? emptyLeaders : [],
             latestDate: null
           };
         }
@@ -153,19 +149,10 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
         console.log(`Sales data for ${type}:`, sales);
 
         const calculateLeaders = (sales: TotalPurchase[] | null): UserSales[] => {
-          // Initialize with all staff members at zero points/sales
-          const defaultUserTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[] }> = {};
+          // Initialize with empty object for tracking user totals
+          const userTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[] }> = {};
           
-          // Add all visible staff members with zero stats
-          visibleStaff.forEach(staff => {
-            defaultUserTotals[staff.user_display_name] = {
-              points: 0,
-              salesCount: 0,
-              sales: []
-            };
-          });
-          
-          // If there are sales, process them
+          // If there are sales, process them and only add users with actual sales
           if (sales && sales.length > 0) {
             // Filter out sales from hidden staff members
             const visibleSales = sales.filter(sale => 
@@ -179,28 +166,28 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
               const name = sale.user_display_name;
               if (!name || !visibleStaffNames.has(name)) return;
               
-              if (!defaultUserTotals[name]) {
-                defaultUserTotals[name] = {
+              if (!userTotals[name]) {
+                userTotals[name] = {
                   points: 0,
                   salesCount: 0,
                   sales: []
                 };
               }
               
-              defaultUserTotals[name].sales.push(sale);
+              userTotals[name].sales.push(sale);
             });
             
             // Calculate points and sales counts for staff with sales
-            Object.keys(defaultUserTotals).forEach(name => {
-              if (defaultUserTotals[name].sales.length > 0) {
-                defaultUserTotals[name].points = calculateTotalPoints(defaultUserTotals[name].sales);
-                defaultUserTotals[name].salesCount = getValidSalesCount(defaultUserTotals[name].sales);
+            Object.keys(userTotals).forEach(name => {
+              if (userTotals[name].sales.length > 0) {
+                userTotals[name].points = calculateTotalPoints(userTotals[name].sales);
+                userTotals[name].salesCount = getValidSalesCount(userTotals[name].sales);
               }
             });
           }
 
-          // Convert to array and sort by points
-          return Object.entries(defaultUserTotals)
+          // Convert to array and sort by points, only including users with actual sales
+          return Object.entries(userTotals)
             .map(([name, stats]) => ({
               "User Display Name": name,
               points: stats.points,

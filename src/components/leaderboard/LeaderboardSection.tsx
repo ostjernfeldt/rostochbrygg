@@ -78,7 +78,9 @@ export const LeaderboardSection = ({
         {isLoading ? (
           <div className="p-4">Laddar data...</div>
         ) : !data || data.length === 0 ? (
-          <div className="p-4">Ingen försäljningsdata tillgänglig.</div>
+          <div className="p-6 text-center bg-gray-800 rounded-lg">
+            <p className="text-gray-300">Ingen försäljningsdata har registrerats ännu.</p>
+          </div>
         ) : (
           data.map((user, index) => (
             <LeaderboardItem
