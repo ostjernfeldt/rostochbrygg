@@ -105,6 +105,7 @@ const StaffMember = () => {
 
       const memberStats: StaffMemberStats = {
         displayName: name,
+        role: roleData?.role || 'Sales Intern', // Add the role property here
         firstSale: firstSaleDate,
         totalAmount,
         averageAmount,
@@ -117,7 +118,6 @@ const StaffMember = () => {
 
       return {
         ...memberStats,
-        role: roleData?.role || 'Sales Intern',
         bestDay,
         highestSale: {
           date: highestSingleSale.timestamp,
