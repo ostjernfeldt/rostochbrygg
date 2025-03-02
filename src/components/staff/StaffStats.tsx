@@ -59,7 +59,7 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
   };
 
   // Fetch historical points
-  const { data: historicalPoints } = useQuery({
+  const { data: historicalPoints, isLoading: isLoadingHistoricalPoints } = useQuery({
     queryKey: ["historicalPoints", userDisplayName],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -68,7 +68,7 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
         .eq("user_display_name", userDisplayName)
         .single();
 
-      if (error && error.code !== "PGRST116") {
+      if (error) {
         console.error("Error fetching historical points:", error);
         return 0;
       }
@@ -79,7 +79,7 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
   });
 
   // Fetch role levels
-  const { data: roleLevels } = useQuery({
+  const { data: roleLevels, isLoading: isLoadingRoleLevels } = useQuery({
     queryKey: ["roleLevels"],
     queryFn: async () => {
       const { data, error } = await supabase
