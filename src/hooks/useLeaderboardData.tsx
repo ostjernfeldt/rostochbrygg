@@ -85,11 +85,11 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             const emptyLeaders: UserSales[] = [];
             
             // Create a result object based on the requested type
-            const result: any = {};
-            if (type === 'daily') result.dailyLeaders = emptyLeaders;
-            if (type === 'weekly') result.weeklyLeaders = emptyLeaders;
-            if (type === 'monthly') result.monthlyLeaders = emptyLeaders;
-            result.latestDate = null;
+            const result: Record<string, any> = { latestDate: null };
+            
+            // Use the string literal to create property name dynamically
+            const leaderKey = `${type}Leaders` as const;
+            result[leaderKey] = emptyLeaders;
             
             return result;
           }
@@ -106,12 +106,12 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           if (latestError) {
             console.log("Error getting latest sale, using current date", latestError);
             // Use current date as fallback
-            const emptyResult: any = {
-              latestDate: null
-            };
-            if (type === 'daily') emptyResult.dailyLeaders = [];
-            if (type === 'weekly') emptyResult.weeklyLeaders = [];
-            if (type === 'monthly') emptyResult.monthlyLeaders = [];
+            const emptyResult: Record<string, any> = { latestDate: null };
+            
+            // Use the string literal to create property name dynamically
+            const leaderKey = `${type}Leaders` as const;
+            emptyResult[leaderKey] = [];
+            
             return emptyResult;
           }
           
@@ -136,24 +136,24 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           if (!latestSales || latestSales.length === 0) {
             // Still no valid sales - return empty array
             const emptyLeaders: UserSales[] = [];
-            const emptyResult: any = {
-              latestDate: startDate.toISOString()
-            };
-            if (type === 'daily') emptyResult.dailyLeaders = emptyLeaders;
-            if (type === 'weekly') emptyResult.weeklyLeaders = [];
-            if (type === 'monthly') emptyResult.monthlyLeaders = [];
+            const emptyResult: Record<string, any> = { latestDate: startDate.toISOString() };
+            
+            // Use the string literal to create property name dynamically
+            const leaderKey = `${type}Leaders` as const;
+            emptyResult[leaderKey] = emptyLeaders;
+            
             return emptyResult;
           }
           
           // Calculate leaders with the latest sales
           const leaders = calculateLeaders(latestSales, visibleStaffNames);
           
-          const result: any = {
-            latestDate: startDate.toISOString()
-          };
-          if (type === 'daily') result.dailyLeaders = leaders;
-          if (type === 'weekly') result.weeklyLeaders = [];
-          if (type === 'monthly') result.monthlyLeaders = [];
+          const result: Record<string, any> = { latestDate: startDate.toISOString() };
+          
+          // Use the string literal to create property name dynamically
+          const leaderKey = `${type}Leaders` as const;
+          result[leaderKey] = leaders;
+          
           return result;
         }
 
@@ -161,12 +161,14 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         const leaders = calculateLeaders(sales, visibleStaffNames);
         
         // Create result object based on the requested type
-        const result: any = {
-          latestDate: useLatestDate ? startDate.toISOString() : null
+        const result: Record<string, any> = { 
+          latestDate: useLatestDate ? startDate.toISOString() : null 
         };
-        if (type === 'daily') result.dailyLeaders = leaders;
-        if (type === 'weekly') result.weeklyLeaders = leaders;
-        if (type === 'monthly') result.monthlyLeaders = leaders;
+        
+        // Use the string literal to create property name dynamically
+        const leaderKey = `${type}Leaders` as const;
+        result[leaderKey] = leaders;
+        
         return result;
       } catch (error) {
         console.error(`Error in ${type} challenge leaders query:`, error);
