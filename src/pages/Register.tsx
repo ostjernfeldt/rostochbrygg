@@ -33,7 +33,7 @@ const Register = () => {
 
       console.log("Verifying invitation for email:", email);
       
-      // Use the new function to validate by email
+      // Use the RPC function to validate by email
       const { data, error } = await supabase
         .rpc('validate_invitation_by_email', { email_address: email.trim() });
 
@@ -44,7 +44,7 @@ const Register = () => {
       
       console.log("Validation result:", data);
 
-      if (!data || data.length === 0 || !data[0].is_valid) {
+      if (!data || !Array.isArray(data) || data.length === 0 || !data[0].is_valid) {
         throw new Error("Ingen aktiv inbjudan hittades för denna e-postadress.");
       }
 

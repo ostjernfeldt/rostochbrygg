@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -37,6 +36,8 @@ type Invitation = {
   expires_at: string;
   used_at: string | null;
   status: string;
+  created_by?: string | null;
+  invitation_token?: string | null;
 };
 
 type InvitationStatus = 'active' | 'expired' | 'used' | 'pending';
@@ -118,9 +119,15 @@ const Invite = () => {
       if (error) throw error;
       
       console.log("Received invitations:", data);
-      setInvitations(data || []);
       
-      await verifyInvitationStatus(data || []);
+      // Make sure each invitation has a status field
+      const invitationsWithStatus = data?.map((inv) => ({
+        ...inv,
+        status: inv.status || (inv.used_at ? 'used' : 'pending')
+      })) || [];
+      
+      setInvitations(invitationsWithStatus);
+      await verifyInvitationStatus(invitationsWithStatus);
     } catch (error: any) {
       console.error("Error fetching invitations:", error);
       toast({
