@@ -12,11 +12,6 @@ interface UserSales {
   salesCount: number;
 }
 
-interface UserTotals {
-  points: number;
-  salesCount: number;
-}
-
 export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selectedDate: string) => {
   return useQuery({
     queryKey: ["challengeLeaders", type, selectedDate],
@@ -24,7 +19,7 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
       console.log(`Fetching ${type} challenge leaders from total_purchases...`);
       
       try {
-        // First, get the list of visible staff members
+        // First, get the list of visible staff members in a single query
         const { data: visibleStaff, error: staffError } = await supabase
           .from("staff_roles")
           .select("user_display_name, historical_points:staff_historical_points(points)")
@@ -34,108 +29,34 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
         if (staffError) throw staffError;
 
         const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
-        const staffHistoricalPoints: Record<string, number> = {};
         
-        // Create a map of staff names to their historical points
-        visibleStaff.forEach(staff => {
-          const points = staff.historical_points?.[0]?.points || 0;
-          staffHistoricalPoints[staff.user_display_name] = points;
-        });
-
-        // Set default date ranges for empty data scenarios
+        // Calculate date ranges based on the selected date and type
         let startDate: Date;
         let endDate: Date;
         let useLatestDate = false;
+        
+        // Parse the selectedDate once
+        const parsedSelectedDate = parseISO(selectedDate);
 
-        // Check if there are any sales at all before proceeding with date calculations
-        const { data: anySales, error: anySalesError } = await supabase
-          .from("total_purchases")
-          .select("timestamp")
-          .limit(1);
-
-        if (anySalesError) throw anySalesError;
-
-        if (!anySales || anySales.length === 0) {
-          console.log("No sales found at all, returning empty array");
-          
-          // Return empty leaders list since we want to show a placeholder message
-          const emptyLeaders: UserSales[] = [];
-          
-          return {
-            dailyLeaders: type === 'daily' ? emptyLeaders : [],
-            weeklyLeaders: type === 'weekly' ? emptyLeaders : [],
-            monthlyLeaders: type === 'monthly' ? emptyLeaders : [],
-            latestDate: null
-          };
+        switch (type) {
+          case 'daily':
+            startDate = new Date(parsedSelectedDate);
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date(startDate);
+            endDate.setHours(23, 59, 59, 999);
+            break;
+          case 'weekly':
+            startDate = startOfWeek(parsedSelectedDate);
+            endDate = endOfWeek(startDate);
+            break;
+          case 'monthly':
+            const [year, month] = selectedDate.split('-').map(Number);
+            startDate = startOfMonth(new Date(year, month - 1));
+            endDate = endOfMonth(startDate);
+            break;
         }
 
-        // If sales exist, continue with normal date processing
-        const { data: latestSale, error: latestError } = await supabase
-          .from("total_purchases")
-          .select("timestamp")
-          .order("timestamp", { ascending: false })
-          .limit(1)
-          .single();
-
-        if (latestError) {
-          console.log("Error getting latest sale, using current date", latestError);
-          // Use current date as fallback
-          const currentDate = new Date();
-          
-          switch (type) {
-            case 'daily':
-              startDate = new Date(currentDate);
-              startDate.setHours(0, 0, 0, 0);
-              endDate = new Date(startDate);
-              endDate.setHours(23, 59, 59, 999);
-              break;
-            case 'weekly':
-              startDate = startOfWeek(currentDate);
-              endDate = endOfWeek(startDate);
-              break;
-            case 'monthly':
-              startDate = startOfMonth(currentDate);
-              endDate = endOfMonth(startDate);
-              break;
-          }
-        } else {
-          switch (type) {
-            case 'daily':
-              startDate = parseISO(selectedDate);
-              startDate.setHours(0, 0, 0, 0);
-              endDate = new Date(startDate);
-              endDate.setHours(23, 59, 59, 999);
-
-              // Check if there are any sales for the selected date
-              const { data: checkSales } = await supabase
-                .from("total_purchases")
-                .select("id")
-                .gte("timestamp", startDate.toISOString())
-                .lte("timestamp", endDate.toISOString())
-                .limit(1);
-
-              // If no sales found for selected date, use the latest date with sales
-              if (!checkSales || checkSales.length === 0) {
-                console.log("No sales for selected date, using latest date:", latestSale.timestamp);
-                startDate = new Date(latestSale.timestamp);
-                startDate.setHours(0, 0, 0, 0);
-                endDate = new Date(startDate);
-                endDate.setHours(23, 59, 59, 999);
-                useLatestDate = true;
-              }
-              break;
-            case 'weekly':
-              startDate = startOfWeek(parseISO(selectedDate));
-              endDate = endOfWeek(startDate);
-              break;
-            case 'monthly':
-              const [year, month] = selectedDate.split('-').map(Number);
-              startDate = startOfMonth(new Date(year, month - 1));
-              endDate = endOfMonth(startDate);
-              break;
-          }
-        }
-
+        // Get all relevant sales in a single query
         const { data: sales, error: salesError } = await supabase
           .from("total_purchases")
           .select("*")
@@ -146,59 +67,91 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
 
         if (salesError) throw salesError;
 
-        console.log(`Sales data for ${type}:`, sales);
-
-        const calculateLeaders = (sales: TotalPurchase[] | null): UserSales[] => {
-          // Initialize with empty object for tracking user totals
-          const userTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[] }> = {};
+        // If no sales are found for the selected date range and we need the latest date
+        if ((!sales || sales.length === 0) && type === 'daily') {
+          // Check if there are any sales at all with a lightweight count query
+          const { count, error: countError } = await supabase
+            .from("total_purchases")
+            .select("*", { count: 'exact', head: true });
           
-          // If there are sales, process them and only add users with actual sales
-          if (sales && sales.length > 0) {
-            // Filter out sales from hidden staff members
-            const visibleSales = sales.filter(sale => 
-              sale.user_display_name && visibleStaffNames.has(sale.user_display_name)
-            );
+          if (countError) throw countError;
+          
+          if (count === 0) {
+            // No sales at all - return empty array for placeholder message
+            console.log("No sales found at all, returning empty array");
+            const emptyLeaders: UserSales[] = [];
             
-            const processedSales = processTransactions(visibleSales);
-            
-            // Update the stats for staff members who have sales
-            processedSales.forEach(sale => {
-              const name = sale.user_display_name;
-              if (!name || !visibleStaffNames.has(name)) return;
-              
-              if (!userTotals[name]) {
-                userTotals[name] = {
-                  points: 0,
-                  salesCount: 0,
-                  sales: []
-                };
-              }
-              
-              userTotals[name].sales.push(sale);
-            });
-            
-            // Calculate points and sales counts for staff with sales
-            Object.keys(userTotals).forEach(name => {
-              if (userTotals[name].sales.length > 0) {
-                userTotals[name].points = calculateTotalPoints(userTotals[name].sales);
-                userTotals[name].salesCount = getValidSalesCount(userTotals[name].sales);
-              }
-            });
+            return {
+              dailyLeaders: type === 'daily' ? emptyLeaders : [],
+              weeklyLeaders: type === 'weekly' ? emptyLeaders : [],
+              monthlyLeaders: type === 'monthly' ? emptyLeaders : [],
+              latestDate: null
+            };
           }
+          
+          // If there are sales but none for selected date, find the latest date with sales
+          const { data: latestSale, error: latestError } = await supabase
+            .from("total_purchases")
+            .select("timestamp")
+            .not("user_display_name", "is", null)
+            .order("timestamp", { ascending: false })
+            .limit(1)
+            .single();
 
-          // Convert to array and sort by points, only including users with actual sales
-          return Object.entries(userTotals)
-            .map(([name, stats]) => ({
-              "User Display Name": name,
-              points: stats.points,
-              salesCount: stats.salesCount
-            }))
-            .sort((a, b) => b.points - a.points);
-        };
+          if (latestError) {
+            console.log("Error getting latest sale, using current date", latestError);
+            // Use current date as fallback
+            return {
+              dailyLeaders: [],
+              weeklyLeaders: [],
+              monthlyLeaders: [],
+              latestDate: null
+            };
+          }
+          
+          // Update date range to use latest date
+          startDate = new Date(latestSale.timestamp);
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(startDate);
+          endDate.setHours(23, 59, 59, 999);
+          useLatestDate = true;
+          
+          // Fetch sales for this latest date
+          const { data: latestSales, error: latestSalesError } = await supabase
+            .from("total_purchases")
+            .select("*")
+            .gte("timestamp", startDate.toISOString())
+            .lte("timestamp", endDate.toISOString())
+            .not("refunded", "eq", true)
+            .not("user_display_name", "is", null);
+            
+          if (latestSalesError) throw latestSalesError;
+          
+          if (!latestSales || latestSales.length === 0) {
+            // Still no valid sales - return empty array
+            const emptyLeaders: UserSales[] = [];
+            return {
+              dailyLeaders: type === 'daily' ? emptyLeaders : [],
+              weeklyLeaders: [],
+              monthlyLeaders: [],
+              latestDate: startDate.toISOString()
+            };
+          }
+          
+          // Calculate leaders with the latest sales
+          const leaders = calculateLeaders(latestSales, visibleStaffNames);
+          
+          return {
+            dailyLeaders: type === 'daily' ? leaders : [],
+            weeklyLeaders: [],
+            monthlyLeaders: [],
+            latestDate: startDate.toISOString()
+          };
+        }
 
-        const leaders = calculateLeaders(sales);
-        console.log(`${type} leaders:`, leaders);
-
+        // Calculate leaders with the originally requested date range
+        const leaders = calculateLeaders(sales, visibleStaffNames);
+        
         return {
           dailyLeaders: type === 'daily' ? leaders : [],
           weeklyLeaders: type === 'weekly' ? leaders : [],
@@ -211,4 +164,52 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
       }
     }
   });
+};
+
+// Simplified leader calculation with better performance
+const calculateLeaders = (sales: TotalPurchase[] | null, visibleStaffNames: Set<string>): UserSales[] => {
+  if (!sales || sales.length === 0) {
+    return [];
+  }
+  
+  // Process sales only once and track totals by user
+  const userTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[] }> = {};
+  
+  // Pre-filter sales to only include visible staff members - do this once
+  const visibleSales = sales.filter(sale => 
+    sale.user_display_name && visibleStaffNames.has(sale.user_display_name)
+  );
+  
+  // Process transactions once
+  const processedSales = processTransactions(visibleSales);
+  
+  // Group sales by user
+  processedSales.forEach(sale => {
+    const name = sale.user_display_name;
+    if (!name || !visibleStaffNames.has(name)) return;
+    
+    if (!userTotals[name]) {
+      userTotals[name] = {
+        points: 0,
+        salesCount: 0,
+        sales: []
+      };
+    }
+    
+    userTotals[name].sales.push(sale);
+  });
+  
+  // Calculate stats for each user
+  const leaders = Object.entries(userTotals)
+    .map(([name, data]) => {
+      // Only calculate when needed
+      return {
+        "User Display Name": name,
+        points: calculateTotalPoints(data.sales),
+        salesCount: getValidSalesCount(data.sales)
+      };
+    })
+    .sort((a, b) => b.points - a.points);
+  
+  return leaders;
 };

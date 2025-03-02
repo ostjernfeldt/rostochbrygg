@@ -7,34 +7,36 @@ export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurc
 };
 
 export const getValidTransactions = (transactions: TotalPurchase[]): TotalPurchase[] => {
-  return transactions.filter(t => {
-    // Om transaktionen redan är markerad som refunderad, exkludera den
-    if (t.refunded) return false;
+  // Optimize by filtering in a single pass
+  return transactions.filter(t => 
+    !t.refunded && t.amount > 0 && 
+    // Check if refund happened on a different day when there's a refund timestamp
+    !(t.refund_timestamp && isSameDay(new Date(t.timestamp), new Date(t.refund_timestamp)))
+  );
+};
 
-    // Om det är en positiv transaktion
-    if (t.amount > 0) {
-      // Om det finns ett refund_timestamp, kolla om refunden skedde samma dag
-      if (t.refund_timestamp) {
-        const saleDate = new Date(t.timestamp);
-        const refundDate = new Date(t.refund_timestamp);
-        
-        // Om refunden skedde samma dag, exkludera transaktionen
-        if (saleDate.getFullYear() === refundDate.getFullYear() &&
-            saleDate.getMonth() === refundDate.getMonth() &&
-            saleDate.getDate() === refundDate.getDate()) {
-          return false;
-        }
-      }
-      return true;
-    }
-    return false;
-  });
+// Helper function to check if two dates are the same day
+const isSameDay = (date1: Date, date2: Date): boolean => {
+  return date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate();
 };
 
 export const getValidSalesCount = (transactions: TotalPurchase[]): number => {
-  return getValidTransactions(transactions).length;
+  // Optimize by using filter directly to avoid double array processing
+  return transactions.filter(t => 
+    !t.refunded && t.amount > 0 && 
+    !(t.refund_timestamp && isSameDay(new Date(t.timestamp), new Date(t.refund_timestamp)))
+  ).length;
 };
 
 export const getValidTotalAmount = (transactions: TotalPurchase[]): number => {
-  return getValidTransactions(transactions).reduce((sum, t) => sum + Number(t.amount), 0);
+  // Optimize by doing filter and sum in a single pass
+  return transactions.reduce((sum, t) => {
+    if (!t.refunded && t.amount > 0 && 
+        !(t.refund_timestamp && isSameDay(new Date(t.timestamp), new Date(t.refund_timestamp)))) {
+      return sum + Number(t.amount);
+    }
+    return sum;
+  }, 0);
 };
