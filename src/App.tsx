@@ -5,7 +5,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useAuth } from "./hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "./integrations/supabase/client";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -15,7 +15,7 @@ import Leaderboard from "./pages/Leaderboard";
 import HallOfFame from "./pages/HallOfFame";
 import Staff from "./pages/Staff";
 import Invite from "./pages/Invite";
-import PageLayout from "./components/PageLayout";
+import { PageLayout } from "./components/PageLayout";
 import { Toaster } from "@/components/ui/toaster";
 
 // Add the Admin import
@@ -130,7 +130,6 @@ function App() {
           }
         />
         
-        {/* Add the Admin route */}
         <Route 
           path="/admin" 
           element={
