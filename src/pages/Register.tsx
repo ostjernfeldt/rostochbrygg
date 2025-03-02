@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, InfoIcon } from "lucide-react";
+import { AlertTriangle, InfoIcon, Loader2 } from "lucide-react";
 import { InvitationCheckResult } from "@/components/invite/types";
 
 const Register = () => {
@@ -36,7 +36,8 @@ const Register = () => {
       // Om användaren kommer från inloggningssidan och redan är inbjuden
       if (invitedParam === 'true') {
         setIsComingFromLogin(true);
-        verifyInvitationByEmail(emailParam);
+        setIsVerified(true); // Set as verified directly if coming from CreateAccount
+        console.log("Setting as verified directly from URL params");
       }
     }
   }, [location.search]);
@@ -64,13 +65,11 @@ const Register = () => {
       
       console.log("Validation result:", data);
 
-      const result = data as InvitationCheckResult;
-
-      if (!result || !result.is_valid) {
+      if (!data || !data.is_valid) {
         throw new Error("Ingen aktiv inbjudan hittades för denna e-postadress.");
       }
 
-      setInvitationId(result.invitation_id || null);
+      setInvitationId(data.invitation_id || null);
       setIsVerified(true);
       setValidationError(null);
     } catch (error: any) {
@@ -231,7 +230,12 @@ const Register = () => {
                 className="w-full"
                 disabled={isVerifying}
               >
-                {isVerifying ? "Verifierar..." : "Fortsätt"}
+                {isVerifying ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Verifierar...
+                  </>
+                ) : "Fortsätt"}
               </Button>
               
               <Button 
@@ -292,7 +296,12 @@ const Register = () => {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? "Skapar konto..." : "Skapa konto"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Skapar konto...
+                </>
+              ) : "Skapa konto"}
             </Button>
             
             <Button 

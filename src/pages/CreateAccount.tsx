@@ -42,7 +42,7 @@ const CreateAccount = () => {
       
       console.log("Validation result:", data);
 
-      if (!data || !data.data || data.data.length === 0 || !data.data[0].is_valid) {
+      if (!data || !data.is_valid) {
         throw new Error("Ingen aktiv inbjudan hittades för denna e-postadress.");
       }
 
@@ -64,6 +64,7 @@ const CreateAccount = () => {
   };
 
   const navigateToRegister = () => {
+    // Make sure to pass the invitation status to the Register component
     navigate(`/register?email=${encodeURIComponent(email)}&invited=true`);
   };
 
