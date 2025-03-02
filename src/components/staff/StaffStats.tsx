@@ -12,7 +12,7 @@ interface StaffStatsProps {
     salesCount: number;
     averagePoints: number;
     activeDays: number;
-    firstSaleDate: string;
+    firstSaleDate: string | null;
     bestDay: {
       date: string;
       points: number;
@@ -25,6 +25,7 @@ interface StaffStatsProps {
       date: string;
       points: number;
     };
+    historicalPoints: number;
   };
   userDisplayName: string;
 }
@@ -59,30 +60,14 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
     bestDay: stats.bestDay || { date: new Date().toISOString(), points: 0 }
   };
 
-  // Fetch historical points
-  const { data: historicalPoints, isLoading: isLoadingHistoricalPoints } = useQuery({
+  // Fetch historical points - no longer needed as we pass them from parent
+  const { data: historicalPoints } = useQuery({
     queryKey: ["historicalPoints", userDisplayName],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from("staff_historical_points")
-          .select("*")
-          .eq("user_display_name", userDisplayName)
-          .single();
-
-        if (error) {
-          console.error("Error fetching historical points:", error);
-          return 0;
-        }
-
-        return (data as HistoricalPoints)?.points || 0;
-      } catch (e) {
-        console.error("Exception fetching historical points:", e);
-        toast.error("Kunde inte ladda historiska poäng");
-        return 0;
-      }
+      return stats.historicalPoints || 0;
     },
-    enabled: !!userDisplayName
+    initialData: stats.historicalPoints,
+    enabled: false // Disable the query since we already have the data
   });
 
   // Fetch role levels
@@ -139,7 +124,7 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
   };
 
   const { currentRole, nextRole } = getCurrentAndNextRole();
-  const isLoading = isLoadingHistoricalPoints || isLoadingRoleLevels;
+  const isLoading = isLoadingRoleLevels;
 
   if (isLoading) {
     return (
@@ -182,12 +167,12 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
           title="Högsta sälj"
           value={`${Math.round(cleanStats.highestSale.points)} p`}
           userName=""
-          subtitle={format(new Date(cleanStats.highestSale.date), "d MMM yyyy", { locale: sv })}
+          subtitle={cleanStats.highestSale.date ? format(new Date(cleanStats.highestSale.date), "d MMM yyyy", { locale: sv }) : "Ingen data"}
           animationDelay="1600ms"
         />
         <StatCard
           title="Bästa säljdagen"
-          subtitle={format(new Date(cleanStats.bestDay.date), "d MMM yyyy", { locale: sv })}
+          subtitle={cleanStats.bestDay.date ? format(new Date(cleanStats.bestDay.date), "d MMM yyyy", { locale: sv }) : "Ingen data"}
           value={`${Math.round(cleanStats.bestDay.points)} p`}
           userName=""
           animationDelay="2000ms"

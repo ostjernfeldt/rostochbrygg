@@ -37,6 +37,20 @@ const StaffMember = () => {
         return null;
       }
 
+      // Fetch historical points data
+      const { data: historicalPointsData, error: historicalPointsError } = await supabase
+        .from("staff_historical_points")
+        .select("points")
+        .eq("user_display_name", decodeURIComponent(name))
+        .single();
+
+      if (historicalPointsError && historicalPointsError.code !== 'PGRST116') {
+        console.error("Error fetching historical points:", historicalPointsError);
+      }
+
+      const historicalPoints = historicalPointsData?.points || 0;
+
+      // Fetch sales data
       const { data: sales, error: salesError } = await supabase
         .from("total_purchases")
         .select("*")
@@ -44,86 +58,110 @@ const StaffMember = () => {
         .order("timestamp", { ascending: true })
         .not("refunded", "eq", true);
 
-      if (salesError) throw salesError;
-      if (!sales || sales.length === 0) return null;
+      if (salesError) {
+        console.error("Error fetching sales:", salesError);
+      }
 
-      // Process transactions to handle refunds
-      const processedSales = processTransactions(sales);
-      // Filtrera bort alla återbetalade köp för statistikberäkningar
-      const validSales = processedSales.filter(sale => !sale.refunded);
+      // Initialize default values for a staff member without sales
+      let validSales: TotalPurchase[] = [];
+      let firstSaleDate = null;
+      let totalAmount = 0;
+      let totalPoints = 0;
+      let averageAmount = 0;
+      let averagePoints = 0;
+      let salesCount = 0;
+      let daysActive = 0;
+      let bestDay = { date: new Date().toISOString(), points: 0 };
+      let highestSingleSale = { date: new Date().toISOString(), points: 0 };
+      let worstDay = { date: new Date().toISOString(), points: 0 };
 
-      // Sort sales by timestamp for consistent date handling
-      const sortedSales = [...validSales].sort((a, b) => 
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
+      // Process sales data if it exists
+      if (sales && sales.length > 0) {
+        // Process transactions to handle refunds
+        const processedSales = processTransactions(sales);
+        // Filter out all refunded purchases for statistics calculations
+        validSales = processedSales.filter(sale => !sale.refunded);
 
-      // Find highest single sale by calculating total points for each individual sale
-      // Exkludera återbetalade köp från högsta sälj beräkningen
-      const highestSingleSale = [...validSales].sort((a, b) => {
-        const pointsA = calculateTotalPoints([a]);
-        const pointsB = calculateTotalPoints([b]);
-        return pointsB - pointsA;
-      })[0];
+        if (validSales.length > 0) {
+          // Sort sales by timestamp for consistent date handling
+          const sortedSales = [...validSales].sort((a, b) => 
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
 
-      // Get the first sale date
-      const firstSaleDate = new Date(sortedSales[0].timestamp);
-      console.log("First sale date:", firstSaleDate);
+          // Find highest single sale by calculating total points for each individual sale
+          const highestSale = [...validSales].sort((a, b) => {
+            const pointsA = calculateTotalPoints([a]);
+            const pointsB = calculateTotalPoints([b]);
+            return pointsB - pointsA;
+          })[0];
 
-      // Group sales by date for daily totals, exkludera återbetalade köp
-      const salesByDate = sortedSales.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
-        const dateStr = new Date(sale.timestamp).toDateString();
-        if (!acc[dateStr]) {
-          acc[dateStr] = [];
+          // Get the first sale date
+          firstSaleDate = new Date(sortedSales[0].timestamp);
+          console.log("First sale date:", firstSaleDate);
+
+          // Group sales by date for daily totals
+          const salesByDate = sortedSales.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
+            const dateStr = new Date(sale.timestamp).toDateString();
+            if (!acc[dateStr]) {
+              acc[dateStr] = [];
+            }
+            acc[dateStr].push(sale);
+            return acc;
+          }, {});
+
+          // Calculate daily totals using calculateTotalPoints for consistency
+          const dailyTotals = Object.entries(salesByDate).map(([dateStr, dateSales]) => ({
+            date: new Date(dateStr).toISOString(),
+            points: calculateTotalPoints(dateSales)
+          }));
+
+          // Sort days by points for best day
+          const sortedDays = [...dailyTotals].sort((a, b) => b.points - a.points);
+          bestDay = sortedDays[0];
+
+          // Calculate first day points using calculateTotalPoints
+          const firstDayPoints = calculateTotalPoints(salesByDate[firstSaleDate.toDateString()]);
+
+          worstDay = {
+            date: firstSaleDate.toISOString(),
+            points: firstDayPoints
+          };
+
+          totalAmount = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
+          totalPoints = calculateTotalPoints(validSales);
+          averageAmount = totalAmount / validSales.length;
+          averagePoints = totalPoints / validSales.length;
+          salesCount = validSales.length;
+          const uniqueDays = new Set(validSales.map(s => new Date(s.timestamp).toDateString()));
+          daysActive = uniqueDays.size;
+          
+          highestSingleSale = {
+            date: highestSale.timestamp,
+            points: calculateTotalPoints([highestSale])
+          };
         }
-        acc[dateStr].push(sale);
-        return acc;
-      }, {});
-
-      // Calculate daily totals using calculateTotalPoints for consistency
-      const dailyTotals = Object.entries(salesByDate).map(([dateStr, dateSales]) => ({
-        date: new Date(dateStr).toISOString(),
-        points: calculateTotalPoints(dateSales)
-      }));
-
-      // Sort days by points for best day
-      const sortedDays = [...dailyTotals].sort((a, b) => b.points - a.points);
-      const bestDay = sortedDays[0];
-
-      // Calculate first day points using calculateTotalPoints
-      const firstDayPoints = calculateTotalPoints(salesByDate[firstSaleDate.toDateString()]);
-
-      const firstDay = {
-        date: firstSaleDate.toISOString(),
-        points: firstDayPoints
-      };
-
-      const totalAmount = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
-      const totalPoints = calculateTotalPoints(validSales);
-      const averageAmount = totalAmount / validSales.length;
-      const averagePoints = totalPoints / validSales.length;
-      const uniqueDays = new Set(validSales.map(s => new Date(s.timestamp).toDateString()));
+      }
 
       const memberStats: StaffMemberStats = {
         displayName: name,
-        role: roleData?.role || 'Sales Intern', // Add the role property here
+        role: roleData?.role || 'Sales Intern',
         firstSale: firstSaleDate,
         totalAmount,
         averageAmount,
         totalPoints,
         averagePoints,
-        salesCount: validSales.length,
-        daysActive: uniqueDays.size,
-        sales: validSales
+        salesCount,
+        daysActive,
+        sales: validSales,
+        // Add the historical points
+        historicalPoints: historicalPoints
       };
 
       return {
         ...memberStats,
         bestDay,
-        highestSale: {
-          date: highestSingleSale.timestamp,
-          points: calculateTotalPoints([highestSingleSale])
-        },
-        worstDay: firstDay
+        highestSale: highestSingleSale,
+        worstDay
       };
     }
   });
@@ -154,10 +192,11 @@ const StaffMember = () => {
     salesCount: memberData.salesCount,
     averagePoints: memberData.averagePoints,
     activeDays: memberData.daysActive,
-    firstSaleDate: memberData.firstSale.toISOString(),
+    firstSaleDate: memberData.firstSale ? memberData.firstSale.toISOString() : null,
     bestDay: memberData.bestDay,
     highestSale: memberData.highestSale,
-    worstDay: memberData.worstDay
+    worstDay: memberData.worstDay,
+    historicalPoints: memberData.historicalPoints || 0
   };
 
   const decodedName = decodeURIComponent(memberData.displayName);

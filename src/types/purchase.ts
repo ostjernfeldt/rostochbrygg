@@ -86,4 +86,5 @@ export interface StaffMemberStats {
   salesCount: number;
   totalSales?: number;
   sales: TotalPurchase[];
+  historicalPoints?: number; // Add this to store historical manual points
 }
