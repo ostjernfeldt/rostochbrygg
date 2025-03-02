@@ -1,5 +1,5 @@
 
-import { Menu, LogOut } from "lucide-react";
+import { Menu, LogOut, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -8,7 +8,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 const useUserRole = () => {
@@ -34,6 +34,22 @@ export const BottomNav = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const { data: userRole } = useUserRole();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUserInfo = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email);
+        if (user.user_metadata?.username) {
+          setUsername(user.user_metadata.username);
+        }
+      }
+    };
+    
+    getUserInfo();
+  }, []);
 
   const getMenuItems = () => {
     const baseItems = [
@@ -84,6 +100,24 @@ export const BottomNav = () => {
           </button>
         </SheetTrigger>
         <SheetContent side="left" className="w-[250px] bg-card border-r border-gray-800">
+          {(username || userEmail) && (
+            <div className="border-b border-gray-800 py-4 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <User className="h-5 w-5 text-primary" />
+                </div>
+                <div className="overflow-hidden">
+                  {username && (
+                    <p className="font-medium text-white truncate">{username}</p>
+                  )}
+                  {userEmail && (
+                    <p className="text-sm text-gray-400 truncate">{userEmail}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          
           <nav className="flex flex-col gap-2 mt-8">
             {menuItems.map((item) => (
               <button
