@@ -147,41 +147,55 @@ const AppContent = () => {
   console.log("Full URL:", window.location.href);
 
   useEffect(() => {
-    // Mer robust metod för att fånga token från olika delar av URL:en
-    const fullUrl = window.location.href;
-    const urlParams = new URLSearchParams(location.search);
-    const hashParams = new URLSearchParams(location.hash.replace(/^#\/?/, ''));
-    
-    // Kontrollera olika platser där token kan finnas
-    let token = urlParams.get('token');
-    
-    // Om ingen token i URL-parametrar, kolla i hashParams
-    if (!token && location.hash) {
-      // Hantera både /#/register?token=xyz och /#?token=xyz format
-      if (hashParams.has('token')) {
-        token = hashParams.get('token');
-      } else {
-        // Manuell extrahering om allt annat misslyckas
-        const tokenMatch = fullUrl.match(/[?&]token=([^&]+)/);
-        if (tokenMatch) {
-          token = decodeURIComponent(tokenMatch[1]);
+    // Check for token in invitation link
+    const checkForInvitationToken = () => {
+      // More robust method to capture token from different parts of URL
+      const fullUrl = window.location.href;
+      const urlParams = new URLSearchParams(location.search);
+      const hashParams = new URLSearchParams(location.hash.replace(/^#\/?/, ''));
+      
+      // Check different places where token can exist
+      let token = urlParams.get('token');
+      
+      // If no token in URL parameters, check in hashParams
+      if (!token && location.hash) {
+        // Handle both /#/register?token=xyz and /#?token=xyz formats
+        if (hashParams.has('token')) {
+          token = hashParams.get('token');
+        } else {
+          // Manual extraction if all else fails
+          const tokenMatch = fullUrl.match(/[?&]token=([^&]+)/);
+          if (tokenMatch) {
+            token = decodeURIComponent(tokenMatch[1]);
+          }
         }
       }
-    }
 
-    // Om token hittas, omdirigera till registreringssidan
-    if (token) {
-      console.log("Token hittad:", token);
-      
-      // Kontrollera om vi redan är på registreringssidan
-      if (!location.pathname.includes('register') && !location.hash.includes('register')) {
-        console.log("Omdirigerar till registreringssidan");
+      if (token) {
+        console.log("Token found:", token);
         
-        // Använda navigate istället för direkt URL-manipulation för att stanna inom React Router
-        navigate(`/register?token=${encodeURIComponent(token)}`);
+        // CRITICAL FIX: Force registration route even if already on another page
+        if (!location.pathname.includes('/register')) {
+          console.log("Redirecting to registration page with token");
+          
+          // Important: Include token properly in the URL
+          navigate(`/register?token=${encodeURIComponent(token)}`, { replace: true });
+          
+          // Return true to indicate that this is an invitation link
+          return true;
+        }
       }
-    } else {
-      console.log("Ingen token hittad i URL");
+      
+      return false;
+    };
+    
+    // Execute the token check and store the result
+    const isInvitationLink = checkForInvitationToken();
+    
+    // If we're handling an invitation link, don't proceed with other auth checks
+    if (isInvitationLink) {
+      console.log("Processing invitation link - skipping other auth checks");
+      return;
     }
   }, [location, navigate]);
 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,17 +16,33 @@ const Register = () => {
   const { toast } = useToast();
   
   const getTokenFromUrl = () => {
+    // Enhanced token extraction logic
     const tokenFromParams = searchParams.get("token");
-    if (tokenFromParams) return tokenFromParams;
+    if (tokenFromParams) {
+      console.log("Token found in search params:", tokenFromParams);
+      return tokenFromParams;
+    }
     
+    // Check in hash part of URL
     const hashContent = location.hash.replace(/^#\/?/, '');
     const hashParams = new URLSearchParams(hashContent);
     const tokenFromHash = hashParams.get("token");
-    if (tokenFromHash) return tokenFromHash;
+    if (tokenFromHash) {
+      console.log("Token found in hash params:", tokenFromHash);
+      return tokenFromHash;
+    }
     
+    // Last resort - check full URL string
     const fullUrl = window.location.href;
-    const tokenMatch = fullUrl.match(/[?&]token=([^&]+)/);
-    return tokenMatch ? decodeURIComponent(tokenMatch[1]) : null;
+    const tokenMatch = fullUrl.match(/[?&]token=([^&#]+)/);
+    const extractedToken = tokenMatch ? decodeURIComponent(tokenMatch[1]) : null;
+    if (extractedToken) {
+      console.log("Token extracted from URL string:", extractedToken);
+    } else {
+      console.log("No token found in URL");
+    }
+    
+    return extractedToken;
   };
   
   const token = getTokenFromUrl();
@@ -55,9 +72,11 @@ const Register = () => {
       try {
         console.log("Validerar token:", token);
         
+        // Direct database check for token
         const checkTokenInDatabase = async (rawToken: string) => {
           console.log("Söker efter token i databasen:", rawToken);
           
+          // Try exact match first
           const { data: exactData, error: exactError } = await supabase
             .from('invitations')
             .select('*')
@@ -72,6 +91,7 @@ const Register = () => {
             }
           }
           
+          // Try trimmed version if different
           const trimmedToken = rawToken.trim();
           if (trimmedToken !== rawToken) {
             console.log("Trying with trimmed token:", trimmedToken);
@@ -93,6 +113,7 @@ const Register = () => {
           return { found: false, data: null };
         };
         
+        // First try direct database check
         const tokenCheck = await checkTokenInDatabase(token);
         if (tokenCheck.found) {
           console.log("Token hittad direkt i databasen:", tokenCheck.data);
@@ -102,6 +123,7 @@ const Register = () => {
           return;
         }
         
+        // Fall back to RPC if direct check fails
         const { data, error } = await supabase
           .rpc('validate_invitation', { token });
 
