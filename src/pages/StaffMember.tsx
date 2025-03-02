@@ -160,10 +160,12 @@ const StaffMember = () => {
     worstDay: memberData.worstDay
   };
 
+  const decodedName = decodeURIComponent(memberData.displayName);
+
   return (
     <PageLayout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">{decodeURIComponent(memberData.displayName)}</h1>
+        <h1 className="text-2xl font-bold">{decodedName}</h1>
         <div className="flex items-center gap-1 text-sm text-primary">
           <Award className="h-4 w-4" />
           <span>{memberData.role}</span>
@@ -171,7 +173,7 @@ const StaffMember = () => {
       </div>
 
       <div className="space-y-4">
-        <StaffStats stats={statsData} />
+        <StaffStats stats={statsData} userDisplayName={decodedName} />
       </div>
     </PageLayout>
   );
