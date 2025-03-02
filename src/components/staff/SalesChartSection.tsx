@@ -1,14 +1,19 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SalesChart } from "@/components/SalesChart";
 import { mapDatabaseToLegacyFormat } from "@/utils/purchaseMappers";
+
 interface SalesChartSectionProps {
   sales: any[];
   userName: string;
+  title?: string; // Added title as optional prop
 }
+
 export const SalesChartSection = ({
   sales,
-  userName
+  userName,
+  title = "Försäljning över tid" // Default title
 }: SalesChartSectionProps) => {
   const {
     data: totalPurchases = [],
@@ -31,11 +36,18 @@ export const SalesChartSection = ({
       return data ? data.map(mapDatabaseToLegacyFormat) : [];
     }
   });
+
   if (isLoading) {
     return <div className="stat-card">
-        <h3 className="text-gray-400 mb-4">Försäljning över tid</h3>
+        <h3 className="text-gray-400 mb-4">{title}</h3>
         <div className="animate-pulse h-[200px] bg-card rounded-xl"></div>
       </div>;
   }
-  return;
+
+  return (
+    <div className="stat-card">
+      <h3 className="text-gray-400 mb-4">{title}</h3>
+      <SalesChart data={totalPurchases.length > 0 ? totalPurchases : sales} />
+    </div>
+  );
 };

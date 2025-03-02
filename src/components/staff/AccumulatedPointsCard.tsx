@@ -15,7 +15,7 @@ export const AccumulatedPointsCard = ({ transactions, isLoading = false }: Accum
     // Filter out refunded transactions
     const validTransactions = transactions.filter(t => !t.refunded);
     
-    // Calculate total points
+    // Calculate total points using the same logic as HallOfFame
     return calculateTotalPoints(validTransactions);
   };
 
@@ -38,7 +38,7 @@ export const AccumulatedPointsCard = ({ transactions, isLoading = false }: Accum
         <CardTitle className="text-lg font-medium">Total poäng</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold">{getAccumulatedPoints().toLocaleString()} p</div>
+        <div className="text-3xl font-bold">{Math.round(getAccumulatedPoints()).toLocaleString()} p</div>
         <div className="text-sm text-muted-foreground mt-1">
           Alla poäng (exkl. återbetalningar)
         </div>

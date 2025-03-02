@@ -1,3 +1,4 @@
+
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,11 +9,15 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { processTransactions } from "@/components/transactions/TransactionProcessor";
 import { calculatePoints, calculateTotalPoints } from "@/utils/pointsCalculation";
+
 interface ShiftsListProps {
   shifts: any[];
+  transactions?: any[]; // Added this prop to support the new use case
 }
+
 export const ShiftsList = ({
-  shifts
+  shifts,
+  transactions = []
 }: ShiftsListProps) => {
   const [selectedPeriod, setSelectedPeriod] = useState("all");
 
@@ -24,6 +29,45 @@ export const ShiftsList = ({
     queryKey: ["shifts", shifts],
     queryFn: async () => {
       console.log("Fetching shifts data from total_purchases...");
+
+      // If we were provided direct transactions, use them instead of fetching
+      if (transactions && transactions.length > 0) {
+        console.log("Using provided transactions instead of fetching");
+        
+        // Group transactions by date
+        const transactionsByDate = transactions.reduce((acc, transaction) => {
+          const date = format(new Date(transaction.timestamp), 'yyyy-MM-dd');
+          if (!acc[date]) {
+            acc[date] = [];
+          }
+          acc[date].push(transaction);
+          return acc;
+        }, {});
+        
+        // Create shift objects from the grouped transactions
+        const shiftsFromTransactions = Object.entries(transactionsByDate).map(([date, dayTransactions]) => {
+          const startDate = new Date(date);
+          startDate.setHours(0, 0, 0, 0);
+          
+          // Filter out refunded transactions
+          const validTransactions = (dayTransactions as any[]).filter(t => !t.refunded);
+          
+          // Calculate total points for the shift
+          const totalPoints = calculateTotalPoints(validTransactions);
+          
+          return {
+            id: date,
+            presence_start: startDate.toISOString(),
+            totalPoints: totalPoints || 0,
+            sales: validTransactions
+          };
+        });
+        
+        // Sort shifts by date in descending order
+        return shiftsFromTransactions.sort((a, b) => 
+          new Date(b.presence_start).getTime() - new Date(a.presence_start).getTime()
+        );
+      }
 
       // Get unique dates from shifts
       const shiftDates = shifts.map(shift => {
@@ -40,7 +84,7 @@ export const ShiftsList = ({
         endDate.setHours(23, 59, 59, 999);
 
         // Get the user display name from the first shift
-        const userDisplayName = shifts[0].sales[0]?.user_display_name;
+        const userDisplayName = shifts[0]?.sales?.[0]?.user_display_name;
         if (!userDisplayName) {
           console.log("No user display name found for shift:", date);
           return {
@@ -98,5 +142,42 @@ export const ShiftsList = ({
     return new Date(b.presence_start).getTime() - new Date(a.presence_start).getTime();
   });
   console.log("Final sorted shifts:", sortedShifts);
-  return;
+  
+  return (
+    <div className="p-4 bg-card rounded-xl">
+      <h3 className="font-medium text-lg mb-4">Arbetsdagar</h3>
+      
+      {isLoading ? (
+        <div className="animate-pulse space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-16 bg-gray-700/20 rounded-lg"></div>
+          ))}
+        </div>
+      ) : sortedShifts.length === 0 ? (
+        <div className="text-center py-4 text-gray-400">Inga arbetsdagar hittades</div>
+      ) : (
+        <ScrollArea className="h-[300px] pr-4">
+          <div className="space-y-3">
+            {sortedShifts.map((shift) => (
+              <div key={shift.id} className="p-3 border border-gray-800 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="font-medium">
+                      {format(new Date(shift.presence_start), "EEE d MMM yyyy", { locale: sv })}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {shift.sales?.length || 0} transaktioner
+                    </div>
+                  </div>
+                  <div className="text-primary font-bold">
+                    {Math.round(shift.totalPoints)} p
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      )}
+    </div>
+  );
 };
