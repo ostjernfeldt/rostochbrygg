@@ -1,6 +1,6 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,178 +10,76 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
 const Register = () => {
-  const [searchParams] = useSearchParams();
-  const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const getTokenFromUrl = () => {
-    console.log("Register page - starting token extraction");
-    console.log("URL search:", location.search);
-    console.log("URL hash:", location.hash);
-    console.log("Full URL:", window.location.href);
-    
-    // Try from search params first (most reliable)
-    const tokenFromParams = searchParams.get("token");
-    if (tokenFromParams) {
-      console.log("Token found in search params:", tokenFromParams);
-      return tokenFromParams;
-    }
-    
-    // Try from hash part
-    const hashContent = location.hash.replace(/^#\/?/, '');
-    const hashParams = new URLSearchParams(hashContent);
-    const tokenFromHash = hashParams.get("token");
-    if (tokenFromHash) {
-      console.log("Token found in hash params:", tokenFromHash);
-      return tokenFromHash;
-    }
-    
-    // Last resort - check full URL string with regex
-    const fullUrl = window.location.href;
-    const tokenMatch = fullUrl.match(/[?&#]token=([^&#]+)/);
-    const extractedToken = tokenMatch ? decodeURIComponent(tokenMatch[1]) : null;
-    if (extractedToken) {
-      console.log("Token extracted from URL string:", extractedToken);
-    } else {
-      console.log("No token found in URL using any method");
-    }
-    
-    return extractedToken;
-  };
-  
-  // Extract token on component mount
-  const token = getTokenFromUrl();
-  
-  console.log("Register page loaded with token:", token);
-  console.log("Register page - token sources:", {
-    fromParams: searchParams.get("token"),
-    fromHash: new URLSearchParams(location.hash.replace(/^#\/?/, '')).get("token"),
-    extractedToken: token,
-    fullUrl: window.location.href
-  });
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isValidating, setIsValidating] = useState(true);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [invitationId, setInvitationId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const validateToken = async () => {
-      if (!token) {
-        console.error("No token provided in URL");
-        setValidationError("Inbjudningslänken saknas eller är ogiltig.");
-        setIsValidating(false);
-        return;
+  const verifyInvitation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsVerifying(true);
+    setValidationError(null);
+
+    try {
+      if (!email.trim() || !email.includes('@')) {
+        throw new Error("Vänligen ange en giltig e-postadress");
       }
 
-      try {
-        console.log("Validating token:", token);
-        
-        // Direct database check for the token
-        const checkTokenInDatabase = async (rawToken: string) => {
-          console.log("Searching for token in database:", rawToken);
-          
-          // Try exact match first
-          const { data: exactData, error: exactError } = await supabase
-            .from('invitations')
-            .select('*')
-            .eq('invitation_token', rawToken);
-            
-          if (exactError) {
-            console.error("Error checking exact token:", exactError);
-          } else {
-            console.log("Exact token search result:", exactData);
-            if (exactData && exactData.length > 0) {
-              return { found: true, data: exactData[0] };
-            }
-          }
-          
-          // Try trimmed version if different
-          const trimmedToken = rawToken.trim();
-          if (trimmedToken !== rawToken) {
-            console.log("Trying with trimmed token:", trimmedToken);
-            const { data: trimmedData, error: trimmedError } = await supabase
-              .from('invitations')
-              .select('*')
-              .eq('invitation_token', trimmedToken);
-              
-            if (trimmedError) {
-              console.error("Error checking trimmed token:", trimmedError);
-            } else {
-              console.log("Trimmed token search result:", trimmedData);
-              if (trimmedData && trimmedData.length > 0) {
-                return { found: true, data: trimmedData[0] };
-              }
-            }
-          }
-          
-          return { found: false, data: null };
-        };
-        
-        // First try direct database check
-        const tokenCheck = await checkTokenInDatabase(token);
-        if (tokenCheck.found) {
-          console.log("Token found directly in database:", tokenCheck.data);
-          setEmail(tokenCheck.data.email);
-          setIsValidating(false);
-          setValidationError(null);
-          return;
-        }
-        
-        // Fall back to RPC if direct check fails
-        const { data, error } = await supabase
-          .rpc('validate_invitation', { token });
+      console.log("Verifying invitation for email:", email);
+      
+      // Use the new function to validate by email
+      const { data, error } = await supabase
+        .rpc('validate_invitation_by_email', { email_address: email.trim() });
 
-        if (error) {
-          console.error("RPC validation error:", error);
-          throw error;
-        }
-        
-        console.log("Validation result:", data);
-
-        if (!data || data.length === 0) {
-          console.error("No validation data returned");
-          throw new Error("Inbjudningslänken kunde inte valideras.");
-        }
-
-        const [validation] = data;
-        console.log("Validation details:", validation);
-        
-        if (!validation || !validation.is_valid) {
-          console.error("Token not valid:", validation);
-          throw new Error("Inbjudningslänken har upphört eller redan använts.");
-        }
-
-        console.log("Setting email to:", validation.email);
-        setEmail(validation.email);
-        setIsValidating(false);
-        setValidationError(null);
-      } catch (error: any) {
-        console.error("Token validation error:", error);
-        setValidationError(error.message || "Inbjudningslänken saknas eller är ogiltig.");
-        setIsValidating(false);
+      if (error) {
+        console.error("Validation error:", error);
+        throw error;
       }
-    };
+      
+      console.log("Validation result:", data);
 
-    validateToken();
-  }, [token]);
+      if (!data || data.length === 0 || !data[0].is_valid) {
+        throw new Error("Ingen aktiv inbjudan hittades för denna e-postadress.");
+      }
+
+      const invitation = data[0];
+      setInvitationId(invitation.invitation_id);
+      setIsVerified(true);
+      setValidationError(null);
+    } catch (error: any) {
+      console.error("Invitation verification error:", error);
+      setValidationError(error.message || "Kunde inte verifiera inbjudan. Kontrollera e-postadressen eller kontakta administratören.");
+      setIsVerified(false);
+      setInvitationId(null);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      if (!token) {
-        throw new Error("Inbjudningslänken är ogiltig. Försök igen eller kontakta administratören.");
+      if (!email.trim() || !password.trim()) {
+        throw new Error("Både e-post och lösenord krävs.");
+      }
+      
+      if (password.length < 6) {
+        throw new Error("Lösenordet måste vara minst 6 tecken långt.");
       }
       
       console.log("Creating account with email:", email);
       
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
+        email: email.trim(),
+        password: password.trim(),
       });
 
       if (signUpError) {
@@ -191,13 +89,14 @@ const Register = () => {
       
       if (!signUpData?.user) {
         console.error("No user data received");
-        throw new Error("No user data received");
+        throw new Error("Inget användardata mottogs.");
       }
 
       console.log("User created successfully:", signUpData.user.id);
 
+      // Mark the invitation as used
       const { error: markUsedError } = await supabase
-        .rpc('mark_invitation_used', { token });
+        .rpc('mark_invitation_used_by_email', { email_address: email.trim() });
 
       if (markUsedError) {
         console.error("Error marking invitation as used:", markUsedError);
@@ -224,57 +123,74 @@ const Register = () => {
     }
   };
 
-  // Show loading state while validating
-  if (isValidating) {
+  // Show verification form if not verified yet
+  if (!isVerified) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
+        <img 
+          src="/lovable-uploads/f3b5392a-fb40-467e-b32d-aa71eb2156af.png" 
+          alt="R&B Logo" 
+          className="h-24 w-auto mb-8 object-contain"
+        />
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Validerar inbjudan</CardTitle>
-            <CardDescription>Vänligen vänta medan vi verifierar din inbjudningslänk...</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-center">
-              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Show error if token validation failed
-  if (validationError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Ogiltig länk</CardTitle>
+            <CardTitle>Registrera nytt konto</CardTitle>
             <CardDescription>
-              Inbjudningslänken saknas eller är ogiltig.
+              Ange din e-postadress som har blivit inbjuden
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Alert variant="destructive" className="mb-4">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Fel</AlertTitle>
-              <AlertDescription>{validationError}</AlertDescription>
-            </Alert>
-            <Button 
-              className="w-full" 
-              onClick={() => navigate("/login")}
-            >
-              Gå till inloggning
-            </Button>
+            {validationError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Verifiering misslyckades</AlertTitle>
+                <AlertDescription>{validationError}</AlertDescription>
+              </Alert>
+            )}
+            
+            <form onSubmit={verifyInvitation} className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  type="email"
+                  placeholder="E-postadress"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isVerifying}
+                />
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={isVerifying}
+              >
+                {isVerifying ? "Verifierar..." : "Fortsätt"}
+              </Button>
+              
+              <Button 
+                type="button" 
+                variant="link" 
+                className="w-full"
+                onClick={() => navigate("/login")}
+              >
+                Tillbaka till inloggning
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  // Show registration form if token is valid
+  // Show registration form if email is verified
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
+      <img 
+        src="/lovable-uploads/f3b5392a-fb40-467e-b32d-aa71eb2156af.png" 
+        alt="R&B Logo" 
+        className="h-24 w-auto mb-8 object-contain"
+      />
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Skapa konto</CardTitle>
@@ -305,9 +221,21 @@ const Register = () => {
             <Button 
               type="submit" 
               className="w-full"
-              disabled={isLoading || !token}
+              disabled={isLoading}
             >
               {isLoading ? "Skapar konto..." : "Skapa konto"}
+            </Button>
+            
+            <Button 
+              type="button" 
+              variant="link" 
+              className="w-full"
+              onClick={() => {
+                setIsVerified(false);
+                setPassword("");
+              }}
+            >
+              Ändra e-postadress
             </Button>
           </form>
         </CardContent>

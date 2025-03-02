@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { nanoid } from 'nanoid';
-import { Check, Copy, AlertTriangle, RefreshCw, Trash2, Key, UserX, ExternalLink } from "lucide-react";
+import { AlertTriangle, RefreshCw, Trash2, Key, UserX } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
@@ -37,7 +36,7 @@ type Invitation = {
   created_at: string;
   expires_at: string;
   used_at: string | null;
-  invitation_token: string;
+  status: string;
 };
 
 type InvitationStatus = 'active' | 'expired' | 'used' | 'pending';
@@ -53,13 +52,10 @@ const Invite = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInvitations, setIsLoadingInvitations] = useState(true);
-  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [invitationStatuses, setInvitationStatuses] = useState<Record<string, InvitationStatus>>({});
-  const [regenerateLoading, setRegenerateLoading] = useState<string | null>(null);
   const [deletingInvitation, setDeletingInvitation] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [invitationToDelete, setInvitationToDelete] = useState<Invitation | null>(null);
@@ -69,7 +65,6 @@ const Invite = () => {
   const [deleteAccountEmail, setDeleteAccountEmail] = useState("");
   const [isProcessingReset, setIsProcessingReset] = useState(false);
   const [isProcessingDelete, setIsProcessingDelete] = useState(false);
-  const [generatedResetLink, setGeneratedResetLink] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -95,7 +90,7 @@ const Invite = () => {
     const statuses: Record<string, InvitationStatus> = {};
     
     for (const invitation of invitations) {
-      if (invitation.used_at !== null) {
+      if (invitation.used_at !== null || invitation.status === 'used') {
         statuses[invitation.id] = 'used';
         continue;
       }
@@ -138,16 +133,6 @@ const Invite = () => {
     }
   };
 
-  // Skapa en absolut URL som fungerar överallt
-  const getAbsoluteUrl = () => {
-    // Prioritera att använda window.location.origin som är den mest pålitliga källan
-    const origin = window.location.origin;
-    console.log("Origin used for creating links:", origin);
-    
-    // Se till att URL:en har rätt format utan trailing slash
-    return origin;
-  };
-
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -184,15 +169,12 @@ const Invite = () => {
         throw new Error("Det finns redan en aktiv inbjudan för denna e-postadress");
       }
 
-      const token = nanoid(32);
-      console.log("Generated token:", token);
-      
       const { data: insertData, error: insertError } = await supabase
         .from('invitations')
         .insert({
           email: email.trim(),
-          invitation_token: token,
-          created_by: userId
+          created_by: userId,
+          status: 'pending'
         })
         .select();
 
@@ -203,20 +185,13 @@ const Invite = () => {
 
       console.log("Invitation created:", insertData);
 
-      // Skapa enkel URL utan hash-symbol i början
-      const baseUrl = getAbsoluteUrl();
-      const inviteLink = `${baseUrl}/register?token=${token}`;
-      console.log("Generated invite link:", inviteLink);
-      
-      setGeneratedLink(inviteLink);
-
       fetchInvitations();
 
       setEmail("");
 
       toast({
-        title: "Inbjudningslänk skapad!",
-        description: "Länken har genererats och kan nu delas med säljaren.",
+        title: "Inbjudan skapad!",
+        description: "Säljaren kan nu registrera sig med sin e-postadress.",
       });
     } catch (error: any) {
       console.error("Error creating invitation:", error);
@@ -228,91 +203,6 @@ const Invite = () => {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const regenerateInviteLink = async (invitation: Invitation) => {
-    setRegenerateLoading(invitation.id);
-    try {
-      const newToken = nanoid(32);
-      
-      const { error } = await supabase
-        .from('invitations')
-        .update({
-          invitation_token: newToken,
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-        })
-        .eq('id', invitation.id);
-      
-      if (error) throw error;
-
-      // Skapa inbjudningslänken med den korrekta URL:en
-      const baseUrl = getAbsoluteUrl();
-      const inviteLink = `${baseUrl}/register?token=${newToken}`;
-      
-      setInvitations(invitations.map(inv => 
-        inv.id === invitation.id 
-          ? {...inv, invitation_token: newToken, expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()} 
-          : inv
-      ));
-      
-      setInvitationStatuses({
-        ...invitationStatuses,
-        [invitation.id]: 'active'
-      });
-
-      navigator.clipboard.writeText(inviteLink);
-      setCopied(invitation.id);
-      setTimeout(() => setCopied(null), 2000);
-
-      toast({
-        title: "Ny länk genererad!",
-        description: "En ny inbjudningslänk har skapats och kopierats till urklipp.",
-      });
-    } catch (error: any) {
-      console.error("Error regenerating invite link:", error);
-      toast({
-        variant: "destructive",
-        title: "Kunde inte generera ny länk",
-        description: error.message || "Ett fel uppstod. Försök igen senare.",
-      });
-    } finally {
-      setRegenerateLoading(null);
-    }
-  };
-
-  const generateResetPasswordLink = () => {
-    setIsProcessingReset(true);
-    setGeneratedResetLink(null);
-    
-    try {
-      if (!resetPasswordEmail.trim() || !resetPasswordEmail.includes('@')) {
-        throw new Error("Vänligen ange en giltig e-postadress");
-      }
-      
-      // Generera en token för lösenordsåterställning
-      const token = nanoid(32);
-      
-      // Skapa länken direkt utan att verifiera användaren eller kontakta Supabase
-      const baseUrl = getAbsoluteUrl();
-      const passwordResetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(resetPasswordEmail.trim())}`;
-      
-      // Visa den genererade länken direkt
-      setGeneratedResetLink(passwordResetLink);
-      
-      toast({
-        title: "Återställningslänk genererad!",
-        description: "Länken har genererats och kan nu delas med säljaren.",
-      });
-    } catch (error: any) {
-      console.error("Password reset link generation error:", error);
-      toast({
-        variant: "destructive",
-        title: "Kunde inte skapa återställningslänk",
-        description: error.message || "Ett fel uppstod. Försök igen senare.",
-      });
-    } finally {
-      setIsProcessingReset(false);
     }
   };
 
@@ -435,30 +325,8 @@ const Invite = () => {
     }
   };
 
-  const copyToClipboard = (link: string, id?: string) => {
-    navigator.clipboard.writeText(link);
-    if (id) {
-      setCopied(id);
-      setTimeout(() => setCopied(null), 2000);
-    } else {
-      setCopied("new");
-      setTimeout(() => setCopied(null), 2000);
-    }
-    
-    toast({
-      title: "Kopierad!",
-      description: "Länken har kopierats till urklipp.",
-    });
-  };
-
-  const getInviteLink = (token: string) => {
-    // Använd samma metod som när vi skapar länken för att säkerställa konsistens
-    const baseUrl = getAbsoluteUrl();
-    return `${baseUrl}/register?token=${token}`;
-  };
-
   const getStatusLabel = (invitation: Invitation) => {
-    if (invitation.used_at !== null) {
+    if (invitation.used_at !== null || invitation.status === 'used') {
       return {
         label: "Använd",
         className: "bg-green-100 text-green-800"
@@ -488,8 +356,7 @@ const Invite = () => {
 
   const renderMobileInvitationItem = (invitation: Invitation) => {
     const statusInfo = getStatusLabel(invitation);
-    const inviteLink = getInviteLink(invitation.invitation_token);
-    const isUsed = invitation.used_at !== null;
+    const isUsed = invitation.used_at !== null || invitation.status === 'used';
     const isDeleting = deletingInvitation === invitation.id;
     
     return (
@@ -510,31 +377,6 @@ const Invite = () => {
             <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
           ) : (
             <>
-              {!isUsed && (
-                <>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => copyToClipboard(inviteLink, invitation.id)}
-                    disabled={regenerateLoading === invitation.id}
-                    className="h-7 px-2"
-                  >
-                    {copied === invitation.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => regenerateInviteLink(invitation)}
-                    disabled={regenerateLoading === invitation.id}
-                    className="h-7 px-2"
-                  >
-                    {regenerateLoading === invitation.id ? 
-                      <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div> : 
-                      <RefreshCw className="h-3 w-3" />
-                    }
-                  </Button>
-                </>
-              )}
               {isUsed && (
                 <>
                   <Button 
@@ -543,7 +385,6 @@ const Invite = () => {
                     onClick={() => {
                       setResetPasswordEmail(invitation.email);
                       setShowResetPasswordDialog(true);
-                      setGeneratedResetLink(null);
                     }}
                     className="h-7 px-2"
                   >
@@ -579,8 +420,7 @@ const Invite = () => {
 
   const renderDesktopInvitationItem = (invitation: Invitation) => {
     const statusInfo = getStatusLabel(invitation);
-    const inviteLink = getInviteLink(invitation.invitation_token);
-    const isUsed = invitation.used_at !== null;
+    const isUsed = invitation.used_at !== null || invitation.status === 'used';
     const isDeleting = deletingInvitation === invitation.id;
     
     return (
@@ -599,31 +439,6 @@ const Invite = () => {
             <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
           ) : (
             <>
-              {!isUsed && (
-                <>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => copyToClipboard(inviteLink, invitation.id)}
-                    disabled={regenerateLoading === invitation.id}
-                    className="h-7 w-7 p-0"
-                  >
-                    {copied === invitation.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => regenerateInviteLink(invitation)}
-                    disabled={regenerateLoading === invitation.id}
-                    className="h-7 w-7 p-0"
-                  >
-                    {regenerateLoading === invitation.id ? 
-                      <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div> : 
-                      <RefreshCw className="h-3 w-3" />
-                    }
-                  </Button>
-                </>
-              )}
               {isUsed && (
                 <>
                   <Button 
@@ -633,7 +448,6 @@ const Invite = () => {
                     onClick={() => {
                       setResetPasswordEmail(invitation.email);
                       setShowResetPasswordDialog(true);
-                      setGeneratedResetLink(null);
                     }}
                     className="h-7 w-7 p-0"
                   >
@@ -734,55 +548,12 @@ const Invite = () => {
                   className="w-full"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Skapar..." : "Skapa inbjudningslänk"}
+                  {isLoading ? "Skapar..." : "Skapa inbjudan"}
                 </Button>
-
-                {generatedLink && (
-                  <div className="mt-3 p-3 bg-card/30 rounded-md">
-                    <p className="text-sm font-medium mb-2">Inbjudningslänk:</p>
-                    <div className="relative">
-                      <div className="text-xs break-all bg-card/50 p-2 rounded border mb-2 max-h-20 overflow-y-auto">
-                        {generatedLink}
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          className="w-full flex items-center justify-center gap-2 h-8 text-xs"
-                          onClick={() => copyToClipboard(generatedLink)}
-                        >
-                          {copied === "new" ? (
-                            <>
-                              <Check className="h-3 w-3" />
-                              Kopierad
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="h-3 w-3" />
-                              Kopiera länk
-                            </>
-                          )}
-                        </Button>
-                        
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full flex items-center justify-center gap-2 h-8 text-xs"
-                          onClick={() => {
-                            // Öppna länken direkt i en ny flik
-                            window.open(generatedLink, '_blank');
-                          }}
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          Testa länken
-                        </Button>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Länken är giltig i 7 dagar
-                    </p>
-                  </div>
-                )}
+                
+                <p className="text-xs text-muted-foreground mt-2">
+                  Säljaren kan registrera sig med sin e-postadress när inbjudan har skapats.
+                </p>
               </form>
             </TabsContent>
             
@@ -830,7 +601,7 @@ const Invite = () => {
                   <CardHeader className="p-3 pb-1">
                     <CardTitle className="text-base">Återställ lösenord</CardTitle>
                     <CardDescription className="text-xs">
-                      Skapa en återställningslänk för en säljare
+                      Återställ lösenord för en säljare
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-3 pt-0">
@@ -840,10 +611,9 @@ const Invite = () => {
                       className="w-full text-sm h-8"
                       onClick={() => {
                         setShowResetPasswordDialog(true);
-                        setGeneratedResetLink(null);
                       }}
                     >
-                      <Key className="h-3 w-3 mr-1" /> Skapa återställningslänk
+                      <Key className="h-3 w-3 mr-1" /> Återställ lösenord
                     </Button>
                   </CardContent>
                 </Card>
@@ -908,35 +678,6 @@ const Invite = () => {
               disabled={isProcessingReset}
               className="bg-card/50"
             />
-            
-            {generatedResetLink && (
-              <div className="mt-3 p-3 bg-card/30 rounded-md">
-                <p className="text-xs font-medium mb-1">Återställningslänk:</p>
-                <div className="relative">
-                  <div className="text-xs break-all bg-card/50 p-2 rounded border mb-2 max-h-20 overflow-y-auto">
-                    {generatedResetLink}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full flex items-center justify-center gap-2 h-8 text-xs"
-                    onClick={() => copyToClipboard(generatedResetLink)}
-                  >
-                    {copied === "reset" ? (
-                      <>
-                        <Check className="h-3 w-3" />
-                        Kopierad
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3 w-3" />
-                        Kopiera länk
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
           <DialogFooter>
             <Button
@@ -947,22 +688,45 @@ const Invite = () => {
             >
               Stäng
             </Button>
-            {!generatedResetLink && (
-              <Button 
-                size="sm"
-                onClick={generateResetPasswordLink}
-                disabled={isProcessingReset}
-              >
-                {isProcessingReset ? (
-                  <>
-                    <div className="w-3 h-3 mr-1 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Genererar...
-                  </>
-                ) : (
-                  "Generera länk"
-                )}
-              </Button>
-            )}
+            <Button 
+              size="sm"
+              onClick={async () => {
+                setIsProcessingReset(true);
+                try {
+                  const { error } = await supabase.auth.resetPasswordForEmail(resetPasswordEmail, {
+                    redirectTo: `${window.location.origin}/reset-password`,
+                  });
+                  
+                  if (error) throw error;
+                  
+                  toast({
+                    title: "Återställningslänk skickad",
+                    description: "En länk för att återställa lösenordet har skickats till e-postadressen.",
+                  });
+                  
+                  setShowResetPasswordDialog(false);
+                  setResetPasswordEmail("");
+                } catch (error: any) {
+                  toast({
+                    variant: "destructive",
+                    title: "Kunde inte skicka återställningslänk",
+                    description: error.message || "Ett fel uppstod. Försök igen senare.",
+                  });
+                } finally {
+                  setIsProcessingReset(false);
+                }
+              }}
+              disabled={isProcessingReset}
+            >
+              {isProcessingReset ? (
+                <>
+                  <div className="w-3 h-3 mr-1 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Skickar...
+                </>
+              ) : (
+                "Skicka återställningslänk"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

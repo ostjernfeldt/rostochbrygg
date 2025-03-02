@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -17,7 +18,6 @@ import Staff from "./pages/Staff";
 import StaffMember from "./pages/StaffMember";
 import HallOfFame from "./pages/HallOfFame";
 import { useQuery } from "@tanstack/react-query";
-import { toast } from "@/components/ui/use-toast";
 
 const queryClient = new QueryClient();
 
@@ -134,110 +134,17 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
   return <>{children}</>;
 };
 
-const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  
-  useEffect(() => {
-    const checkForInvitationToken = () => {
-      const searchParams = new URLSearchParams(location.search);
-      const hashParams = new URLSearchParams(location.hash.replace(/^#\/?/, ''));
-      const fullUrl = window.location.href;
-      
-      let token = searchParams.get('token');
-      
-      if (!token && hashParams.has('token')) {
-        token = hashParams.get('token');
-      }
-      
-      if (!token) {
-        const tokenMatch = fullUrl.match(/[?&#]token=([^&#]+)/);
-        if (tokenMatch) {
-          token = decodeURIComponent(tokenMatch[1]);
-        }
-      }
-      
-      if (token) {
-        console.log("PublicRoute - Token found in URL:", token);
-        
-        if (!location.pathname.includes('/register')) {
-          console.log("Redirecting to registration with token");
-          navigate(`/register?token=${encodeURIComponent(token)}`, { replace: true });
-          return true;
-        }
-      }
-      
-      return false;
-    };
-    
-    checkForInvitationToken();
-  }, [location, navigate]);
-  
-  return <>{children}</>;
-};
-
 const AppContent = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { data: userRole } = useUserRole();
-
-  useEffect(() => {
-    const checkForInvitationToken = () => {
-      const searchParams = new URLSearchParams(location.search);
-      const hashParams = new URLSearchParams(location.hash.replace(/^#\/?/, ''));
-      const fullUrl = window.location.href;
-      
-      let token = searchParams.get('token');
-      
-      if (!token && hashParams.has('token')) {
-        token = hashParams.get('token');
-      }
-      
-      if (!token) {
-        const tokenMatch = fullUrl.match(/[?&#]token=([^&#]+)/);
-        if (tokenMatch) {
-          token = decodeURIComponent(tokenMatch[1]);
-        }
-      }
-      
-      if (token) {
-        console.log("AppContent - Token found in URL:", token);
-        
-        if (!location.pathname.includes('/register')) {
-          console.log("Redirecting from AppContent to registration with token");
-          navigate(`/register?token=${encodeURIComponent(token)}`, { replace: true });
-          return true;
-        }
-      }
-      
-      return false;
-    };
-    
-    const isInvitationLink = checkForInvitationToken();
-    
-    if (isInvitationLink) {
-      console.log("Processing invitation link - skipping other auth checks");
-    }
-  }, [location, navigate]);
 
   return (
     <div className="min-h-screen bg-background">
       <Routes>
-        <Route path="/login" element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        } />
-        <Route path="/register" element={
-          <PublicRoute>
-            <Register />
-          </PublicRoute>
-        } />
-        <Route path="/reset-password" element={
-          <PublicRoute>
-            <ResetPassword />
-          </PublicRoute>
-        } />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        
         <Route path="/" element={
           <PrivateRoute requireAdmin={true}>
             <Home />
