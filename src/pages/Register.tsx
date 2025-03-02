@@ -33,9 +33,10 @@ const Register = () => {
 
       console.log("Verifying invitation for email:", email);
       
-      // Use the RPC function to validate by email
-      const { data, error } = await supabase
-        .rpc('validate_invitation_by_email', { email_address: email.trim() });
+      // Call the custom RPC function
+      const { data, error } = await supabase.functions.invoke('validate-invitation-email', {
+        body: { email: email.trim() }
+      });
 
       if (error) {
         console.error("Validation error:", error);
@@ -44,12 +45,11 @@ const Register = () => {
       
       console.log("Validation result:", data);
 
-      if (!data || !Array.isArray(data) || data.length === 0 || !data[0].is_valid) {
+      if (!data || !data.is_valid) {
         throw new Error("Ingen aktiv inbjudan hittades för denna e-postadress.");
       }
 
-      const invitation = data[0];
-      setInvitationId(invitation.invitation_id);
+      setInvitationId(data.invitation_id);
       setIsVerified(true);
       setValidationError(null);
     } catch (error: any) {
@@ -95,8 +95,9 @@ const Register = () => {
       console.log("User created successfully:", signUpData.user.id);
 
       // Mark the invitation as used
-      const { error: markUsedError } = await supabase
-        .rpc('mark_invitation_used_by_email', { email_address: email.trim() });
+      const { error: markUsedError } = await supabase.functions.invoke('mark-invitation-used', {
+        body: { email: email.trim() }
+      });
 
       if (markUsedError) {
         console.error("Error marking invitation as used:", markUsedError);

@@ -37,7 +37,6 @@ type Invitation = {
   used_at: string | null;
   status: string;
   created_by?: string | null;
-  invitation_token?: string | null;
 };
 
 type InvitationStatus = 'active' | 'expired' | 'used' | 'pending';
@@ -124,7 +123,7 @@ const Invite = () => {
       const invitationsWithStatus = data?.map((inv) => ({
         ...inv,
         status: inv.status || (inv.used_at ? 'used' : 'pending')
-      })) || [];
+      })) as Invitation[];
       
       setInvitations(invitationsWithStatus);
       await verifyInvitationStatus(invitationsWithStatus);
