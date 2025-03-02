@@ -128,11 +128,6 @@ const Login = () => {
         throw new Error("Kunde inte verifiera användarrollen");
       }
 
-      toast({
-        title: "Inloggningen lyckades!",
-        description: "Välkommen tillbaka.",
-      });
-      
       if (roleData?.role === 'admin') {
         navigate("/");
       } else {
