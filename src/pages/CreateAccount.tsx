@@ -42,7 +42,9 @@ const CreateAccount = () => {
       
       console.log("Validation result:", data);
 
-      if (!data || !data.is_valid) {
+      // Check if there's a valid invitation in the response
+      // The response structure should be data.success with data.data containing an array with the result
+      if (!data || !data.success || !data.data || data.data.length === 0 || !data.data[0].is_valid) {
         throw new Error("Ingen aktiv inbjudan hittades för denna e-postadress.");
       }
 

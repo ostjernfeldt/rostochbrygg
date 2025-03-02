@@ -65,11 +65,12 @@ const Register = () => {
       
       console.log("Validation result:", data);
 
-      if (!data || !data.is_valid) {
+      // Check if there's a valid invitation in the response
+      if (!data || !data.success || !data.data || data.data.length === 0 || !data.data[0].is_valid) {
         throw new Error("Ingen aktiv inbjudan hittades för denna e-postadress.");
       }
 
-      setInvitationId(data.invitation_id || null);
+      setInvitationId(data.data[0].invitation_id || null);
       setIsVerified(true);
       setValidationError(null);
     } catch (error: any) {
