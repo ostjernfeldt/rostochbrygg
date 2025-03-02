@@ -1,14 +1,16 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
 import { format, parseISO } from "date-fns";
 import { sv } from "date-fns/locale";
 import { calculateTotalPoints } from "@/utils/pointsCalculation";
-import { Trophy, Calendar, Sun, List } from "lucide-react";
+import { Trophy, Calendar, Sun, List, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { TotalPurchase } from "@/types/purchase";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TopSeller {
   name: string;
@@ -16,6 +18,18 @@ interface TopSeller {
   date?: string;
   month?: string;
   transaction?: TotalPurchase;
+  isManual?: boolean;
+  description?: string;
+}
+
+interface ManualEntry {
+  id: string;
+  category: 'sale' | 'day' | 'month';
+  user_display_name: string;
+  points: number;
+  description?: string;
+  date?: string;
+  month?: string;
 }
 
 const HallOfFame = () => {
@@ -43,7 +57,50 @@ const HallOfFame = () => {
         .order("timestamp", { ascending: true });
 
       if (error) throw error;
-      if (!sales) return null;
+      
+      // Fetch manual Hall of Fame entries
+      const { data: manualEntries, error: manualError } = await supabase
+        .from("hall_of_fame_manual")
+        .select("*");
+        
+      if (manualError) throw manualError;
+      
+      // Process manual entries
+      const manualTopSales: TopSeller[] = (manualEntries || [])
+        .filter(entry => entry.category === 'sale')
+        .map(entry => ({
+          name: entry.user_display_name,
+          points: Number(entry.points),
+          date: entry.date ? format(new Date(entry.date), 'd MMMM yyyy', { locale: sv }) : undefined,
+          isManual: true,
+          description: entry.description
+        }));
+        
+      const manualTopDays: TopSeller[] = (manualEntries || [])
+        .filter(entry => entry.category === 'day')
+        .map(entry => ({
+          name: entry.user_display_name,
+          points: Number(entry.points),
+          date: entry.date ? format(new Date(entry.date), 'd MMMM yyyy', { locale: sv }) : undefined,
+          isManual: true,
+          description: entry.description
+        }));
+        
+      const manualTopMonths: TopSeller[] = (manualEntries || [])
+        .filter(entry => entry.category === 'month')
+        .map(entry => ({
+          name: entry.user_display_name,
+          points: Number(entry.points),
+          month: entry.month,
+          isManual: true,
+          description: entry.description
+        }));
+
+      if (!sales) return { 
+        topSales: manualTopSales,
+        topDays: manualTopDays,
+        topMonths: manualTopMonths
+      };
 
       // Filter for visible staff members
       const visibleSales = sales.filter(sale => 
@@ -66,6 +123,12 @@ const HallOfFame = () => {
         return uniqueSellers;
       };
 
+      // Helper function to merge automatic and manual entries, favoring higher points
+      const mergeEntries = (automatic: TopSeller[], manual: TopSeller[]): TopSeller[] => {
+        const allEntries = [...automatic, ...manual];
+        return allEntries.sort((a, b) => b.points - a.points);
+      };
+
       // 1. Highest single sales
       const allSalesByPoints = visibleSales
         .filter(sale => sale.amount > 0)
@@ -73,11 +136,12 @@ const HallOfFame = () => {
           name: sale.user_display_name || 'Okänd',
           points: calculateTotalPoints([sale]),
           date: format(new Date(sale.timestamp), 'd MMMM yyyy', { locale: sv }),
-          transaction: sale
+          transaction: sale,
+          isManual: false
         }))
         .sort((a, b) => b.points - a.points);
 
-      const topSales = getUniqueTopSellers(allSalesByPoints);
+      const topSales = getUniqueTopSellers(mergeEntries(allSalesByPoints, manualTopSales));
 
       // 2. Best months
       const monthlyTotals = visibleSales
@@ -105,12 +169,13 @@ const HallOfFame = () => {
           Object.entries(data.sellers).map(([name, sales]) => ({
             name,
             points: calculateTotalPoints(sales),
-            month: format(parseISO(monthKey), 'MMMM yyyy', { locale: sv })
+            month: format(parseISO(monthKey), 'MMMM yyyy', { locale: sv }),
+            isManual: false
           }))
         )
         .sort((a, b) => b.points - a.points);
 
-      const topMonths = getUniqueTopSellers(allMonthlyTopSellers);
+      const topMonths = getUniqueTopSellers(mergeEntries(allMonthlyTopSellers, manualTopMonths));
 
       // 3. Best days
       const dailyTotals = visibleSales
@@ -138,12 +203,13 @@ const HallOfFame = () => {
           Object.entries(data.sellers).map(([name, sales]) => ({
             name,
             points: calculateTotalPoints(sales),
-            date: format(parseISO(dateKey), 'd MMMM yyyy', { locale: sv })
+            date: format(parseISO(dateKey), 'd MMMM yyyy', { locale: sv }),
+            isManual: false
           }))
         )
         .sort((a, b) => b.points - a.points);
 
-      const topDays = getUniqueTopSellers(allDailyTopSellers);
+      const topDays = getUniqueTopSellers(mergeEntries(allDailyTopSellers, manualTopDays));
 
       return {
         topSales,
@@ -178,23 +244,40 @@ const HallOfFame = () => {
               }
             }}
             className={`group flex items-center gap-4 p-4 bg-gradient-to-r from-card to-card/80 ${
-              type === 'sale' ? 'hover:from-card/80 hover:to-card/60 cursor-pointer' : ''
+              type === 'sale' && item.transaction ? 'hover:from-card/80 hover:to-card/60 cursor-pointer' : ''
             } rounded-xl transition-all duration-300 border border-white/5 ${
-              type === 'sale' ? 'hover:border-primary/20' : ''
+              type === 'sale' && item.transaction ? 'hover:border-primary/20' : ''
             }`}
           >
             <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${
               index === 0 ? 'bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 text-yellow-500' :
               index === 1 ? 'bg-gradient-to-br from-gray-400/20 to-gray-500/20 text-gray-400' :
               'bg-gradient-to-br from-amber-700/20 to-amber-800/20 text-amber-700'
-            } font-bold text-2xl ${type === 'sale' ? 'transition-transform group-hover:scale-110' : ''}`}>
+            } font-bold text-2xl ${type === 'sale' && item.transaction ? 'transition-transform group-hover:scale-110' : ''}`}>
               #{index + 1}
             </div>
             <div className="flex-1">
-              <div className={`font-semibold text-lg text-white ${
-                type === 'sale' ? 'group-hover:text-primary transition-colors' : ''
-              }`}>
-                {item.name}
+              <div className="flex items-center">
+                <div className={`font-semibold text-lg text-white ${
+                  type === 'sale' && item.transaction ? 'group-hover:text-primary transition-colors' : ''
+                }`}>
+                  {item.name}
+                </div>
+                {item.isManual && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="ml-2">
+                          <Sparkles className="h-4 w-4 text-amber-500" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Manuellt tillagd prestation</p>
+                        {item.description && <p className="text-xs opacity-80 mt-1">{item.description}</p>}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
               <div className="text-sm text-gray-400">
                 {type === 'sale' && item.date}
@@ -203,7 +286,7 @@ const HallOfFame = () => {
               </div>
             </div>
             <div className={`bg-gradient-to-r from-cyan-400 to-primary bg-clip-text text-transparent text-xl font-bold ${
-              type === 'sale' ? 'transition-transform group-hover:scale-110' : ''
+              type === 'sale' && item.transaction ? 'transition-transform group-hover:scale-110' : ''
             }`}>
               {Math.round(item.points)} p
             </div>
