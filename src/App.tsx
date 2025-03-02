@@ -140,21 +140,50 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppContent = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { data: userRole, isLoading } = useUserRole();
 
   console.log("AppContent - Current location:", location.pathname, location.search, location.hash);
+  console.log("Full URL:", window.location.href);
 
   useEffect(() => {
-    // Kontrollera om det finns en token i URL:en
-    const params = new URLSearchParams(location.search);
-    const hashParams = new URLSearchParams(location.hash.replace('#', ''));
-    const token = params.get('token') || hashParams.get('token');
-
-    if (token && location.pathname === '/') {
-      console.log("Found token, redirecting to register page:", token);
-      window.location.href = `/#/register?token=${encodeURIComponent(token)}`;
+    // Mer robust metod för att fånga token från olika delar av URL:en
+    const fullUrl = window.location.href;
+    const urlParams = new URLSearchParams(location.search);
+    const hashParams = new URLSearchParams(location.hash.replace(/^#\/?/, ''));
+    
+    // Kontrollera olika platser där token kan finnas
+    let token = urlParams.get('token');
+    
+    // Om ingen token i URL-parametrar, kolla i hashParams
+    if (!token && location.hash) {
+      // Hantera både /#/register?token=xyz och /#?token=xyz format
+      if (hashParams.has('token')) {
+        token = hashParams.get('token');
+      } else {
+        // Manuell extrahering om allt annat misslyckas
+        const tokenMatch = fullUrl.match(/[?&]token=([^&]+)/);
+        if (tokenMatch) {
+          token = decodeURIComponent(tokenMatch[1]);
+        }
+      }
     }
-  }, [location]);
+
+    // Om token hittas, omdirigera till registreringssidan
+    if (token) {
+      console.log("Token hittad:", token);
+      
+      // Kontrollera om vi redan är på registreringssidan
+      if (!location.pathname.includes('register') && !location.hash.includes('register')) {
+        console.log("Omdirigerar till registreringssidan");
+        
+        // Använda navigate istället för direkt URL-manipulation för att stanna inom React Router
+        navigate(`/register?token=${encodeURIComponent(token)}`);
+      }
+    } else {
+      console.log("Ingen token hittad i URL");
+    }
+  }, [location, navigate]);
 
   return (
     <div className="min-h-screen bg-background">

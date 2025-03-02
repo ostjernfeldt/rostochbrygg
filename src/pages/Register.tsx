@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,11 +14,28 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Försök hämta token från olika ställen
-  const tokenFromSearchParams = searchParams.get("token");
-  const hashParams = new URLSearchParams(location.hash.replace('#/register?', ''));
-  const tokenFromHash = hashParams.get("token");
-  const token = tokenFromSearchParams || tokenFromHash || extractTokenFromUrl();
+  const getTokenFromUrl = () => {
+    const tokenFromParams = searchParams.get("token");
+    if (tokenFromParams) return tokenFromParams;
+    
+    const hashContent = location.hash.replace(/^#\/?/, '');
+    const hashParams = new URLSearchParams(hashContent);
+    const tokenFromHash = hashParams.get("token");
+    if (tokenFromHash) return tokenFromHash;
+    
+    const fullUrl = window.location.href;
+    const tokenMatch = fullUrl.match(/[?&]token=([^&]+)/);
+    return tokenMatch ? decodeURIComponent(tokenMatch[1]) : null;
+  };
+  
+  const token = getTokenFromUrl();
+  
+  console.log("Register page - token sources:", {
+    fromParams: searchParams.get("token"),
+    fromHash: new URLSearchParams(location.hash.replace(/^#\/?/, '')).get("token"),
+    extractedToken: token,
+    fullUrl: window.location.href
+  });
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,35 +43,8 @@ const Register = () => {
   const [isValidating, setIsValidating] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Funktion för att extrahera token från URL:en direkt om andra metoder misslyckas
-  function extractTokenFromUrl() {
-    const url = window.location.href;
-    const tokenMatch = url.match(/[?&]token=([^&]+)/);
-    return tokenMatch ? tokenMatch[1] : null;
-  }
-
   useEffect(() => {
-    // Detaljerad loggning av URL-parametrar för att hjälpa vid felsökning
-    console.log("All URLSearchParams:");
-    for (const [key, value] of searchParams.entries()) {
-      console.log(`${key}: ${value}`);
-    }
-    
-    console.log("Token sources:", {
-      tokenFromSearchParams: tokenFromSearchParams,
-      tokenFromHash: tokenFromHash,
-      extractedToken: extractTokenFromUrl(),
-      finalToken: token
-    });
-    
-    console.log("Current URL:", window.location.href);
-    console.log("Search params string:", window.location.search);
-    console.log("Hash:", window.location.hash);
-    console.log("Location state:", location.state);
-    console.log("Current pathname:", window.location.pathname);
-
     const validateToken = async () => {
-      // Kontrollera om token finns i URL:en
       if (!token) {
         console.error("No token provided in URL");
         setValidationError("Inbjudningslänken saknas eller är ogiltig.");
@@ -63,30 +52,56 @@ const Register = () => {
         return;
       }
 
-      // Fortsätt med validering
       try {
-        console.log("Validating token:", token);
+        console.log("Validerar token:", token);
         
-        // Hämta inbjudningsinformation direkt från tabellen för felsökning
-        const { data: invitationData, error: invitationError } = await supabase
-          .from('invitations')
-          .select('*')
-          .eq('invitation_token', token)
-          .single();
+        const checkTokenInDatabase = async (rawToken: string) => {
+          console.log("Söker efter token i databasen:", rawToken);
+          
+          const { data: exactData, error: exactError } = await supabase
+            .from('invitations')
+            .select('*')
+            .eq('invitation_token', rawToken);
+            
+          if (exactError) {
+            console.error("Error checking exact token:", exactError);
+          } else {
+            console.log("Exact token search result:", exactData);
+            if (exactData && exactData.length > 0) {
+              return { found: true, data: exactData[0] };
+            }
+          }
+          
+          const trimmedToken = rawToken.trim();
+          if (trimmedToken !== rawToken) {
+            console.log("Trying with trimmed token:", trimmedToken);
+            const { data: trimmedData, error: trimmedError } = await supabase
+              .from('invitations')
+              .select('*')
+              .eq('invitation_token', trimmedToken);
+              
+            if (trimmedError) {
+              console.error("Error checking trimmed token:", trimmedError);
+            } else {
+              console.log("Trimmed token search result:", trimmedData);
+              if (trimmedData && trimmedData.length > 0) {
+                return { found: true, data: trimmedData[0] };
+              }
+            }
+          }
+          
+          return { found: false, data: null };
+        };
         
-        if (invitationError) {
-          console.error("Error fetching invitation:", invitationError);
-          if (invitationError.code === 'PGRST116') {
-            throw new Error("Inbjudningslänken hittades inte. Token: " + token);
-          }
-        } else {
-          console.log("Invitation data found:", invitationData);
-          if (!invitationData) {
-            throw new Error("Ingen inbjudan hittades med denna token.");
-          }
+        const tokenCheck = await checkTokenInDatabase(token);
+        if (tokenCheck.found) {
+          console.log("Token hittad direkt i databasen:", tokenCheck.data);
+          setEmail(tokenCheck.data.email);
+          setIsValidating(false);
+          setValidationError(null);
+          return;
         }
         
-        // Validera token med Supabase-funktionen
         const { data, error } = await supabase
           .rpc('validate_invitation', { token });
 
@@ -122,7 +137,7 @@ const Register = () => {
     };
 
     validateToken();
-  }, [token, searchParams, location, tokenFromSearchParams, tokenFromHash]);
+  }, [token]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +150,6 @@ const Register = () => {
       
       console.log("Creating account with email:", email);
       
-      // Skapa användarkonto
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -153,7 +167,6 @@ const Register = () => {
 
       console.log("User created successfully:", signUpData.user.id);
 
-      // Markera inbjudan som använd
       const { error: markUsedError } = await supabase
         .rpc('mark_invitation_used', { token });
 
