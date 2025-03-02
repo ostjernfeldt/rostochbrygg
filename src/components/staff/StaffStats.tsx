@@ -28,32 +28,43 @@ interface StaffStatsProps {
   userDisplayName: string;
 }
 
+// Define types for our database tables
 interface RoleLevel {
   id: string;
   title: string;
   points_threshold: number;
   display_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface HistoricalPoints {
+  id: string;
+  user_display_name: string;
+  points: number;
+  updated_at?: string;
+  updated_by?: string;
 }
 
 export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
-  // Justera statistiken för att exkludera återbetalade köp
+  // Adjust statistics to exclude refunded purchases
   const cleanStats = {
     ...stats,
-    // Om vi har data för genomsnittliga poäng, använd det, annars 0
+    // If we have data for average points, use it, otherwise 0
     averagePoints: stats.averagePoints || 0,
-    // Om vi har data för högsta sälj, använd det, annars ett tomt objekt med 0 poäng
+    // If we have data for highest sale, use it, otherwise an empty object with 0 points
     highestSale: stats.highestSale || { date: new Date().toISOString(), points: 0 },
-    // Om vi har data för bästa dagen, använd det, annars ett tomt objekt med 0 poäng
+    // If we have data for best day, use it, otherwise an empty object with 0 points
     bestDay: stats.bestDay || { date: new Date().toISOString(), points: 0 }
   };
 
-  // Hämta historiska poäng
+  // Fetch historical points
   const { data: historicalPoints } = useQuery({
     queryKey: ["historicalPoints", userDisplayName],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("staff_historical_points")
-        .select("points")
+        .select("*")
         .eq("user_display_name", userDisplayName)
         .single();
 
@@ -62,12 +73,12 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
         return 0;
       }
 
-      return data?.points || 0;
+      return (data as HistoricalPoints)?.points || 0;
     },
     enabled: !!userDisplayName
   });
 
-  // Hämta rollnivåer
+  // Fetch role levels
   const { data: roleLevels } = useQuery({
     queryKey: ["roleLevels"],
     queryFn: async () => {
@@ -85,11 +96,11 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
     }
   });
 
-  // Beräkna ackumulerade poäng (använder samma logik som befintliga kort plus historiska poäng)
+  // Calculate accumulated points (using the same logic as existing cards plus historical points)
   const automaticPoints = Math.round(cleanStats.averagePoints * cleanStats.salesCount);
   const totalAccumulatedPoints = automaticPoints + (historicalPoints || 0);
 
-  // Bestäm nuvarande roll och nästa roll baserat på ackumulerade poäng
+  // Determine current role and next role based on accumulated points
   const getCurrentAndNextRole = () => {
     if (!roleLevels || roleLevels.length === 0) {
       return {
