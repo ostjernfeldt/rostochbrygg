@@ -1,12 +1,13 @@
 
-import { serve } from 'https://deno.land/std@0.131.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.5';
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+
+console.log("Mark invitation used function started");
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -15,63 +16,45 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase credentials');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Get the request body
     const { email } = await req.json();
 
-    console.log('Marking invitation as used for email:', email);
-
-    if (!email || typeof email !== 'string') {
-      throw new Error('Invalid email address');
+    if (!email) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Email is required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
     }
 
-    // Update invitation to mark it as used
-    const { data, error } = await supabase
-      .from('invitations')
-      .update({ 
-        used_at: new Date().toISOString(),
-        status: 'used'
-      })
-      .eq('email', email.trim())
-      .is('used_at', null)
-      .select('id');
+    // Create a Supabase client with the Admin key (Service Role)
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    console.log("Marking invitation used for email:", email);
+
+    // Call the RPC function to mark the invitation as used by email
+    const { data, error } = await supabase.rpc('mark_invitation_used_by_email', {
+      email_address: email
+    });
 
     if (error) {
-      console.error('Error updating invitation:', error);
-      throw error;
+      console.error("Error marking invitation as used:", error);
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
     }
 
-    console.log('Update result:', data);
-
-    const success = data && data.length > 0;
-
     return new Response(
-      JSON.stringify({ 
-        success,
-        message: success ? 'Invitation marked as used' : 'No active invitation found'
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
+      JSON.stringify({ success: true, data }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error('Error marking invitation as used:', error);
+    console.error("Unexpected error:", error.message);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        message: error.message || 'An unexpected error occurred' 
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
-      }
+      JSON.stringify({ success: false, error: error.message }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
 });

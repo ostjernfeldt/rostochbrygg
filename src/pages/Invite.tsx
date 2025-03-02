@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,7 @@ type Invitation = {
   used_at: string | null;
   status: string;
   created_by?: string | null;
-  invitation_token?: string;
+  invitation_token: string; // Changed to be required, not optional
 };
 
 type InvitationStatus = 'active' | 'expired' | 'used' | 'pending';
@@ -175,13 +176,16 @@ const Invite = () => {
         throw new Error("Det finns redan en aktiv inbjudan för denna e-postadress");
       }
 
+      // Generate a secure random token for the invitation
+      const invitationToken = crypto.randomUUID();
+
       const { data: insertData, error: insertError } = await supabase
         .from('invitations')
         .insert({
           email: email.trim(),
           created_by: userId,
           status: 'pending',
-          invitation_token: crypto.randomUUID()
+          invitation_token: invitationToken // Ensure this is explicitly provided
         })
         .select();
 
