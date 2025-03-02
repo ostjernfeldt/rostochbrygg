@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -22,18 +21,15 @@ const Login = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Om e-postadressen kommer från sökvägsfrågan, fyll i den automatiskt
     const searchParams = new URLSearchParams(location.search);
     const emailParam = searchParams.get('email');
     if (emailParam) {
       setEmail(emailParam);
     }
 
-    // Kontrollera om det finns en aktiv session vid komponentmontering
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Om det finns en session, hämta användarens roll och navigera
         try {
           const { data: roleData, error: roleError } = await supabase
             .from("user_roles")
@@ -43,7 +39,6 @@ const Login = () => {
 
           if (roleError) throw roleError;
 
-          // Navigera baserat på roll
           if (roleData?.role === 'admin') {
             navigate("/");
           } else {
@@ -96,25 +91,20 @@ const Login = () => {
     }
 
     try {
-      // Försök logga in först
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim()
       });
 
       if (error) {
-        // Om inloggning misslyckas med felmeddelande om ogiltiga uppgifter, kontrollera om det finns en inbjudan
         if (error.message.includes("Invalid login credentials")) {
-          // Kontrollera om e-postadressen har en aktiv inbjudan
           const invitationResult = await checkInvitation(email);
           
           if (invitationResult && invitationResult.is_valid) {
-            // Om det finns en aktiv inbjudan, omdirigera till registreringssidan
             navigate(`/register?email=${encodeURIComponent(email)}&invited=true`);
             return;
           }
 
-          // Annars, visa vanligt felmeddelande om ogiltiga inloggningsuppgifter
           throw new Error("Felaktig e-post eller lösenord.");
         }
         throw error;
@@ -122,7 +112,6 @@ const Login = () => {
       
       if (!data?.user) throw new Error("No user data received");
 
-      // Kontrollera användarens roll
       console.log("Checking role for user:", data.user.id);
       
       const { data: roleData, error: roleError } = await supabase
@@ -144,7 +133,6 @@ const Login = () => {
         description: "Välkommen tillbaka.",
       });
       
-      // Navigera till lämplig sida baserat på användarens roll
       if (roleData?.role === 'admin') {
         navigate("/");
       } else {
@@ -231,7 +219,6 @@ const Login = () => {
         setInvitationMessage("Du har en inbjudan! För att skapa ditt konto, klicka på knappen nedan.");
       } else {
         setInvitationMessage(null);
-        // Fortsätt med vanlig inloggning
         const { data, error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password: password.trim()
@@ -241,7 +228,6 @@ const Login = () => {
         
         if (!data?.user) throw new Error("No user data received");
 
-        // Kontrollera användarens roll
         const { data: roleData, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
@@ -258,7 +244,6 @@ const Login = () => {
           description: "Välkommen tillbaka.",
         });
         
-        // Navigera till lämplig sida baserat på användarens roll
         if (roleData?.role === 'admin') {
           navigate("/");
         } else {
@@ -349,15 +334,27 @@ const Login = () => {
               {isLoading ? "Laddar..." : isResetMode ? "Skicka återställningslänk" : "Logga in"}
             </Button>
 
-            <Button
-              type="button"
-              variant="link"
-              className="w-full"
-              onClick={() => setIsResetMode(!isResetMode)}
-              disabled={isLoading}
-            >
-              {isResetMode ? "Tillbaka till inloggning" : "Glömt lösenord?"}
-            </Button>
+            <div className="flex flex-col gap-2 mt-4">
+              <Button
+                type="button"
+                variant="link"
+                className="w-full"
+                onClick={() => setIsResetMode(!isResetMode)}
+                disabled={isLoading}
+              >
+                {isResetMode ? "Tillbaka till inloggning" : "Glömt lösenord?"}
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate('/create-account')}
+                disabled={isLoading}
+              >
+                Har du fått en inbjudan? Skapa konto
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
