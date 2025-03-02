@@ -1,221 +1,177 @@
 
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { format, parseISO } from "date-fns";
-import { sv } from "date-fns/locale";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { TotalPurchase } from "@/types/purchase";
+import { useParams, useNavigate } from "react-router-dom";
+import { Award } from "lucide-react";
 import { PageLayout } from "@/components/PageLayout";
 import { StaffStats } from "@/components/staff/StaffStats";
-import { SalesChartSection } from "@/components/staff/SalesChartSection";
-import { DateFilterSection } from "@/components/staff/DateFilterSection";
-import { ShiftsList } from "@/components/staff/ShiftsList";
-import { AccumulatedPointsCard } from "@/components/staff/AccumulatedPointsCard";
-import { DateRange } from "react-day-picker";
+import { StaffMemberStats, TotalPurchase } from "@/types/purchase";
+import { processTransactions } from "@/components/transactions/TransactionProcessor";
+import { calculatePoints, calculateTotalPoints } from "@/utils/pointsCalculation";
 
 const StaffMember = () => {
-  const { name } = useParams<{ name: string }>();
+  const { name } = useParams();
   const navigate = useNavigate();
-  const [transactions, setTransactions] = useState<TotalPurchase[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: undefined,
-    to: undefined,
-  });
-  const [selectedPeriod, setSelectedPeriod] = useState("all");
-  const [selectedDate, setSelectedDate] = useState("");
+  
+  const { data: memberData, isLoading } = useQuery({
+    queryKey: ["staffMember", name],
+    queryFn: async () => {
+      console.log("Fetching staff member data for:", name);
+      
+      if (!name) throw new Error("No name provided");
+      
+      // Fetch role data and check if hidden
+      const { data: roleData, error: roleError } = await supabase
+        .from("staff_roles")
+        .select("role, hidden")
+        .eq("user_display_name", decodeURIComponent(name))
+        .single();
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      setLoading(true);
-      try {
-        const decodedName = decodeURIComponent(name || "");
-        
-        // Check if the staff member exists
-        const { data: staffCheck, error: staffError } = await supabase
-          .from("staff_roles")
-          .select("user_display_name")
-          .eq("user_display_name", decodedName);
-        
-        if (staffError) throw staffError;
-        
-        if (!staffCheck || staffCheck.length === 0) {
-          setError(`Säljaren "${decodedName}" hittades inte.`);
-          setLoading(false);
-          return;
-        }
-        
-        let query = supabase
-          .from("total_purchases")
-          .select("*")
-          .eq("user_display_name", decodedName)
-          .order("timestamp", { ascending: false });
-        
-        if (dateRange.from) {
-          const fromDate = new Date(dateRange.from);
-          fromDate.setHours(0, 0, 0, 0);
-          query = query.gte("timestamp", fromDate.toISOString());
-        }
-        
-        if (dateRange.to) {
-          const toDate = new Date(dateRange.to);
-          toDate.setHours(23, 59, 59, 999);
-          query = query.lte("timestamp", toDate.toISOString());
-        }
-        
-        const { data, error: transactionsError } = await query;
-        
-        if (transactionsError) throw transactionsError;
-        
-        setTransactions(data || []);
-      } catch (err) {
-        console.error("Error fetching staff member data:", err);
-        setError("Ett fel uppstod när data skulle hämtas. Försök igen senare.");
-      } finally {
-        setLoading(false);
+      if (roleError) {
+        console.error("Error fetching role:", roleError);
       }
-    };
-    
-    fetchTransactions();
-  }, [name, dateRange]);
 
-  if (error) {
+      // If staff member is hidden, redirect to staff list
+      if (roleData?.hidden) {
+        navigate('/staff');
+        return null;
+      }
+
+      const { data: sales, error: salesError } = await supabase
+        .from("total_purchases")
+        .select("*")
+        .eq("user_display_name", decodeURIComponent(name))
+        .order("timestamp", { ascending: true })
+        .not("refunded", "eq", true);
+
+      if (salesError) throw salesError;
+      if (!sales || sales.length === 0) return null;
+
+      // Process transactions to handle refunds
+      const processedSales = processTransactions(sales);
+      // Filtrera bort alla återbetalade köp för statistikberäkningar
+      const validSales = processedSales.filter(sale => !sale.refunded);
+
+      // Sort sales by timestamp for consistent date handling
+      const sortedSales = [...validSales].sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      // Find highest single sale by calculating total points for each individual sale
+      // Exkludera återbetalade köp från högsta sälj beräkningen
+      const highestSingleSale = [...validSales].sort((a, b) => {
+        const pointsA = calculateTotalPoints([a]);
+        const pointsB = calculateTotalPoints([b]);
+        return pointsB - pointsA;
+      })[0];
+
+      // Get the first sale date
+      const firstSaleDate = new Date(sortedSales[0].timestamp);
+      console.log("First sale date:", firstSaleDate);
+
+      // Group sales by date for daily totals, exkludera återbetalade köp
+      const salesByDate = sortedSales.reduce((acc: { [key: string]: TotalPurchase[] }, sale) => {
+        const dateStr = new Date(sale.timestamp).toDateString();
+        if (!acc[dateStr]) {
+          acc[dateStr] = [];
+        }
+        acc[dateStr].push(sale);
+        return acc;
+      }, {});
+
+      // Calculate daily totals using calculateTotalPoints for consistency
+      const dailyTotals = Object.entries(salesByDate).map(([dateStr, dateSales]) => ({
+        date: new Date(dateStr).toISOString(),
+        points: calculateTotalPoints(dateSales)
+      }));
+
+      // Sort days by points for best day
+      const sortedDays = [...dailyTotals].sort((a, b) => b.points - a.points);
+      const bestDay = sortedDays[0];
+
+      // Calculate first day points using calculateTotalPoints
+      const firstDayPoints = calculateTotalPoints(salesByDate[firstSaleDate.toDateString()]);
+
+      const firstDay = {
+        date: firstSaleDate.toISOString(),
+        points: firstDayPoints
+      };
+
+      const totalAmount = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
+      const totalPoints = calculateTotalPoints(validSales);
+      const averageAmount = totalAmount / validSales.length;
+      const averagePoints = totalPoints / validSales.length;
+      const uniqueDays = new Set(validSales.map(s => new Date(s.timestamp).toDateString()));
+
+      const memberStats: StaffMemberStats = {
+        displayName: name,
+        firstSale: firstSaleDate,
+        totalAmount,
+        averageAmount,
+        totalPoints,
+        averagePoints,
+        salesCount: validSales.length,
+        daysActive: uniqueDays.size,
+        sales: validSales
+      };
+
+      return {
+        ...memberStats,
+        role: roleData?.role || 'Sales Intern',
+        bestDay,
+        highestSale: {
+          date: highestSingleSale.timestamp,
+          points: calculateTotalPoints([highestSingleSale])
+        },
+        worstDay: firstDay
+      };
+    }
+  });
+
+  if (isLoading) {
     return (
       <PageLayout>
-        <div className="text-center my-8">
-          <h2 className="text-xl font-semibold mb-4">{error}</h2>
-          <button 
-            onClick={() => navigate("/staff")}
-            className="px-4 py-2 bg-primary text-white rounded-md"
-          >
-            Tillbaka till säljare
-          </button>
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-card rounded w-1/3"></div>
+          <div className="h-24 bg-card rounded"></div>
+          <div className="h-24 bg-card rounded"></div>
         </div>
       </PageLayout>
     );
   }
 
-  const decodedName = decodeURIComponent(name || "");
-  const formattedDateRange = dateRange.from && dateRange.to 
-    ? `${format(dateRange.from, 'd MMM', { locale: sv })} - ${format(dateRange.to, 'd MMM yyyy', { locale: sv })}`
-    : "Alla tider";
-    
-  // Calculate stats for the StaffStats component
-  const calculateStats = () => {
-    // Filter out refunded transactions
-    const validTransactions = transactions.filter(t => !t.refunded);
-    
-    // If no valid transactions, return default stats
-    if (validTransactions.length === 0) {
-      return {
-        salesCount: 0,
-        averagePoints: 0,
-        activeDays: 0,
-        firstSaleDate: new Date().toISOString(),
-        bestDay: {
-          date: new Date().toISOString(),
-          points: 0
-        },
-        highestSale: {
-          date: new Date().toISOString(),
-          points: 0
-        },
-        worstDay: {
-          date: new Date().toISOString(),
-          points: 0
-        }
-      };
-    }
-    
-    // Group by date to find best/worst day
-    const salesByDay = validTransactions.reduce((acc, transaction) => {
-      const date = transaction.timestamp.split('T')[0];
-      if (!acc[date]) {
-        acc[date] = {
-          date,
-          points: 0,
-          sales: [],
-        };
-      }
-      
-      // Calculate points for this sale (simplified)
-      const points = transaction.amount;
-      acc[date].points += points;
-      acc[date].sales.push(transaction);
-      
-      return acc;
-    }, {} as Record<string, { date: string; points: number; sales: TotalPurchase[] }>);
-    
-    // Sort days by points to find best/worst
-    const sortedDays = Object.values(salesByDay).sort((a, b) => b.points - a.points);
-    const bestDay = sortedDays[0] || { date: new Date().toISOString(), points: 0 };
-    const worstDay = sortedDays[sortedDays.length - 1] || { date: new Date().toISOString(), points: 0 };
-    
-    // Find highest single sale
-    const highestSale = validTransactions.reduce(
-      (highest, transaction) => {
-        const points = transaction.amount;
-        if (points > highest.points) {
-          return { 
-            date: transaction.timestamp,
-            points
-          };
-        }
-        return highest;
-      }, 
-      { date: new Date().toISOString(), points: 0 }
+  if (!memberData) {
+    return (
+      <PageLayout>
+        <div className="text-center text-gray-400">
+          Ingen data hittades för denna säljare
+        </div>
+      </PageLayout>
     );
-    
-    // Calculate average points per sale
-    const totalPoints = validTransactions.reduce((sum, t) => sum + t.amount, 0);
-    const averagePoints = totalPoints / validTransactions.length;
-    
-    return {
-      salesCount: validTransactions.length,
-      averagePoints,
-      activeDays: Object.keys(salesByDay).length,
-      firstSaleDate: validTransactions[validTransactions.length - 1].timestamp,
-      bestDay,
-      highestSale,
-      worstDay
-    };
+  }
+
+  const statsData = {
+    salesCount: memberData.salesCount,
+    averagePoints: memberData.averagePoints,
+    activeDays: memberData.daysActive,
+    firstSaleDate: memberData.firstSale.toISOString(),
+    bestDay: memberData.bestDay,
+    highestSale: memberData.highestSale,
+    worstDay: memberData.worstDay
   };
-  
-  const staffStats = calculateStats();
 
   return (
     <PageLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <h1 className="text-2xl font-bold">{decodedName}</h1>
-          <DateFilterSection 
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            dateRange={dateRange}
-            setDateRange={setDateRange}
-            selectedPeriod={selectedPeriod}
-            setSelectedPeriod={setSelectedPeriod}
-          />
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">{decodeURIComponent(memberData.displayName)}</h1>
+        <div className="flex items-center gap-1 text-sm text-primary">
+          <Award className="h-4 w-4" />
+          <span>{memberData.role}</span>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <AccumulatedPointsCard transactions={transactions} isLoading={loading} />
-          <StaffStats stats={staffStats} />
-        </div>
+      </div>
 
-        <SalesChartSection
-          sales={transactions}
-          userName={decodedName}
-        />
-        
-        <ShiftsList 
-          shifts={transactions.map(t => ({
-            id: t.id,
-            presence_start: t.timestamp,
-            sales: [t]
-          }))}
-        />
+      <div className="space-y-4">
+        <StaffStats stats={statsData} />
       </div>
     </PageLayout>
   );

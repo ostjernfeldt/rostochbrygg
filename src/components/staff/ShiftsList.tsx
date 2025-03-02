@@ -12,79 +12,36 @@ import { calculatePoints, calculateTotalPoints } from "@/utils/pointsCalculation
 
 interface ShiftsListProps {
   shifts: any[];
-  transactions?: any[]; // Added this prop to support the new use case
 }
 
-export const ShiftsList = ({
-  shifts,
-  transactions = []
-}: ShiftsListProps) => {
+export const ShiftsList = ({ shifts }: ShiftsListProps) => {
   const [selectedPeriod, setSelectedPeriod] = useState("all");
 
   // Fetch shifts data from total_purchases
-  const {
-    data: shiftsData,
-    isLoading
-  } = useQuery({
+  const { data: shiftsData, isLoading } = useQuery({
     queryKey: ["shifts", shifts],
     queryFn: async () => {
       console.log("Fetching shifts data from total_purchases...");
-
-      // If we were provided direct transactions, use them instead of fetching
-      if (transactions && transactions.length > 0) {
-        console.log("Using provided transactions instead of fetching");
-        
-        // Group transactions by date
-        const transactionsByDate = transactions.reduce((acc, transaction) => {
-          const date = format(new Date(transaction.timestamp), 'yyyy-MM-dd');
-          if (!acc[date]) {
-            acc[date] = [];
-          }
-          acc[date].push(transaction);
-          return acc;
-        }, {});
-        
-        // Create shift objects from the grouped transactions
-        const shiftsFromTransactions = Object.entries(transactionsByDate).map(([date, dayTransactions]) => {
-          const startDate = new Date(date);
-          startDate.setHours(0, 0, 0, 0);
-          
-          // Filter out refunded transactions
-          const validTransactions = (dayTransactions as any[]).filter(t => !t.refunded);
-          
-          // Calculate total points for the shift
-          const totalPoints = calculateTotalPoints(validTransactions);
-          
-          return {
-            id: date,
-            presence_start: startDate.toISOString(),
-            totalPoints: totalPoints || 0,
-            sales: validTransactions
-          };
-        });
-        
-        // Sort shifts by date in descending order
-        return shiftsFromTransactions.sort((a, b) => 
-          new Date(b.presence_start).getTime() - new Date(a.presence_start).getTime()
-        );
-      }
-
+      
       // Get unique dates from shifts
       const shiftDates = shifts.map(shift => {
         const date = new Date(shift.presence_start);
         return format(date, 'yyyy-MM-dd');
       });
+
       console.log("Shift dates:", shiftDates);
 
       // For each shift date, fetch the sales data for the specific user
-      const shiftsWithSales = await Promise.all(shiftDates.map(async date => {
+      const shiftsWithSales = await Promise.all(shiftDates.map(async (date) => {
         const startDate = new Date(date);
         startDate.setHours(0, 0, 0, 0);
+        
         const endDate = new Date(date);
         endDate.setHours(23, 59, 59, 999);
 
         // Get the user display name from the first shift
-        const userDisplayName = shifts[0]?.sales?.[0]?.user_display_name;
+        const userDisplayName = shifts[0].sales[0]?.user_display_name;
+
         if (!userDisplayName) {
           console.log("No user display name found for shift:", date);
           return {
@@ -94,14 +51,20 @@ export const ShiftsList = ({
             sales: []
           };
         }
-        const {
-          data: sales,
-          error
-        } = await supabase.from("total_purchases").select("*").eq("user_display_name", userDisplayName).gte("timestamp", startDate.toISOString()).lte("timestamp", endDate.toISOString()).not("refunded", "eq", true);
+
+        const { data: sales, error } = await supabase
+          .from("total_purchases")
+          .select("*")
+          .eq("user_display_name", userDisplayName)
+          .gte("timestamp", startDate.toISOString())
+          .lte("timestamp", endDate.toISOString())
+          .not("refunded", "eq", true);
+
         if (error) {
           console.error("Error fetching sales for date:", date, error);
           throw error;
         }
+
         if (!sales || sales.length === 0) {
           console.log("No sales found for date:", date);
           return {
@@ -118,22 +81,25 @@ export const ShiftsList = ({
 
         // Calculate total points for the shift
         const totalPoints = calculateTotalPoints(validSales);
+
         console.log(`Sales for ${date} by ${userDisplayName}:`, {
           salesCount: validSales.length,
           totalPoints,
           validSales
         });
+
         return {
           id: date,
           presence_start: startDate.toISOString(),
-          totalPoints: totalPoints || 0,
-          // Ensure we always have a number
+          totalPoints: totalPoints || 0, // Ensure we always have a number
           sales: validSales
         };
       }));
 
       // Sort shifts by date in descending order
-      return shiftsWithSales.sort((a, b) => new Date(b.presence_start).getTime() - new Date(a.presence_start).getTime());
+      return shiftsWithSales.sort((a, b) => 
+        new Date(b.presence_start).getTime() - new Date(a.presence_start).getTime()
+      );
     }
   });
 
@@ -141,43 +107,54 @@ export const ShiftsList = ({
   const sortedShifts = shiftsData || shifts.sort((a, b) => {
     return new Date(b.presence_start).getTime() - new Date(a.presence_start).getTime();
   });
+
   console.log("Final sorted shifts:", sortedShifts);
-  
+
   return (
-    <div className="p-4 bg-card rounded-xl">
-      <h3 className="font-medium text-lg mb-4">Arbetsdagar</h3>
+    <div className="stat-card">
+      <h3 className="text-gray-400 mb-4">Säljpass</h3>
+      <div className="flex gap-2">
+        <Button
+          variant={selectedPeriod === "all" ? "default" : "outline"}
+          onClick={() => setSelectedPeriod("all")}
+          size="sm"
+        >
+          Alla
+        </Button>
+      </div>
       
-      {isLoading ? (
-        <div className="animate-pulse space-y-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-16 bg-gray-700/20 rounded-lg"></div>
-          ))}
-        </div>
-      ) : sortedShifts.length === 0 ? (
-        <div className="text-center py-4 text-gray-400">Inga arbetsdagar hittades</div>
-      ) : (
-        <ScrollArea className="h-[300px] pr-4">
-          <div className="space-y-3">
-            {sortedShifts.map((shift) => (
-              <div key={shift.id} className="p-3 border border-gray-800 rounded-lg">
-                <div className="flex justify-between items-center">
+      <ScrollArea className="h-[400px] mt-4">
+        <div className="space-y-4">
+          {isLoading ? (
+            <div className="animate-pulse space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-4 bg-card/50 rounded-lg border border-primary/20">
+                  <div className="h-6 bg-gray-700/50 rounded w-1/3 mb-2"></div>
+                  <div className="h-4 bg-gray-700/50 rounded w-1/4"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            sortedShifts?.map((shift) => (
+              <div 
+                key={shift.id} 
+                className="p-4 bg-card/50 rounded-lg border border-primary/20 hover:border-primary/40 transition-colors"
+              >
+                <div className="flex justify-between items-start mb-2">
                   <div>
-                    <div className="font-medium">
-                      {format(new Date(shift.presence_start), "EEE d MMM yyyy", { locale: sv })}
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      {shift.sales?.length || 0} transaktioner
+                    <div className="font-bold">
+                      {format(new Date(shift.presence_start), 'EEEE d MMMM', { locale: sv })}
                     </div>
                   </div>
-                  <div className="text-primary font-bold">
-                    {Math.round(shift.totalPoints)} p
+                  <div className="text-right">
+                    <div className="font-bold">{Math.round(shift.totalPoints || 0)} poäng</div>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </ScrollArea>
-      )}
+            ))
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 };
