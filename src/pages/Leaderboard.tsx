@@ -16,12 +16,19 @@ const Leaderboard = () => {
 
   // Handle dates loaded from the server
   const handleDatesLoaded = (dates: string[]) => {
+    // If there are dates, set the selected week to the latest date
     if (dates.length > 0 && !selectedWeek) {
       console.log("Latest sale date:", dates[0]);
       const latestDate = parseISO(dates[0]);
       const latestWeekStart = format(startOfWeek(latestDate), 'yyyy-MM-dd');
       setSelectedWeek(latestWeekStart);
       console.log("Setting latest week start to:", latestWeekStart);
+    } else if (dates.length === 0 && !selectedWeek) {
+      // If no dates exist, use current week
+      const currentDate = new Date();
+      const currentWeekStart = format(startOfWeek(currentDate), 'yyyy-MM-dd');
+      setSelectedWeek(currentWeekStart);
+      console.log("No sales found, using current week:", currentWeekStart);
     }
 
     // Generate a list of months with sales data
@@ -36,16 +43,20 @@ const Leaderboard = () => {
   // Fetch dates with sales activity
   const { data: salesDates } = useLeaderboardDates(handleDatesLoaded);
 
-  // Generate weeks based on sales dates
-  const weekOptions = salesDates ? Array.from({ length: 5 }, (_, i) => {
-    const latestDate = parseISO(salesDates[0]);
-    const date = startOfWeek(latestDate);
+  // Generate weeks based on sales dates or current date if no sales
+  const weekOptions = Array.from({ length: 5 }, (_, i) => {
+    // Use current date as reference if no sales
+    const referenceDate = salesDates && salesDates.length > 0 
+      ? parseISO(salesDates[0]) 
+      : new Date();
+      
+    const date = startOfWeek(referenceDate);
     date.setDate(date.getDate() - (i * 7));
     return {
       value: format(date, 'yyyy-MM-dd'),
       label: `Vecka ${format(date, 'w')} (${format(date, 'd MMM', { locale: sv })} - ${format(endOfWeek(date), 'd MMM', { locale: sv })})`
     };
-  }) : [];
+  });
 
   // Generate last 12 months for the dropdown, now with Swedish month names
   const monthOptions = Array.from({ length: 12 }, (_, i) => {

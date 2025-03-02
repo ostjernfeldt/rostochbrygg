@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -7,6 +8,22 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
     queryKey: ["salesDates"],
     queryFn: async () => {
       console.log("Fetching dates with sales activity from total_purchases...");
+      
+      // First check if there are any sales
+      const { count, error: countError } = await supabase
+        .from("total_purchases")
+        .select("*", { count: 'exact', head: true });
+      
+      if (countError) throw countError;
+      
+      // If no sales exist, return empty dates array and let onDatesLoaded handle it
+      if (count === 0) {
+        console.log("No sales found at all");
+        if (onDatesLoaded) {
+          onDatesLoaded([]);
+        }
+        return [];
+      }
       
       // First get visible staff members
       const { data: visibleStaff, error: staffError } = await supabase
@@ -50,7 +67,7 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
       console.log("Found valid sales dates:", validDates);
       
       // Call the callback with the loaded dates
-      if (onDatesLoaded && validDates.length > 0) {
+      if (onDatesLoaded) {
         onDatesLoaded(validDates);
       }
       
