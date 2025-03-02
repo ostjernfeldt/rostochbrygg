@@ -93,15 +93,15 @@ const CreateAccount = () => {
           )}
           
           {validationMessage && (
-            <Alert className="mb-4 bg-blue-50 border-blue-200">
-              <InfoIcon className="h-4 w-4 text-blue-500" />
-              <AlertDescription className="text-blue-700">
+            <Alert className="mb-4 bg-card border border-accent/20">
+              <InfoIcon className="h-4 w-4 text-accent" />
+              <AlertDescription className="text-card-foreground">
                 {validationMessage}
                 <div className="mt-2">
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
+                    className="w-full border-accent/20 text-accent hover:bg-accent/10"
                     onClick={navigateToRegister}
                   >
                     Skapa ditt konto

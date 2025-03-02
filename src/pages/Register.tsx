@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,6 @@ const Register = () => {
   const [invitationId, setInvitationId] = useState<string | null>(null);
   const [isComingFromLogin, setIsComingFromLogin] = useState(false);
 
-  // Hantera URL-parametrar
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const emailParam = searchParams.get('email');
@@ -33,10 +31,9 @@ const Register = () => {
     if (emailParam) {
       setEmail(emailParam);
       
-      // Om användaren kommer från inloggningssidan och redan är inbjuden
       if (invitedParam === 'true') {
         setIsComingFromLogin(true);
-        setIsVerified(true); // Set as verified directly if coming from CreateAccount
+        setIsVerified(true);
         console.log("Setting as verified directly from URL params");
       }
     }
@@ -53,7 +50,6 @@ const Register = () => {
 
       console.log("Verifying invitation for email:", emailToVerify);
       
-      // Call the custom RPC function
       const { data, error } = await supabase.functions.invoke('validate-invitation-email', {
         body: { email: emailToVerify.trim() }
       });
@@ -65,7 +61,6 @@ const Register = () => {
       
       console.log("Validation result:", data);
 
-      // Check if there's a valid invitation in the response
       if (!data || !data.success || !data.data || data.data.length === 0 || !data.data[0].is_valid) {
         throw new Error("Ingen aktiv inbjudan hittades för denna e-postadress.");
       }
@@ -120,7 +115,6 @@ const Register = () => {
 
       console.log("User created successfully:", signUpData.user.id);
 
-      // Mark the invitation as used
       const { error: markUsedError } = await supabase.functions.invoke('mark-invitation-used', {
         body: { email: email.trim() }
       });
@@ -137,7 +131,6 @@ const Register = () => {
         description: "Ditt konto har skapats. Du loggas nu in automatiskt.",
       });
 
-      // Logga in användaren automatiskt efter registrering
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim(),
@@ -154,14 +147,12 @@ const Register = () => {
         return;
       }
 
-      // Efter lyckad automatisk inloggning, hämta användarrollen
       const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", signUpData.user.id)
         .single();
 
-      // Navigera till lämplig sida baserat på roll
       if (roleData?.role === 'admin') {
         navigate("/");
       } else {
@@ -180,7 +171,6 @@ const Register = () => {
     }
   };
 
-  // Show verification form if not verified yet
   if (!isVerified) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
@@ -206,9 +196,9 @@ const Register = () => {
             )}
             
             {isComingFromLogin && (
-              <Alert className="mb-4 bg-blue-50 border-blue-200">
-                <InfoIcon className="h-4 w-4 text-blue-500" />
-                <AlertDescription className="text-blue-700">
+              <Alert className="mb-4 bg-card border border-accent/20">
+                <InfoIcon className="h-4 w-4 text-accent" />
+                <AlertDescription className="text-card-foreground">
                   Din e-postadress är inbjuden! Fortsätt för att skapa ditt konto.
                 </AlertDescription>
               </Alert>
@@ -254,7 +244,6 @@ const Register = () => {
     );
   }
 
-  // Show registration form if email is verified
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
       <img 
