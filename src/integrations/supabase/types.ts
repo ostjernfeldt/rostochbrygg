@@ -42,6 +42,42 @@ export type Database = {
         }
         Relationships: []
       }
+      hall_of_fame_manual: {
+        Row: {
+          category: Database["public"]["Enums"]["hall_of_fame_category"]
+          created_at: string | null
+          date: string | null
+          description: string | null
+          id: string
+          month: string | null
+          points: number
+          updated_at: string | null
+          user_display_name: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["hall_of_fame_category"]
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+          month?: string | null
+          points: number
+          updated_at?: string | null
+          user_display_name: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["hall_of_fame_category"]
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+          month?: string | null
+          points?: number
+          updated_at?: string | null
+          user_display_name?: string
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           created_at: string
@@ -603,6 +639,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       article_category: "Kaffekunskap" | "Säljutbildning"
+      hall_of_fame_category: "sale" | "day" | "month"
     }
     CompositeTypes: {
       [_ in never]: never

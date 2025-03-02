@@ -14,25 +14,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import { Calendar as CalendarIcon, Edit, Trash2, CalendarDays, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface ManualEntry {
-  id: string;
-  category: 'sale' | 'day' | 'month';
-  user_display_name: string;
-  points: number;
-  description?: string;
-  date?: string;
-  month?: string;
-  created_at: string;
-}
+import { ManualHallOfFameEntry } from "@/types/hallOfFame";
 
 export const ManageHallOfFameEntries = () => {
-  const [entries, setEntries] = useState<ManualEntry[]>([]);
+  const [entries, setEntries] = useState<ManualHallOfFameEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentEntry, setCurrentEntry] = useState<ManualEntry | null>(null);
+  const [currentEntry, setCurrentEntry] = useState<ManualHallOfFameEntry | null>(null);
   const [formData, setFormData] = useState({
     category: 'sale' as 'sale' | 'day' | 'month',
     user_display_name: '',
@@ -196,7 +186,7 @@ export const ManageHallOfFameEntries = () => {
     setCurrentEntry(null);
   };
 
-  const openEditDialog = (entry: ManualEntry) => {
+  const openEditDialog = (entry: ManualHallOfFameEntry) => {
     setCurrentEntry(entry);
     setFormData({
       category: entry.category,
@@ -209,7 +199,7 @@ export const ManageHallOfFameEntries = () => {
     setIsEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (entry: ManualEntry) => {
+  const openDeleteDialog = (entry: ManualHallOfFameEntry) => {
     setCurrentEntry(entry);
     setIsDeleteDialogOpen(true);
   };

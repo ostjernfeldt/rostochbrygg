@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
@@ -11,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useState } from "react";
 import { TotalPurchase } from "@/types/purchase";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ManualHallOfFameEntry } from "@/types/hallOfFame";
 
 interface TopSeller {
   name: string;
@@ -20,16 +20,6 @@ interface TopSeller {
   transaction?: TotalPurchase;
   isManual?: boolean;
   description?: string;
-}
-
-interface ManualEntry {
-  id: string;
-  category: 'sale' | 'day' | 'month';
-  user_display_name: string;
-  points: number;
-  description?: string;
-  date?: string;
-  month?: string;
 }
 
 const HallOfFame = () => {
@@ -67,8 +57,8 @@ const HallOfFame = () => {
       
       // Process manual entries
       const manualTopSales: TopSeller[] = (manualEntries || [])
-        .filter(entry => entry.category === 'sale')
-        .map(entry => ({
+        .filter((entry: ManualHallOfFameEntry) => entry.category === 'sale')
+        .map((entry: ManualHallOfFameEntry) => ({
           name: entry.user_display_name,
           points: Number(entry.points),
           date: entry.date ? format(new Date(entry.date), 'd MMMM yyyy', { locale: sv }) : undefined,
@@ -77,8 +67,8 @@ const HallOfFame = () => {
         }));
         
       const manualTopDays: TopSeller[] = (manualEntries || [])
-        .filter(entry => entry.category === 'day')
-        .map(entry => ({
+        .filter((entry: ManualHallOfFameEntry) => entry.category === 'day')
+        .map((entry: ManualHallOfFameEntry) => ({
           name: entry.user_display_name,
           points: Number(entry.points),
           date: entry.date ? format(new Date(entry.date), 'd MMMM yyyy', { locale: sv }) : undefined,
@@ -87,8 +77,8 @@ const HallOfFame = () => {
         }));
         
       const manualTopMonths: TopSeller[] = (manualEntries || [])
-        .filter(entry => entry.category === 'month')
-        .map(entry => ({
+        .filter((entry: ManualHallOfFameEntry) => entry.category === 'month')
+        .map((entry: ManualHallOfFameEntry) => ({
           name: entry.user_display_name,
           points: Number(entry.points),
           month: entry.month,
