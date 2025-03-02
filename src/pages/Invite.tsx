@@ -37,6 +37,7 @@ type Invitation = {
   used_at: string | null;
   status: string;
   created_by?: string | null;
+  invitation_token?: string;
 };
 
 type InvitationStatus = 'active' | 'expired' | 'used' | 'pending';
@@ -45,7 +46,6 @@ type InvitationStatus = 'active' | 'expired' | 'used' | 'pending';
 type SupabaseUser = {
   id: string;
   email?: string | null;
-  // Lägg till andra egenskaper om de behövs
 };
 
 const Invite = () => {
@@ -180,7 +180,8 @@ const Invite = () => {
         .insert({
           email: email.trim(),
           created_by: userId,
-          status: 'pending'
+          status: 'pending',
+          invitation_token: crypto.randomUUID()
         })
         .select();
 

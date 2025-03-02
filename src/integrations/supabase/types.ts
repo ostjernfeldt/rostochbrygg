@@ -50,6 +50,7 @@ export type Database = {
           expires_at: string
           id: string
           invitation_token: string
+          status: string
           used_at: string | null
         }
         Insert: {
@@ -59,6 +60,7 @@ export type Database = {
           expires_at?: string
           id?: string
           invitation_token: string
+          status?: string
           used_at?: string | null
         }
         Update: {
@@ -68,6 +70,7 @@ export type Database = {
           expires_at?: string
           id?: string
           invitation_token?: string
+          status?: string
           used_at?: string | null
         }
         Relationships: []
@@ -504,6 +507,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_invitation_used_by_email: {
+        Args: {
+          email_address: string
+        }
+        Returns: boolean
+      }
       sync_total_purchases: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -515,6 +524,16 @@ export type Database = {
         Returns: {
           is_valid: boolean
           email: string
+        }[]
+      }
+      validate_invitation_by_email: {
+        Args: {
+          email_address: string
+        }
+        Returns: {
+          is_valid: boolean
+          email: string
+          invitation_id: string
         }[]
       }
     }
