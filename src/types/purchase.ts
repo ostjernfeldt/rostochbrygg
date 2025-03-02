@@ -76,7 +76,8 @@ export interface LegacyPurchaseFormat {
 
 export interface StaffMemberStats {
   displayName: string;
-  firstSale: Date;
+  role: string;
+  firstSale: Date | null;
   totalAmount: number;
   totalPoints: number;
   averagePoints: number;
