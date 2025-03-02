@@ -1,5 +1,5 @@
 
-import { Menu, LogOut, User, Shield } from "lucide-react";
+import { Menu, LogOut, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -64,7 +64,6 @@ export const BottomNav = () => {
         { path: "/", label: "Idag" },
         ...baseItems,
         { path: "/invite", label: "Bjud in" },
-        { path: "/admin", label: "Administrera", icon: <Shield className="h-4 w-4" /> },
       ];
     }
 
@@ -127,13 +126,12 @@ export const BottomNav = () => {
                   navigate(item.path);
                   setOpen(false);
                 }}
-                className={`p-3 text-left rounded-lg transition-colors flex items-center gap-2 ${
+                className={`p-3 text-left rounded-lg transition-colors ${
                   location.pathname === item.path
                     ? "bg-primary text-white"
                     : "text-gray-400 hover:bg-card/80"
                 }`}
               >
-                {item.icon && item.icon}
                 {item.label}
               </button>
             ))}
