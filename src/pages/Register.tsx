@@ -1,16 +1,18 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, InfoIcon } from "lucide-react";
+import { InvitationCheckResult } from "@/components/invite/types";
 
 const Register = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   
   const [email, setEmail] = useState("");
@@ -20,22 +22,39 @@ const Register = () => {
   const [isVerified, setIsVerified] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [invitationId, setInvitationId] = useState<string | null>(null);
+  const [isComingFromLogin, setIsComingFromLogin] = useState(false);
 
-  const verifyInvitation = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Hantera URL-parametrar
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const emailParam = searchParams.get('email');
+    const invitedParam = searchParams.get('invited');
+    
+    if (emailParam) {
+      setEmail(emailParam);
+      
+      // Om användaren kommer från inloggningssidan och redan är inbjuden
+      if (invitedParam === 'true') {
+        setIsComingFromLogin(true);
+        verifyInvitationByEmail(emailParam);
+      }
+    }
+  }, [location.search]);
+
+  const verifyInvitationByEmail = async (emailToVerify: string) => {
     setIsVerifying(true);
     setValidationError(null);
 
     try {
-      if (!email.trim() || !email.includes('@')) {
+      if (!emailToVerify.trim() || !emailToVerify.includes('@')) {
         throw new Error("Vänligen ange en giltig e-postadress");
       }
 
-      console.log("Verifying invitation for email:", email);
+      console.log("Verifying invitation for email:", emailToVerify);
       
       // Call the custom RPC function
       const { data, error } = await supabase.functions.invoke('validate-invitation-email', {
-        body: { email: email.trim() }
+        body: { email: emailToVerify.trim() }
       });
 
       if (error) {
@@ -45,11 +64,13 @@ const Register = () => {
       
       console.log("Validation result:", data);
 
-      if (!data || !data.is_valid) {
+      const result = data as InvitationCheckResult;
+
+      if (!result || !result.is_valid) {
         throw new Error("Ingen aktiv inbjudan hittades för denna e-postadress.");
       }
 
-      setInvitationId(data.invitation_id);
+      setInvitationId(result.invitation_id || null);
       setIsVerified(true);
       setValidationError(null);
     } catch (error: any) {
@@ -60,6 +81,11 @@ const Register = () => {
     } finally {
       setIsVerifying(false);
     }
+  };
+
+  const verifyInvitation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await verifyInvitationByEmail(email);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -108,10 +134,40 @@ const Register = () => {
       
       toast({
         title: "Registrering lyckades!",
-        description: "Ditt konto har skapats. Du kan nu logga in.",
+        description: "Ditt konto har skapats. Du loggas nu in automatiskt.",
       });
+
+      // Logga in användaren automatiskt efter registrering
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim(),
+      });
+
+      if (signInError) {
+        console.error("Auto sign-in error:", signInError);
+        toast({
+          variant: "destructive",
+          title: "Automatisk inloggning misslyckades",
+          description: "Ditt konto har skapats, men vi kunde inte logga in dig automatiskt. Vänligen logga in manuellt.",
+        });
+        navigate("/login");
+        return;
+      }
+
+      // Efter lyckad automatisk inloggning, hämta användarrollen
+      const { data: roleData, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", signUpData.user.id)
+        .single();
+
+      // Navigera till lämplig sida baserat på roll
+      if (roleData?.role === 'admin') {
+        navigate("/");
+      } else {
+        navigate("/leaderboard");
+      }
       
-      navigate("/login");
     } catch (error: any) {
       console.error("Registration error:", error);
       toast({
@@ -149,6 +205,15 @@ const Register = () => {
               </Alert>
             )}
             
+            {isComingFromLogin && (
+              <Alert className="mb-4 bg-blue-50 border-blue-200">
+                <InfoIcon className="h-4 w-4 text-blue-500" />
+                <AlertDescription className="text-blue-700">
+                  Din e-postadress är inbjuden! Fortsätt för att skapa ditt konto.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={verifyInvitation} className="space-y-4">
               <div className="space-y-2">
                 <Input
@@ -157,7 +222,7 @@ const Register = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  disabled={isVerifying}
+                  disabled={isVerifying || isComingFromLogin}
                 />
               </div>
               
@@ -217,6 +282,9 @@ const Register = () => {
                 disabled={isLoading}
                 minLength={6}
               />
+              <p className="text-xs text-muted-foreground">
+                Lösenordet måste vara minst 6 tecken långt.
+              </p>
             </div>
             
             <Button 

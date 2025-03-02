@@ -1,21 +1,34 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
+import { InvitationCheckResult } from "@/components/invite/types";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
+  const [invitationMessage, setInvitationMessage] = useState<string | null>(null);
+  const [isCheckingInvitation, setIsCheckingInvitation] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Om e-postadressen kommer från sökvägsfrågan, fyll i den automatiskt
+    const searchParams = new URLSearchParams(location.search);
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+
     // Kontrollera om det finns en aktiv session vid komponentmontering
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -43,11 +56,34 @@ const Login = () => {
     };
 
     checkSession();
-  }, [navigate]);
+  }, [navigate, location.search]);
+
+  const checkInvitation = async (emailToCheck: string): Promise<InvitationCheckResult | null> => {
+    try {
+      setIsCheckingInvitation(true);
+      
+      const { data, error } = await supabase.functions.invoke('validate-invitation-email', {
+        body: { email: emailToCheck.trim() }
+      });
+
+      if (error) {
+        console.error("Error checking invitation:", error);
+        return null;
+      }
+
+      return data as InvitationCheckResult;
+    } catch (error) {
+      console.error("Invitation check error:", error);
+      return null;
+    } finally {
+      setIsCheckingInvitation(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setInvitationMessage(null);
     
     if (!email || !password) {
       toast({
@@ -60,12 +96,30 @@ const Login = () => {
     }
 
     try {
+      // Försök logga in först
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim()
       });
 
-      if (error) throw error;
+      if (error) {
+        // Om inloggning misslyckas med felmeddelande om ogiltiga uppgifter, kontrollera om det finns en inbjudan
+        if (error.message.includes("Invalid login credentials")) {
+          // Kontrollera om e-postadressen har en aktiv inbjudan
+          const invitationResult = await checkInvitation(email);
+          
+          if (invitationResult && invitationResult.is_valid) {
+            // Om det finns en aktiv inbjudan, omdirigera till registreringssidan
+            navigate(`/register?email=${encodeURIComponent(email)}&invited=true`);
+            return;
+          }
+
+          // Annars, visa vanligt felmeddelande om ogiltiga inloggningsuppgifter
+          throw new Error("Felaktig e-post eller lösenord.");
+        }
+        throw error;
+      }
+      
       if (!data?.user) throw new Error("No user data received");
 
       // Kontrollera användarens roll
@@ -155,6 +209,80 @@ const Login = () => {
     }
   };
 
+  const handleCheckInvitationFirst = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Ogiltig inmatning",
+        description: "E-post krävs för att kontrollera inbjudan.",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    setInvitationMessage(null);
+
+    try {
+      const invitationResult = await checkInvitation(email);
+      
+      if (invitationResult && invitationResult.is_valid) {
+        setInvitationMessage("Du har en inbjudan! För att skapa ditt konto, klicka på knappen nedan.");
+      } else {
+        setInvitationMessage(null);
+        // Fortsätt med vanlig inloggning
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: password.trim()
+        });
+
+        if (error) throw error;
+        
+        if (!data?.user) throw new Error("No user data received");
+
+        // Kontrollera användarens roll
+        const { data: roleData, error: roleError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .single();
+
+        if (roleError) {
+          await supabase.auth.signOut();
+          throw new Error("Kunde inte verifiera användarrollen");
+        }
+
+        toast({
+          title: "Inloggningen lyckades!",
+          description: "Välkommen tillbaka.",
+        });
+        
+        // Navigera till lämplig sida baserat på användarens roll
+        if (roleData?.role === 'admin') {
+          navigate("/");
+        } else {
+          navigate("/leaderboard");
+        }
+      }
+    } catch (error: any) {
+      console.error("Login/Invitation check error:", error);
+      
+      let errorMessage = "Ett fel uppstod vid inloggning.";
+      if (error.message.includes("Invalid login credentials")) {
+        errorMessage = "Felaktig e-post eller lösenord.";
+      }
+
+      toast({
+        variant: "destructive",
+        title: "Inloggningen misslyckades",
+        description: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
       <img 
@@ -172,6 +300,25 @@ const Login = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {invitationMessage && (
+            <Alert className="mb-4 bg-blue-50 border-blue-200">
+              <InfoIcon className="h-4 w-4 text-blue-500" />
+              <AlertDescription className="text-blue-700">
+                {invitationMessage}
+                <div className="mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
+                    onClick={() => navigate(`/register?email=${encodeURIComponent(email)}&invited=true`)}
+                  >
+                    Skapa ditt konto
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <form onSubmit={isResetMode ? handleResetPassword : handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Input

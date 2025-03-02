@@ -16,3 +16,9 @@ export type SupabaseUser = {
   id: string;
   email?: string | null;
 };
+
+export type InvitationCheckResult = {
+  is_valid: boolean;
+  email: string;
+  invitation_id: string | null;
+};
