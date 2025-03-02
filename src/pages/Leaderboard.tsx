@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { format, startOfWeek, endOfWeek, parseISO, subMonths } from "date-fns";
+import { useState, useEffect } from "react";
+import { format, startOfWeek, endOfWeek, parseISO, subMonths, isAfter } from "date-fns";
 import { sv } from "date-fns/locale";  // Importera svenska lokaliseringen
 import { useNavigate } from "react-router-dom";
 import { PageLayout } from "@/components/PageLayout";
@@ -12,6 +12,7 @@ const Leaderboard = () => {
   const navigate = useNavigate();
   const [selectedWeek, setSelectedWeek] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
+  const [previousMonthsWithData, setPreviousMonthsWithData] = useState<string[]>([]);
 
   // Handle dates loaded from the server
   const handleDatesLoaded = (dates: string[]) => {
@@ -22,6 +23,14 @@ const Leaderboard = () => {
       setSelectedWeek(latestWeekStart);
       console.log("Setting latest week start to:", latestWeekStart);
     }
+
+    // Generate a list of months with sales data
+    const monthsWithData = new Set<string>();
+    dates.forEach(date => {
+      const month = date.substring(0, 7); // Get YYYY-MM format
+      monthsWithData.add(month);
+    });
+    setPreviousMonthsWithData(Array.from(monthsWithData).sort().reverse()); // Sort descending
   };
 
   // Fetch dates with sales activity
@@ -49,7 +58,32 @@ const Leaderboard = () => {
 
   // Fetch leaderboard data for each time period
   const { data: weeklyLeaderboard, isLoading: isWeeklyLoading } = useLeaderboardData('weekly', selectedWeek);
-  const { data: monthlyLeaderboard, isLoading: isMonthlyLoading } = useLeaderboardData('monthly', selectedMonth);
+  const { 
+    data: monthlyLeaderboard, 
+    isLoading: isMonthlyLoading 
+  } = useLeaderboardData('monthly', selectedMonth);
+
+  // Effect to check if current month has data and fall back to previous month if needed
+  useEffect(() => {
+    if (!isMonthlyLoading && monthlyLeaderboard && previousMonthsWithData.length > 0) {
+      const currentMonthHasData = 
+        monthlyLeaderboard.monthlyLeaders && 
+        monthlyLeaderboard.monthlyLeaders.length > 0;
+      
+      // If current month has no data and it's not in our list of months with data
+      if (!currentMonthHasData && !previousMonthsWithData.includes(selectedMonth)) {
+        console.log("Current month has no data, finding previous month with data");
+        
+        // Find the most recent month with data
+        const mostRecentMonthWithData = previousMonthsWithData[0];
+        
+        if (mostRecentMonthWithData && mostRecentMonthWithData !== selectedMonth) {
+          console.log(`Switching to month with data: ${mostRecentMonthWithData}`);
+          setSelectedMonth(mostRecentMonthWithData);
+        }
+      }
+    }
+  }, [monthlyLeaderboard, isMonthlyLoading, previousMonthsWithData, selectedMonth]);
 
   return (
     <PageLayout>
