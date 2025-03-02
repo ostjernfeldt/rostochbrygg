@@ -12,7 +12,10 @@ interface UserSales {
   salesCount: number;
 }
 
-export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selectedDate: string) => {
+// Defining a union type for the supported time periods
+type TimePeriod = 'daily' | 'weekly' | 'monthly';
+
+export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
   return useQuery({
     queryKey: ["challengeLeaders", type, selectedDate],
     queryFn: async () => {
@@ -81,12 +84,14 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
             console.log("No sales found at all, returning empty array");
             const emptyLeaders: UserSales[] = [];
             
-            return {
-              dailyLeaders: type === 'daily' ? emptyLeaders : [],
-              weeklyLeaders: type === 'weekly' ? emptyLeaders : [],
-              monthlyLeaders: type === 'monthly' ? emptyLeaders : [],
-              latestDate: null
-            };
+            // Create a result object based on the requested type
+            const result: any = {};
+            if (type === 'daily') result.dailyLeaders = emptyLeaders;
+            if (type === 'weekly') result.weeklyLeaders = emptyLeaders;
+            if (type === 'monthly') result.monthlyLeaders = emptyLeaders;
+            result.latestDate = null;
+            
+            return result;
           }
           
           // If there are sales but none for selected date, find the latest date with sales
@@ -101,12 +106,13 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
           if (latestError) {
             console.log("Error getting latest sale, using current date", latestError);
             // Use current date as fallback
-            return {
-              dailyLeaders: [],
-              weeklyLeaders: [],
-              monthlyLeaders: [],
+            const emptyResult: any = {
               latestDate: null
             };
+            if (type === 'daily') emptyResult.dailyLeaders = [];
+            if (type === 'weekly') emptyResult.weeklyLeaders = [];
+            if (type === 'monthly') emptyResult.monthlyLeaders = [];
+            return emptyResult;
           }
           
           // Update date range to use latest date
@@ -130,34 +136,38 @@ export const useLeaderboardData = (type: 'daily' | 'weekly' | 'monthly', selecte
           if (!latestSales || latestSales.length === 0) {
             // Still no valid sales - return empty array
             const emptyLeaders: UserSales[] = [];
-            return {
-              dailyLeaders: type === 'daily' ? emptyLeaders : [],
-              weeklyLeaders: [],
-              monthlyLeaders: [],
+            const emptyResult: any = {
               latestDate: startDate.toISOString()
             };
+            if (type === 'daily') emptyResult.dailyLeaders = emptyLeaders;
+            if (type === 'weekly') emptyResult.weeklyLeaders = [];
+            if (type === 'monthly') emptyResult.monthlyLeaders = [];
+            return emptyResult;
           }
           
           // Calculate leaders with the latest sales
           const leaders = calculateLeaders(latestSales, visibleStaffNames);
           
-          return {
-            dailyLeaders: type === 'daily' ? leaders : [],
-            weeklyLeaders: [],
-            monthlyLeaders: [],
+          const result: any = {
             latestDate: startDate.toISOString()
           };
+          if (type === 'daily') result.dailyLeaders = leaders;
+          if (type === 'weekly') result.weeklyLeaders = [];
+          if (type === 'monthly') result.monthlyLeaders = [];
+          return result;
         }
 
         // Calculate leaders with the originally requested date range
         const leaders = calculateLeaders(sales, visibleStaffNames);
         
-        return {
-          dailyLeaders: type === 'daily' ? leaders : [],
-          weeklyLeaders: type === 'weekly' ? leaders : [],
-          monthlyLeaders: type === 'monthly' ? leaders : [],
+        // Create result object based on the requested type
+        const result: any = {
           latestDate: useLatestDate ? startDate.toISOString() : null
         };
+        if (type === 'daily') result.dailyLeaders = leaders;
+        if (type === 'weekly') result.weeklyLeaders = leaders;
+        if (type === 'monthly') result.monthlyLeaders = leaders;
+        return result;
       } catch (error) {
         console.error(`Error in ${type} challenge leaders query:`, error);
         throw error;
