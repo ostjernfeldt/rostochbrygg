@@ -295,6 +295,65 @@ export type Database = {
         }
         Relationships: []
       }
+      role_levels: {
+        Row: {
+          created_at: string | null
+          display_order: number
+          id: string
+          points_threshold: number
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order: number
+          id?: string
+          points_threshold: number
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          points_threshold?: number
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      staff_historical_points: {
+        Row: {
+          id: string
+          points: number
+          updated_at: string | null
+          updated_by: string | null
+          user_display_name: string
+        }
+        Insert: {
+          id?: string
+          points?: number
+          updated_at?: string | null
+          updated_by?: string | null
+          user_display_name: string
+        }
+        Update: {
+          id?: string
+          points?: number
+          updated_at?: string | null
+          updated_by?: string | null
+          user_display_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_historical_points_user_display_name_fkey"
+            columns: ["user_display_name"]
+            isOneToOne: true
+            referencedRelation: "staff_roles"
+            referencedColumns: ["user_display_name"]
+          },
+        ]
+      }
       staff_roles: {
         Row: {
           created_at: string | null
