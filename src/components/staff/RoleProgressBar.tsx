@@ -44,33 +44,45 @@ export const RoleProgressBar = ({
     : 0;
 
   return (
-    <Card className="animate-fade-in" style={{ animationDelay }}>
-      <CardContent className="pt-6">
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-sm font-medium">
-              {currentRole}
-            </span>
+    <Card 
+      className="animate-fade-in bg-gradient-to-r from-card to-card/80 border-primary/20 shadow-lg overflow-hidden" 
+      style={{ animationDelay }}
+    >
+      <CardContent className="p-6">
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-primary">Din nuvarande roll</h3>
+              <p className="text-2xl font-bold">{currentRole}</p>
+            </div>
             {nextRole && (
-              <span className="text-sm font-medium">
-                {nextRole}
-              </span>
+              <div className="text-right space-y-1">
+                <h3 className="text-sm text-gray-400">Nästa nivå</h3>
+                <p className="text-lg font-medium text-gray-300">{nextRole}</p>
+              </div>
             )}
           </div>
           
-          <Progress value={progressPercentage} className="h-2" />
-          
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>{currentPoints} poäng</span>
-            {nextThreshold && (
-              <span>{nextThreshold} poäng</span>
-            )}
+          <div className="space-y-2">
+            <Progress 
+              value={progressPercentage} 
+              className="h-3 bg-primary/10" 
+            />
+            
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>{currentPoints} poäng</span>
+              {nextThreshold && (
+                <span>{nextThreshold} poäng</span>
+              )}
+            </div>
           </div>
           
-          {nextRole && (
-            <p className="text-sm text-center mt-2 text-muted-foreground">
-              {pointsToNextLevel} poäng till {nextRole}
-            </p>
+          {nextRole && pointsToNextLevel > 0 && (
+            <div className="mt-3 px-4 py-2 bg-primary/10 rounded-md text-center">
+              <p className="text-sm font-medium">
+                <span className="text-primary font-bold">{pointsToNextLevel} poäng</span> till {nextRole}
+              </p>
+            </div>
           )}
         </div>
       </CardContent>

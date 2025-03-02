@@ -128,44 +128,44 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <StatCard
-          title="Ackumelerad poäng"
-          value={`${totalAccumulatedPoints} p`}
-          userName=""
-          animationDelay="400ms"
-        />
-        <StatCard
-          title="Snittpoäng per sälj"
-          value={`${Math.round(cleanStats.averagePoints)} p`}
-          userName=""
-          animationDelay="800ms"
-        />
-        <StatCard
-          title="Högsta sälj"
-          value={`${Math.round(cleanStats.highestSale.points)} p`}
-          userName=""
-          subtitle={format(new Date(cleanStats.highestSale.date), "d MMM yyyy", { locale: sv })}
-          animationDelay="1200ms"
-        />
-        <StatCard
-          title="Bästa säljdagen"
-          subtitle={format(new Date(cleanStats.bestDay.date), "d MMM yyyy", { locale: sv })}
-          value={`${Math.round(cleanStats.bestDay.points)} p`}
-          userName=""
-          animationDelay="1600ms"
-        />
-      </div>
-
-      {/* Role progression bar */}
+      {/* Role progression bar - now placed first */}
       <RoleProgressBar
         currentRole={currentRole?.title || "Sales Intern"}
         nextRole={nextRole?.title}
         currentPoints={totalAccumulatedPoints}
         currentThreshold={currentRole?.points_threshold || 0}
         nextThreshold={nextRole?.points_threshold}
-        animationDelay="2000ms"
+        animationDelay="400ms"
       />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <StatCard
+          title="Ackumelerad poäng"
+          value={`${totalAccumulatedPoints} p`}
+          userName=""
+          animationDelay="800ms"
+        />
+        <StatCard
+          title="Snittpoäng per sälj"
+          value={`${Math.round(cleanStats.averagePoints)} p`}
+          userName=""
+          animationDelay="1200ms"
+        />
+        <StatCard
+          title="Högsta sälj"
+          value={`${Math.round(cleanStats.highestSale.points)} p`}
+          userName=""
+          subtitle={format(new Date(cleanStats.highestSale.date), "d MMM yyyy", { locale: sv })}
+          animationDelay="1600ms"
+        />
+        <StatCard
+          title="Bästa säljdagen"
+          subtitle={format(new Date(cleanStats.bestDay.date), "d MMM yyyy", { locale: sv })}
+          value={`${Math.round(cleanStats.bestDay.points)} p`}
+          userName=""
+          animationDelay="2000ms"
+        />
+      </div>
     </div>
   );
 };
