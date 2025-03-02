@@ -47,7 +47,7 @@ export const SalesChartSection = ({
   return (
     <div className="stat-card">
       <h3 className="text-gray-400 mb-4">{title}</h3>
-      <SalesChart data={totalPurchases.length > 0 ? totalPurchases : sales} />
+      <SalesChart transactions={totalPurchases.length > 0 ? totalPurchases : sales} />
     </div>
   );
-};
+}
