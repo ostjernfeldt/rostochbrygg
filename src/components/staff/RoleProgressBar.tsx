@@ -45,32 +45,33 @@ export const RoleProgressBar = ({
 
   return (
     <Card 
-      className="animate-fade-in bg-card/80 border-primary/10 shadow-sm overflow-hidden" 
+      className="animate-fade-in overflow-hidden bg-gradient-to-r from-card/90 to-card/70 border border-primary/10 shadow-md" 
       style={{ animationDelay }}
     >
-      <CardContent className="p-4">
-        <div className="space-y-3">
+      <CardContent className="p-3">
+        <div className="space-y-2.5">
           <div className="flex justify-between items-center text-sm">
             <div>
-              <span className="text-gray-400">Roll:</span>{" "}
-              <span className="font-medium">{currentRole}</span>
+              <span className="text-gray-400 text-xs">NUVARANDE ROLL</span>
+              <div className="font-medium text-white/90">{currentRole}</div>
             </div>
             {nextRole && pointsToNextLevel > 0 && (
-              <div className="text-gray-400 text-xs">
-                <span className="text-primary font-medium">{pointsToNextLevel}p</span> till {nextRole}
+              <div className="text-right">
+                <span className="text-gray-400 text-xs">NÄSTA NIVÅ</span>
+                <div className="text-primary/90 font-medium text-sm">{nextRole}</div>
               </div>
             )}
           </div>
           
           <Progress 
             value={progressPercentage} 
-            className="h-2 bg-primary/5" 
+            className="h-1.5 bg-primary/5" 
           />
           
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>{currentPoints}p</span>
-            {nextThreshold && (
-              <span>{nextThreshold}p</span>
+          <div className="flex justify-between text-xs">
+            <span className="text-white/70">{currentPoints}p</span>
+            {nextThreshold && pointsToNextLevel > 0 && (
+              <span className="text-primary/80">{pointsToNextLevel}p kvar</span>
             )}
           </div>
         </div>
