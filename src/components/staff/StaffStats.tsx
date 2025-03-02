@@ -5,6 +5,7 @@ import { sv } from "date-fns/locale";
 import { RoleProgressBar } from "./RoleProgressBar";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface StaffStatsProps {
   stats: {
@@ -62,18 +63,24 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
   const { data: historicalPoints, isLoading: isLoadingHistoricalPoints } = useQuery({
     queryKey: ["historicalPoints", userDisplayName],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("staff_historical_points")
-        .select("*")
-        .eq("user_display_name", userDisplayName)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from("staff_historical_points")
+          .select("*")
+          .eq("user_display_name", userDisplayName)
+          .single();
 
-      if (error) {
-        console.error("Error fetching historical points:", error);
+        if (error) {
+          console.error("Error fetching historical points:", error);
+          return 0;
+        }
+
+        return (data as HistoricalPoints)?.points || 0;
+      } catch (e) {
+        console.error("Exception fetching historical points:", e);
+        toast.error("Kunde inte ladda historiska poäng");
         return 0;
       }
-
-      return (data as HistoricalPoints)?.points || 0;
     },
     enabled: !!userDisplayName
   });
@@ -82,17 +89,24 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
   const { data: roleLevels, isLoading: isLoadingRoleLevels } = useQuery({
     queryKey: ["roleLevels"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("role_levels")
-        .select("*")
-        .order("points_threshold", { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from("role_levels")
+          .select("*")
+          .order("points_threshold", { ascending: true });
 
-      if (error) {
-        console.error("Error fetching role levels:", error);
+        if (error) {
+          console.error("Error fetching role levels:", error);
+          toast.error("Kunde inte ladda rollnivåer");
+          return [];
+        }
+
+        return data as RoleLevel[];
+      } catch (e) {
+        console.error("Exception fetching role levels:", e);
+        toast.error("Kunde inte ladda rollnivåer");
         return [];
       }
-
-      return data as RoleLevel[];
     }
   });
 
@@ -125,6 +139,19 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
   };
 
   const { currentRole, nextRole } = getCurrentAndNextRole();
+  const isLoading = isLoadingHistoricalPoints || isLoadingRoleLevels;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="animate-pulse h-16 bg-card/40 rounded-lg"></div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="animate-pulse h-24 bg-card/40 rounded-lg"></div>
+          <div className="animate-pulse h-24 bg-card/40 rounded-lg"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

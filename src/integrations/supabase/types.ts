@@ -572,6 +572,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      sync_staff_historical_points: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       sync_total_purchases: {
         Args: Record<PropertyKey, never>
         Returns: undefined

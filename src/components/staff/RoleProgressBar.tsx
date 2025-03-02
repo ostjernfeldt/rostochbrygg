@@ -45,33 +45,33 @@ export const RoleProgressBar = ({
 
   return (
     <Card 
-      className="animate-fade-in overflow-hidden bg-gradient-to-r from-card/90 to-card/70 border border-primary/10 shadow-md" 
+      className="animate-fade-in overflow-hidden bg-gradient-to-r from-black/90 to-gray-900/95 border border-primary/20 shadow-sm" 
       style={{ animationDelay }}
     >
-      <CardContent className="p-3">
-        <div className="space-y-2.5">
-          <div className="flex justify-between items-center text-sm">
+      <CardContent className="p-2.5">
+        <div className="space-y-2">
+          <div className="flex justify-between items-center text-xs">
             <div>
-              <span className="text-gray-400 text-xs">NUVARANDE ROLL</span>
+              <span className="text-gray-500 text-xs tracking-wider font-semibold uppercase">NUVARANDE</span>
               <div className="font-medium text-white/90">{currentRole}</div>
             </div>
             {nextRole && pointsToNextLevel > 0 && (
               <div className="text-right">
-                <span className="text-gray-400 text-xs">NÄSTA NIVÅ</span>
-                <div className="text-primary/90 font-medium text-sm">{nextRole}</div>
+                <span className="text-gray-500 text-xs tracking-wider font-semibold uppercase">NÄSTA</span>
+                <div className="text-primary/90 font-medium">{nextRole}</div>
               </div>
             )}
           </div>
           
           <Progress 
             value={progressPercentage} 
-            className="h-1.5 bg-primary/5" 
+            className="h-1 bg-primary/5" 
           />
           
           <div className="flex justify-between text-xs">
-            <span className="text-white/70">{currentPoints}p</span>
+            <span className="text-white/70 font-medium">{currentPoints}p</span>
             {nextThreshold && pointsToNextLevel > 0 && (
-              <span className="text-primary/80">{pointsToNextLevel}p kvar</span>
+              <span className="text-primary/80 font-medium">{pointsToNextLevel}p kvar</span>
             )}
           </div>
         </div>
