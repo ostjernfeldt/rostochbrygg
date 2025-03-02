@@ -11,6 +11,7 @@ import { SalesChartSection } from "@/components/staff/SalesChartSection";
 import { DateFilterSection } from "@/components/staff/DateFilterSection";
 import { ShiftsList } from "@/components/staff/ShiftsList";
 import { AccumulatedPointsCard } from "@/components/staff/AccumulatedPointsCard";
+import { DateRange } from "react-day-picker";
 
 const StaffMember = () => {
   const { name } = useParams<{ name: string }>();
@@ -18,10 +19,12 @@ const StaffMember = () => {
   const [transactions, setTransactions] = useState<TotalPurchase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: undefined,
     to: undefined,
   });
+  const [selectedPeriod, setSelectedPeriod] = useState("all");
+  const [selectedDate, setSelectedDate] = useState("");
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -97,29 +100,121 @@ const StaffMember = () => {
   const formattedDateRange = dateRange.from && dateRange.to 
     ? `${format(dateRange.from, 'd MMM', { locale: sv })} - ${format(dateRange.to, 'd MMM yyyy', { locale: sv })}`
     : "Alla tider";
+    
+  // Calculate stats for the StaffStats component
+  const calculateStats = () => {
+    // Filter out refunded transactions
+    const validTransactions = transactions.filter(t => !t.refunded);
+    
+    // If no valid transactions, return default stats
+    if (validTransactions.length === 0) {
+      return {
+        salesCount: 0,
+        averagePoints: 0,
+        activeDays: 0,
+        firstSaleDate: new Date().toISOString(),
+        bestDay: {
+          date: new Date().toISOString(),
+          points: 0
+        },
+        highestSale: {
+          date: new Date().toISOString(),
+          points: 0
+        },
+        worstDay: {
+          date: new Date().toISOString(),
+          points: 0
+        }
+      };
+    }
+    
+    // Group by date to find best/worst day
+    const salesByDay = validTransactions.reduce((acc, transaction) => {
+      const date = transaction.timestamp.split('T')[0];
+      if (!acc[date]) {
+        acc[date] = {
+          date,
+          points: 0,
+          sales: [],
+        };
+      }
+      
+      // Calculate points for this sale (simplified)
+      const points = transaction.amount;
+      acc[date].points += points;
+      acc[date].sales.push(transaction);
+      
+      return acc;
+    }, {} as Record<string, { date: string; points: number; sales: TotalPurchase[] }>);
+    
+    // Sort days by points to find best/worst
+    const sortedDays = Object.values(salesByDay).sort((a, b) => b.points - a.points);
+    const bestDay = sortedDays[0] || { date: new Date().toISOString(), points: 0 };
+    const worstDay = sortedDays[sortedDays.length - 1] || { date: new Date().toISOString(), points: 0 };
+    
+    // Find highest single sale
+    const highestSale = validTransactions.reduce(
+      (highest, transaction) => {
+        const points = transaction.amount;
+        if (points > highest.points) {
+          return { 
+            date: transaction.timestamp,
+            points
+          };
+        }
+        return highest;
+      }, 
+      { date: new Date().toISOString(), points: 0 }
+    );
+    
+    // Calculate average points per sale
+    const totalPoints = validTransactions.reduce((sum, t) => sum + t.amount, 0);
+    const averagePoints = totalPoints / validTransactions.length;
+    
+    return {
+      salesCount: validTransactions.length,
+      averagePoints,
+      activeDays: Object.keys(salesByDay).length,
+      firstSaleDate: validTransactions[validTransactions.length - 1].timestamp,
+      bestDay,
+      highestSale,
+      worstDay
+    };
+  };
+  
+  const staffStats = calculateStats();
 
   return (
     <PageLayout>
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <h1 className="text-2xl font-bold">{decodedName}</h1>
-          <DateFilterSection dateRange={dateRange} setDateRange={setDateRange} />
+          <DateFilterSection 
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            selectedPeriod={selectedPeriod}
+            setSelectedPeriod={setSelectedPeriod}
+          />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <AccumulatedPointsCard transactions={transactions} isLoading={loading} />
-          <StaffStats transactions={transactions} isLoading={loading} />
+          <StaffStats stats={staffStats} />
         </div>
 
         <SalesChartSection
-          title={`Säljstatistik: ${formattedDateRange}`} 
-          transactions={transactions}
-          isLoading={loading}
+          sales={transactions}
+          userName={decodedName}
         />
         
         <ShiftsList 
-          transactions={transactions} 
-          isLoading={loading}
+          shifts={transactions.map(t => ({
+            id: t.id,
+            presence_start: t.timestamp,
+            sales: [t]
+          }))}
         />
       </div>
     </PageLayout>
