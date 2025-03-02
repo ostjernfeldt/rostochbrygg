@@ -36,6 +36,9 @@ export const StaffStats = ({ stats }: StaffStatsProps) => {
     bestDay: stats.bestDay || { date: new Date().toISOString(), points: 0 }
   };
 
+  // Beräkna ackumulerade poäng (använder samma logik som befintliga kort)
+  const totalAccumulatedPoints = Math.round(cleanStats.averagePoints * cleanStats.salesCount);
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <StatCard
@@ -57,6 +60,12 @@ export const StaffStats = ({ stats }: StaffStatsProps) => {
         value={`${Math.round(cleanStats.bestDay.points)} p`}
         userName=""
         animationDelay="1200ms"
+      />
+      <StatCard
+        title="Ackumulerade poäng"
+        value={`${totalAccumulatedPoints} p`}
+        userName=""
+        animationDelay="1600ms"
       />
     </div>
   );
