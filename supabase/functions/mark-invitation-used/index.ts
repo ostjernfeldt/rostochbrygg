@@ -31,13 +31,19 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log("Marking invitation used for email:", email);
+    console.log("Marking invitation as used for email:", email);
 
-    // Call the RPC function to mark the invitation as used by email
-    const { data, error } = await supabase.rpc('mark_invitation_used_by_email', {
-      email_address: email
-    });
-
+    // Update the invitation as used
+    const { data, error } = await supabase
+      .from('invitations')
+      .update({ 
+        used_at: new Date().toISOString(),
+        status: 'used'
+      })
+      .eq('email', email.trim())
+      .is('used_at', null)
+      .gt('expires_at', new Date().toISOString());
+    
     if (error) {
       console.error("Error marking invitation as used:", error);
       return new Response(
@@ -47,7 +53,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, data }),
+      JSON.stringify({ success: true, message: "Invitation marked as used" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

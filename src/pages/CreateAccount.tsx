@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { InfoIcon, AlertTriangle } from "lucide-react";
+import { InfoIcon, AlertTriangle, Loader2 } from "lucide-react";
 
 const CreateAccount = () => {
   const [email, setEmail] = useState("");
@@ -30,30 +30,34 @@ const CreateAccount = () => {
 
       console.log("Verifying invitation for email:", email);
       
-      // Call the custom RPC function to check if the email is invited
+      // Call the edge function to validate the invitation
       const { data, error } = await supabase.functions.invoke('validate-invitation-email', {
         body: { email: email.trim() }
       });
 
       if (error) {
         console.error("Validation error:", error);
-        throw error;
+        throw new Error("Ett fel uppstod vid kontroll av inbjudan: " + error.message);
       }
       
       console.log("Validation result:", data);
 
-      const result = data as { is_valid: boolean; email: string; invitation_id: string | null };
-
-      if (!result || !result.is_valid) {
+      if (!data || !data.data || data.data.length === 0 || !data.data[0].is_valid) {
         throw new Error("Ingen aktiv inbjudan hittades för denna e-postadress.");
       }
 
-      // If the email is valid, navigate to register page with email parameter
+      // If the email is valid, show success message
       setValidationMessage("Du har en aktiv inbjudan! Klicka på knappen nedan för att skapa ditt konto.");
       
     } catch (error: any) {
       console.error("Invitation verification error:", error);
       setValidationError(error.message || "Kunde inte verifiera inbjudan. Kontrollera e-postadressen eller kontakta administratören.");
+      
+      toast({
+        variant: "destructive",
+        title: "Verifiering misslyckades",
+        description: error.message || "Kunde inte verifiera inbjudan. Kontrollera e-postadressen eller kontakta administratören.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -64,8 +68,13 @@ const CreateAccount = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-8 p-4">
-      <Card>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
+      <img 
+        src="/lovable-uploads/f3b5392a-fb40-467e-b32d-aa71eb2156af.png" 
+        alt="R&B Logo" 
+        className="h-24 w-auto mb-8 object-contain"
+      />
+      <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Skapa konto</CardTitle>
           <CardDescription>
@@ -116,7 +125,12 @@ const CreateAccount = () => {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? "Verifierar..." : "Kontrollera inbjudan"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verifierar...
+                </>
+              ) : "Kontrollera inbjudan"}
             </Button>
             
             <Button 

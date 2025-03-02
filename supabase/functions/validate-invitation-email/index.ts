@@ -33,21 +33,42 @@ serve(async (req) => {
 
     console.log("Validating invitation for email:", email);
 
-    // Call the RPC function to validate the invitation by email
-    const { data, error } = await supabase.rpc('validate_invitation_by_email', {
-      email_address: email
-    });
-
-    if (error) {
-      console.error("Error validating invitation:", error);
+    // Query the invitations table directly
+    const { data: invitations, error: invitationError } = await supabase
+      .from('invitations')
+      .select('*')
+      .eq('email', email.trim())
+      .is('used_at', null)
+      .gt('expires_at', new Date().toISOString());
+    
+    if (invitationError) {
+      console.error("Error querying invitations:", invitationError);
       return new Response(
-        JSON.stringify({ success: false, error: error.message }),
+        JSON.stringify({ success: false, error: invitationError.message }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
     }
 
+    if (!invitations || invitations.length === 0) {
+      console.log("No valid invitation found for email:", email);
+      return new Response(
+        JSON.stringify({ success: true, data: [{ is_valid: false, email, invitation_id: null }] }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const invitation = invitations[0];
+    console.log("Valid invitation found:", invitation.id);
+
     return new Response(
-      JSON.stringify({ success: true, data }),
+      JSON.stringify({ 
+        success: true, 
+        data: [{ 
+          is_valid: true, 
+          email: invitation.email, 
+          invitation_id: invitation.id 
+        }] 
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
