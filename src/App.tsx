@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -18,6 +17,7 @@ import Staff from "./pages/Staff";
 import StaffMember from "./pages/StaffMember";
 import HallOfFame from "./pages/HallOfFame";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "@/components/ui/use-toast";
 
 const queryClient = new QueryClient();
 
@@ -135,53 +135,34 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
 };
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  return <>{children}</>;
-};
-
-const AppContent = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { data: userRole, isLoading } = useUserRole();
-
-  console.log("AppContent - Current location:", location.pathname, location.search, location.hash);
-  console.log("Full URL:", window.location.href);
-
+  
   useEffect(() => {
-    // Check for token in invitation link
     const checkForInvitationToken = () => {
-      // More robust method to capture token from different parts of URL
-      const fullUrl = window.location.href;
-      const urlParams = new URLSearchParams(location.search);
+      const searchParams = new URLSearchParams(location.search);
       const hashParams = new URLSearchParams(location.hash.replace(/^#\/?/, ''));
+      const fullUrl = window.location.href;
       
-      // Check different places where token can exist
-      let token = urlParams.get('token');
+      let token = searchParams.get('token');
       
-      // If no token in URL parameters, check in hashParams
-      if (!token && location.hash) {
-        // Handle both /#/register?token=xyz and /#?token=xyz formats
-        if (hashParams.has('token')) {
-          token = hashParams.get('token');
-        } else {
-          // Manual extraction if all else fails
-          const tokenMatch = fullUrl.match(/[?&]token=([^&]+)/);
-          if (tokenMatch) {
-            token = decodeURIComponent(tokenMatch[1]);
-          }
+      if (!token && hashParams.has('token')) {
+        token = hashParams.get('token');
+      }
+      
+      if (!token) {
+        const tokenMatch = fullUrl.match(/[?&#]token=([^&#]+)/);
+        if (tokenMatch) {
+          token = decodeURIComponent(tokenMatch[1]);
         }
       }
-
+      
       if (token) {
-        console.log("Token found:", token);
+        console.log("PublicRoute - Token found in URL:", token);
         
-        // CRITICAL FIX: Force registration route even if already on another page
         if (!location.pathname.includes('/register')) {
-          console.log("Redirecting to registration page with token");
-          
-          // Important: Include token properly in the URL
+          console.log("Redirecting to registration with token");
           navigate(`/register?token=${encodeURIComponent(token)}`, { replace: true });
-          
-          // Return true to indicate that this is an invitation link
           return true;
         }
       }
@@ -189,13 +170,53 @@ const AppContent = () => {
       return false;
     };
     
-    // Execute the token check and store the result
+    checkForInvitationToken();
+  }, [location, navigate]);
+  
+  return <>{children}</>;
+};
+
+const AppContent = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { data: userRole } = useUserRole();
+
+  useEffect(() => {
+    const checkForInvitationToken = () => {
+      const searchParams = new URLSearchParams(location.search);
+      const hashParams = new URLSearchParams(location.hash.replace(/^#\/?/, ''));
+      const fullUrl = window.location.href;
+      
+      let token = searchParams.get('token');
+      
+      if (!token && hashParams.has('token')) {
+        token = hashParams.get('token');
+      }
+      
+      if (!token) {
+        const tokenMatch = fullUrl.match(/[?&#]token=([^&#]+)/);
+        if (tokenMatch) {
+          token = decodeURIComponent(tokenMatch[1]);
+        }
+      }
+      
+      if (token) {
+        console.log("AppContent - Token found in URL:", token);
+        
+        if (!location.pathname.includes('/register')) {
+          console.log("Redirecting from AppContent to registration with token");
+          navigate(`/register?token=${encodeURIComponent(token)}`, { replace: true });
+          return true;
+        }
+      }
+      
+      return false;
+    };
+    
     const isInvitationLink = checkForInvitationToken();
     
-    // If we're handling an invitation link, don't proceed with other auth checks
     if (isInvitationLink) {
       console.log("Processing invitation link - skipping other auth checks");
-      return;
     }
   }, [location, navigate]);
 

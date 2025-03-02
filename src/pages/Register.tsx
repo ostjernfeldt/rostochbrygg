@@ -16,14 +16,19 @@ const Register = () => {
   const { toast } = useToast();
   
   const getTokenFromUrl = () => {
-    // Enhanced token extraction logic
+    console.log("Register page - starting token extraction");
+    console.log("URL search:", location.search);
+    console.log("URL hash:", location.hash);
+    console.log("Full URL:", window.location.href);
+    
+    // Try from search params first (most reliable)
     const tokenFromParams = searchParams.get("token");
     if (tokenFromParams) {
       console.log("Token found in search params:", tokenFromParams);
       return tokenFromParams;
     }
     
-    // Check in hash part of URL
+    // Try from hash part
     const hashContent = location.hash.replace(/^#\/?/, '');
     const hashParams = new URLSearchParams(hashContent);
     const tokenFromHash = hashParams.get("token");
@@ -32,21 +37,23 @@ const Register = () => {
       return tokenFromHash;
     }
     
-    // Last resort - check full URL string
+    // Last resort - check full URL string with regex
     const fullUrl = window.location.href;
-    const tokenMatch = fullUrl.match(/[?&]token=([^&#]+)/);
+    const tokenMatch = fullUrl.match(/[?&#]token=([^&#]+)/);
     const extractedToken = tokenMatch ? decodeURIComponent(tokenMatch[1]) : null;
     if (extractedToken) {
       console.log("Token extracted from URL string:", extractedToken);
     } else {
-      console.log("No token found in URL");
+      console.log("No token found in URL using any method");
     }
     
     return extractedToken;
   };
   
+  // Extract token on component mount
   const token = getTokenFromUrl();
   
+  console.log("Register page loaded with token:", token);
   console.log("Register page - token sources:", {
     fromParams: searchParams.get("token"),
     fromHash: new URLSearchParams(location.hash.replace(/^#\/?/, '')).get("token"),
@@ -70,11 +77,11 @@ const Register = () => {
       }
 
       try {
-        console.log("Validerar token:", token);
+        console.log("Validating token:", token);
         
-        // Direct database check for token
+        // Direct database check for the token
         const checkTokenInDatabase = async (rawToken: string) => {
-          console.log("Söker efter token i databasen:", rawToken);
+          console.log("Searching for token in database:", rawToken);
           
           // Try exact match first
           const { data: exactData, error: exactError } = await supabase
@@ -116,7 +123,7 @@ const Register = () => {
         // First try direct database check
         const tokenCheck = await checkTokenInDatabase(token);
         if (tokenCheck.found) {
-          console.log("Token hittad direkt i databasen:", tokenCheck.data);
+          console.log("Token found directly in database:", tokenCheck.data);
           setEmail(tokenCheck.data.email);
           setIsValidating(false);
           setValidationError(null);
@@ -128,7 +135,7 @@ const Register = () => {
           .rpc('validate_invitation', { token });
 
         if (error) {
-          console.error("RPC error:", error);
+          console.error("RPC validation error:", error);
           throw error;
         }
         
@@ -217,6 +224,7 @@ const Register = () => {
     }
   };
 
+  // Show loading state while validating
   if (isValidating) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -235,6 +243,7 @@ const Register = () => {
     );
   }
 
+  // Show error if token validation failed
   if (validationError) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -263,6 +272,7 @@ const Register = () => {
     );
   }
 
+  // Show registration form if token is valid
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-md">
