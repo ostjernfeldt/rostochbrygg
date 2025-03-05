@@ -43,20 +43,9 @@ export default function Booking() {
   const {
     isEnabled: bookingSystemEnabled
   } = useBookingSystemEnabled();
-  const {
-    shifts,
-    isLoading: shiftsLoading
-  } = useGetShifts(currentWeekStart, weekEnd);
-  const {
-    shift: selectedShift,
-    isLoading: shiftDetailsLoading
-  } = useGetShiftDetails(selectedShiftId || '');
-  const {
-    mutate: batchBookShifts,
-    isPending: isBatchBooking
-  } = useBatchBookShifts();
 
   useEffect(() => {
+    console.log('Booking page rendered, bookingSystemEnabled:', bookingSystemEnabled);
     const checkUserSession = async () => {
       const {
         data: {
@@ -198,7 +187,11 @@ export default function Booking() {
           </Card>
         </div>;
     } else {
+      console.log('Non-admin view, bookingSystemEnabled value:', bookingSystemEnabled);
+      console.log('bookingSystemEnabled type:', typeof bookingSystemEnabled);
+      
       if (!bookingSystemEnabled) {
+        console.log('Booking system is NOT ENABLED, showing closed message');
         return <div className="max-w-md mx-auto">
             <div className="flex items-center gap-2 mb-4">
               <User className="h-5 w-5 text-primary" />
@@ -218,6 +211,8 @@ export default function Booking() {
             </Card>
           </div>;
       }
+      
+      console.log('Booking system IS ENABLED, showing booking UI');
       return <div className="max-w-md mx-auto">
           <div className="flex items-center gap-2 mb-6">
           </div>
@@ -295,6 +290,19 @@ export default function Booking() {
         </div>;
     }
   };
+
+  const {
+    shifts,
+    isLoading: shiftsLoading
+  } = useGetShifts(currentWeekStart, weekEnd);
+  const {
+    shift: selectedShift,
+    isLoading: shiftDetailsLoading
+  } = useGetShiftDetails(selectedShiftId || '');
+  const {
+    mutate: batchBookShifts,
+    isPending: isBatchBooking
+  } = useBatchBookShifts();
 
   return <PageLayout>
       {renderContent()}
