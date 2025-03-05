@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfWeek, endOfWeek, isSameDay } from 'date-fns';
@@ -26,7 +25,6 @@ export default function Booking() {
   
   const navigate = useNavigate();
   
-  // Always use the current week
   const today = new Date();
   const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
@@ -49,7 +47,6 @@ export default function Booking() {
       }
       setUser(session.user);
       
-      // Get user display name
       try {
         const { data, error } = await supabase
           .from('staff_roles')
@@ -64,7 +61,6 @@ export default function Booking() {
         console.error('Error fetching user name:', error);
       }
       
-      // Check if user is admin
       try {
         const { data, error } = await supabase
           .from('user_roles')
@@ -177,7 +173,7 @@ export default function Booking() {
     } else {
       if (!bookingSystemEnabled) {
         return (
-          <div className="max-w-md mx-auto px-4">
+          <div className="max-w-md mx-auto">
             <div className="flex items-center gap-2 mb-4">
               <User className="h-5 w-5 text-primary" />
               <h1 className="text-xl font-semibold">Välkommen {userName || ''}</h1>
@@ -199,7 +195,7 @@ export default function Booking() {
       }
       
       return (
-        <div className="max-w-md mx-auto px-4">
+        <div className="max-w-md mx-auto">
           <div className="flex items-center gap-2 mb-6">
             <User className="h-5 w-5 text-primary" />
             <h1 className="text-xl font-semibold">Välkommen {userName || ''}</h1>
@@ -285,18 +281,16 @@ export default function Booking() {
   
   return (
     <PageLayout>
-      <div className="container mx-auto">
-        {renderContent()}
-        
-        {selectedShift && (
-          <ShiftDetailsDialog 
-            shift={selectedShift} 
-            isUserAdmin={isAdmin}
-            open={dialogOpen} 
-            onOpenChange={setDialogOpen} 
-          />
-        )}
-      </div>
+      {renderContent()}
+      
+      {selectedShift && (
+        <ShiftDetailsDialog 
+          shift={selectedShift} 
+          isUserAdmin={isAdmin}
+          open={dialogOpen} 
+          onOpenChange={setDialogOpen} 
+        />
+      )}
     </PageLayout>
   );
 }
