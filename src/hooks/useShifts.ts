@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
@@ -23,7 +22,6 @@ export const useShifts = (startDate: Date, endDate: Date) => {
         throw error;
       }
       
-      // Get all bookings for retrieved shifts
       const shiftIds = data.map(shift => shift.id);
       const { data: bookings, error: bookingsError } = await supabase
         .from('shift_bookings')
@@ -35,11 +33,9 @@ export const useShifts = (startDate: Date, endDate: Date) => {
         throw bookingsError;
       }
       
-      // Transform shifts to ShiftWithBookings
       const shiftsWithBookings: ShiftWithBookings[] = data.map(shift => {
         const shiftBookings = bookings.filter(booking => booking.shift_id === shift.id)
           .map(booking => {
-            // Ensure status is correctly typed as "confirmed" | "cancelled"
             const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
             
             return {
@@ -75,7 +71,6 @@ export const useShiftDetails = (shiftId: string) => {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Fetch the shift
       const { data: shift, error: shiftError } = await supabase
         .from('shifts')
         .select('*')
@@ -84,7 +79,6 @@ export const useShiftDetails = (shiftId: string) => {
       
       if (shiftError) throw shiftError;
       
-      // Fetch all bookings for this shift
       const { data: bookings, error: bookingsError } = await supabase
         .from('shift_bookings')
         .select('*, user_id')
@@ -92,16 +86,14 @@ export const useShiftDetails = (shiftId: string) => {
       
       if (bookingsError) throw bookingsError;
       
-      // Get user display names for each booking and ensure status is correctly typed
       const bookingsWithNames = await Promise.all(
         bookings.map(async (booking) => {
           const { data: userData, error: userError } = await supabase
             .from('staff_roles')
             .select('user_display_name')
             .eq('id', booking.user_id)
-            .maybeSingle();
+            .single();
           
-          // Ensure status is correctly typed as "confirmed" | "cancelled"
           const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
           
           return {
@@ -112,10 +104,8 @@ export const useShiftDetails = (shiftId: string) => {
         })
       );
       
-      // Check if current user has booked this shift
       const isBookedByCurrentUser = user ? bookings.some(b => b.user_id === user.id) : false;
       
-      // Calculate remaining slots
       const availableSlotsRemaining = shift.available_slots - bookings.length;
       
       return {
