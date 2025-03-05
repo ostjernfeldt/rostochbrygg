@@ -2,6 +2,7 @@
 export type Invitation = {
   id: string;
   email: string;
+  display_name?: string;
   created_at: string;
   expires_at: string;
   used_at: string | null;
@@ -20,5 +21,6 @@ export type SupabaseUser = {
 export type InvitationCheckResult = {
   is_valid: boolean;
   email: string;
+  display_name?: string;
   invitation_id: string | null;
 };
