@@ -1,8 +1,7 @@
 
 import { format, addDays } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, AlertCircle } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle } from "lucide-react";
 import { useWeeklyBookingSummary } from '@/hooks/useShiftBookings';
 
 interface WeeklyBookingsSummaryProps {
@@ -14,54 +13,40 @@ export function WeeklyBookingsSummary({ weekStartDate }: WeeklyBookingsSummaryPr
   
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Din bokningsöversikt</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>Laddar bokningssammanställning...</p>
-        </CardContent>
-      </Card>
+      <div className="w-full bg-card/50 rounded-xl p-4 border border-[#33333A] animate-pulse">
+        <div className="h-16"></div>
+      </div>
     );
   }
   
   const startDate = weekStartDate || new Date(Date.now());
   const endDate = addDays(startDate, 6);
-  const dateRange = `${format(startDate, 'd MMM', { locale: sv })} - ${format(endDate, 'd MMM yyyy', { locale: sv })}`;
+  
+  // Check if requirement is met
+  const requirementMet = (summary?.total_bookings || 0) >= 2;
   
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Din bokningsöversikt</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Vecka:</span>
-            <span className="font-medium">{dateRange}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Bokade pass:</span>
-            <span className="font-medium">{summary?.total_bookings || 0}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Status:</span>
-            {summary?.meets_minimum_requirement ? (
-              <div className="flex items-center gap-1 text-green-600">
-                <CheckCircle className="h-4 w-4" />
-                <span className="text-sm font-medium">Bokningskrav uppfyllt</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 text-amber-600">
-                <AlertCircle className="h-4 w-4" />
-                <span className="text-sm font-medium">Boka minst {2 - (summary?.total_bookings || 0)} pass till</span>
-              </div>
-            )}
-          </div>
+    <div className={`w-full ${requirementMet ? 'bg-[#1A2E22]/50' : 'bg-[#2E1A1A]/50'} rounded-xl p-4 border ${requirementMet ? 'border-[#2A3E32]' : 'border-[#3E2A2A]'}`}>
+      <div className="flex items-center gap-2 mb-2">
+        <Calendar className="h-5 w-5 text-muted-foreground" />
+        <h2 className="font-medium text-[15px]">Dina pass</h2>
+      </div>
+      
+      {requirementMet ? (
+        <div className="flex items-center gap-2 text-emerald-400">
+          <CheckCircle className="h-4 w-4" />
+          <span className="text-sm">
+            Du har bokat {summary?.total_bookings || 0} pass denna vecka
+          </span>
         </div>
-      </CardContent>
-    </Card>
+      ) : (
+        <div className="flex items-center gap-2 text-amber-400">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-sm">
+            Tvåpassregeln: Boka minst {2 - (summary?.total_bookings || 0)} pass till
+          </span>
+        </div>
+      )}
+    </div>
   );
 }

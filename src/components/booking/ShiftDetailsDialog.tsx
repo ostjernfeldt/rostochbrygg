@@ -1,12 +1,12 @@
 
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
+import { Calendar, Clock, Users, X } from "lucide-react";
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
+  DialogTitle,
   DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -48,12 +48,26 @@ export function ShiftDetailsDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="capitalize">{formattedDate}</DialogTitle>
-          <DialogDescription>
-            {startTime} - {endTime}
-          </DialogDescription>
+      <DialogContent className="sm:max-w-md bg-card border-[#33333A]">
+        <DialogHeader className="flex-row justify-between items-start">
+          <div>
+            <DialogTitle className="capitalize flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              {formattedDate}
+            </DialogTitle>
+            <div className="flex items-center gap-2 text-muted-foreground text-sm mt-1">
+              <Clock className="h-4 w-4" />
+              {startTime} - {endTime}
+            </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full h-6 w-6"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </DialogHeader>
         
         <div className="py-4">
@@ -64,16 +78,12 @@ export function ShiftDetailsDialog({
             </div>
           )}
           
-          <div className="mb-4">
-            <h3 className="text-sm font-medium mb-1">Platsinfo</h3>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <span className="text-muted-foreground">Totalt antal platser:</span>
-              <span>{shift.available_slots}</span>
-              <span className="text-muted-foreground">Bokade platser:</span>
-              <span>{shift.bookings.length}</span>
-              <span className="text-muted-foreground">Lediga platser:</span>
-              <span>{shift.available_slots_remaining}</span>
-            </div>
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">
+              {shift.bookings.length} av {shift.available_slots} platser bokade
+              ({shift.available_slots_remaining} lediga)
+            </span>
           </div>
           
           <Separator className="my-4" />
@@ -81,9 +91,9 @@ export function ShiftDetailsDialog({
           <div>
             <h3 className="text-sm font-medium mb-2">Bokade säljare</h3>
             {shift.bookings.length > 0 ? (
-              <ul className="space-y-1">
+              <ul className="space-y-2">
                 {shift.bookings.map((booking) => (
-                  <li key={booking.id} className="flex justify-between text-sm items-center">
+                  <li key={booking.id} className="flex justify-between text-sm items-center bg-background/20 p-2 rounded-md">
                     <span>{booking.user_display_name || 'Okänd säljare'}</span>
                     
                     {isUserAdmin && (
@@ -92,6 +102,7 @@ export function ShiftDetailsDialog({
                         size="sm"
                         onClick={() => cancelBooking(booking.id)}
                         disabled={isCancelling}
+                        className="h-7 text-xs"
                       >
                         {isCancelling ? "Avbokar..." : "Avboka"}
                       </Button>
@@ -100,7 +111,9 @@ export function ShiftDetailsDialog({
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground">Inga bokningar ännu</p>
+              <p className="text-sm text-muted-foreground bg-background/20 p-2 rounded-md">
+                Inga bokningar ännu
+              </p>
             )}
           </div>
         </div>
