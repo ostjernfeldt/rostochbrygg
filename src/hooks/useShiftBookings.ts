@@ -198,6 +198,121 @@ export const useBookShift = () => {
   });
 };
 
+export const useBatchBookShifts = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (shiftIds: string[]) => {
+      if (shiftIds.length === 0) {
+        throw new Error('Inga säljpass valda för bokning');
+      }
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Du måste vara inloggad för att boka säljpass');
+      
+      // Validate and book all shifts
+      const bookings = [];
+      const errors = [];
+      
+      for (const shiftId of shiftIds) {
+        try {
+          // Check if the user already has booked this shift
+          const { data: existingBooking, error: checkError } = await supabase
+            .from('shift_bookings')
+            .select('*')
+            .eq('shift_id', shiftId)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (checkError) throw checkError;
+          if (existingBooking) throw new Error(`Du har redan bokat detta säljpass`);
+          
+          // Check if the shift has available slots
+          const { data: shift, error: shiftError } = await supabase
+            .from('shifts')
+            .select('*')
+            .eq('id', shiftId)
+            .single();
+          
+          if (shiftError) throw shiftError;
+          
+          // Count existing bookings
+          const { count, error: countError } = await supabase
+            .from('shift_bookings')
+            .select('*', { count: 'exact', head: true })
+            .eq('shift_id', shiftId)
+            .eq('status', 'confirmed');
+          
+          if (countError) throw countError;
+          
+          if (count !== null && count >= shift.available_slots) {
+            throw new Error(`Detta säljpass är fullbokat`);
+          }
+          
+          bookings.push({
+            shift_id: shiftId,
+            user_id: user.id,
+            status: 'confirmed'
+          });
+          
+        } catch (error: any) {
+          errors.push({
+            shiftId,
+            message: error.message || 'Ett fel uppstod'
+          });
+        }
+      }
+      
+      if (bookings.length === 0) {
+        throw new Error('Kunde inte boka några av de valda passen');
+      }
+      
+      // Create all bookings
+      const { data, error } = await supabase
+        .from('shift_bookings')
+        .insert(bookings)
+        .select();
+      
+      if (error) {
+        console.error('Error batch booking shifts:', error);
+        throw error;
+      }
+      
+      return {
+        bookings: data,
+        successCount: bookings.length,
+        errorCount: errors.length,
+        errors
+      };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['userBookings'] });
+      queryClient.invalidateQueries({ queryKey: ['weeklyBookingSummary'] });
+      
+      if (result.errors.length > 0) {
+        toast({
+          title: `${result.successCount} pass bokade`,
+          description: `${result.errorCount} pass kunde inte bokas.`,
+          variant: 'default'
+        });
+      } else {
+        toast({
+          title: 'Alla pass bokade',
+          description: `Du har bokat ${result.successCount} säljpass framgångsrikt.`,
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Fel vid bokning av säljpass',
+        description: error.message || 'Ett fel uppstod vid bokning av säljpassen.',
+      });
+    },
+  });
+};
+
 export const useCancelBooking = () => {
   const queryClient = useQueryClient();
   

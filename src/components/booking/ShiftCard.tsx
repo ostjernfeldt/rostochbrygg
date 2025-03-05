@@ -1,25 +1,28 @@
 
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Calendar, Clock, Users } from "lucide-react";
+import { Calendar, Clock, Users, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShiftWithBookings } from '@/types/booking';
-import { useBookShift } from '@/hooks/useShiftBookings';
 
 interface ShiftCardProps {
   shift: ShiftWithBookings;
   isUserAdmin: boolean;
   onViewDetails: (shiftId: string) => void;
+  isSelectable?: boolean;
+  isSelected?: boolean;
+  onSelectShift?: (shiftId: string) => void;
 }
 
-export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps) {
-  const { mutate: bookShift, isPending } = useBookShift();
-  
-  const handleBookShift = () => {
-    bookShift(shift.id);
-  };
-  
+export function ShiftCard({ 
+  shift, 
+  isUserAdmin, 
+  onViewDetails, 
+  isSelectable = false,
+  isSelected = false,
+  onSelectShift 
+}: ShiftCardProps) {
   const startTime = shift.start_time.substring(0, 5);
   const endTime = shift.end_time.substring(0, 5);
   
@@ -29,16 +32,26 @@ export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps)
   const isBooked = shift.is_booked_by_current_user;
   const isFull = shift.available_slots_remaining === 0;
 
+  const handleCardClick = () => {
+    if (isSelectable && onSelectShift && !isBooked && !isFull) {
+      onSelectShift(shift.id);
+    } else {
+      onViewDetails(shift.id);
+    }
+  };
+
   return (
     <div 
       className={`rounded-xl p-4 border shadow-sm transition-all duration-300 ${
-        isBooked 
-          ? 'bg-gradient-to-br from-[#1F2937]/90 to-[#1A2333]/95 backdrop-blur-sm border-primary/40 shadow-primary/10' 
-          : isFull 
-            ? 'bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 backdrop-blur-sm border-[#33333A]/50 opacity-80' 
-            : 'bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm border-[#33333A] hover:border-primary/30 hover:shadow-md hover:shadow-primary/5'
-      } cursor-pointer`}
-      onClick={() => onViewDetails(shift.id)}
+        isSelected 
+          ? 'bg-gradient-to-br from-primary/20 to-primary/10 border-primary/40 shadow-primary/20'
+          : isBooked 
+            ? 'bg-gradient-to-br from-[#1F2937]/90 to-[#1A2333]/95 backdrop-blur-sm border-primary/40 shadow-primary/10' 
+            : isFull 
+              ? 'bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 backdrop-blur-sm border-[#33333A]/50 opacity-80' 
+              : 'bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm border-[#33333A] hover:border-primary/30 hover:shadow-md hover:shadow-primary/5'
+      } ${(isSelectable && !isBooked && !isFull) ? 'cursor-pointer' : isFull ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+      onClick={handleCardClick}
     >
       <div className="flex items-start justify-between mb-2">
         <div>
@@ -61,17 +74,22 @@ export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps)
           <span>{shift.bookings.length} / {shift.available_slots}</span>
         </div>
         
-        {!isUserAdmin && !shift.is_booked_by_current_user && shift.available_slots_remaining > 0 && (
+        {isSelected && (
+          <Badge className="bg-primary text-white border-none">
+            <Check className="h-3 w-3 mr-1" /> Vald
+          </Badge>
+        )}
+        
+        {!isSelectable && !isUserAdmin && !shift.is_booked_by_current_user && shift.available_slots_remaining > 0 && (
           <Button 
             onClick={(e) => {
               e.stopPropagation();
-              handleBookShift();
+              onViewDetails(shift.id);
             }} 
             size="sm"
-            disabled={isPending}
             className="text-xs h-8 bg-primary hover:bg-primary/90 shadow-sm transition-all"
           >
-            {isPending ? "Bokar..." : "Boka"}
+            Detaljer
           </Button>
         )}
         

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format, startOfWeek, endOfWeek, isSameDay } from 'date-fns';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,8 +13,10 @@ import { WeeklyBookingsSummary } from '@/components/booking/WeeklyBookingsSummar
 import { useShifts, useShiftDetails } from '@/hooks/useShifts';
 import { useBookingSystemEnabled } from '@/hooks/useAppSettings';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Clock, InfoIcon, Settings, User } from 'lucide-react';
+import { Calendar, Clock, InfoIcon, Settings, User, X, Check } from 'lucide-react';
 import { PageLayout } from '@/components/PageLayout';
+import { BatchBookingConfirmDialog } from '@/components/booking/BatchBookingConfirmDialog';
+import { useBatchBookShifts } from '@/hooks/useShiftBookings';
 
 export default function Booking() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -22,6 +24,9 @@ export default function Booking() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedShifts, setSelectedShifts] = useState<string[]>([]);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   
   const navigate = useNavigate();
   
@@ -37,6 +42,8 @@ export default function Booking() {
   const { shift: selectedShift, isLoading: shiftDetailsLoading } = useShiftDetails(
     selectedShiftId || ''
   );
+  
+  const { mutate: batchBookShifts, isPending: isBatchBooking } = useBatchBookShifts();
   
   useEffect(() => {
     const checkUserSession = async () => {
@@ -83,9 +90,42 @@ export default function Booking() {
   }, [navigate]);
   
   const handleViewShiftDetails = (shiftId: string) => {
-    setSelectedShiftId(shiftId);
-    setDialogOpen(true);
+    if (!isSelectionMode) {
+      setSelectedShiftId(shiftId);
+      setDialogOpen(true);
+    }
   };
+  
+  const handleSelectShift = (shiftId: string) => {
+    if (isSelectionMode) {
+      setSelectedShifts(prevSelected => {
+        if (prevSelected.includes(shiftId)) {
+          return prevSelected.filter(id => id !== shiftId);
+        } else {
+          return [...prevSelected, shiftId];
+        }
+      });
+    }
+  };
+  
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(prev => !prev);
+    if (isSelectionMode) {
+      setSelectedShifts([]);
+    }
+  };
+  
+  const handleConfirmBookings = () => {
+    batchBookShifts(selectedShifts, {
+      onSuccess: () => {
+        setConfirmDialogOpen(false);
+        setIsSelectionMode(false);
+        setSelectedShifts([]);
+      }
+    });
+  };
+  
+  const selectedShiftsData = shifts.filter(shift => selectedShifts.includes(shift.id));
   
   const processedShifts: ShiftWithBookings[] = shifts.map(shift => {
     return {
@@ -229,10 +269,42 @@ export default function Booking() {
                 <Calendar className="h-5 w-5 text-primary" />
                 <h2 className="font-medium text-base">Tillgängliga pass</h2>
               </div>
-              <div className="text-sm bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 px-3 py-1.5 rounded-md shadow-md border border-[#33333A]/50">
-                <span className="text-xs text-muted-foreground">{formattedDateRange}</span>
+              <div className="flex items-center gap-2">
+                <div className="text-sm bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 px-3 py-1.5 rounded-md shadow-md border border-[#33333A]/50">
+                  <span className="text-xs text-muted-foreground">{formattedDateRange}</span>
+                </div>
+                
+                <Button
+                  variant={isSelectionMode ? "secondary" : "outline"}
+                  size="sm"
+                  className={`text-xs h-8 ${isSelectionMode ? 'bg-primary/20 text-primary border-primary/20' : ''}`}
+                  onClick={toggleSelectionMode}
+                >
+                  {isSelectionMode ? (
+                    <>
+                      <X className="h-3.5 w-3.5 mr-1" /> Avbryt val
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-3.5 w-3.5 mr-1" /> Välj flera
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
+            
+            {isSelectionMode && selectedShifts.length > 0 && (
+              <div className="mb-4 flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                <span className="text-sm">{selectedShifts.length} pass valda</span>
+                <Button
+                  size="sm"
+                  className="bg-primary hover:bg-primary/90"
+                  onClick={() => setConfirmDialogOpen(true)}
+                >
+                  Boka valda pass
+                </Button>
+              </div>
+            )}
             
             <div className="space-y-2">
               {shiftsLoading ? (
@@ -250,6 +322,9 @@ export default function Booking() {
                         shift={shift} 
                         isUserAdmin={isAdmin}
                         onViewDetails={handleViewShiftDetails}
+                        isSelectable={isSelectionMode}
+                        isSelected={selectedShifts.includes(shift.id)}
+                        onSelectShift={handleSelectShift}
                       />
                     ))}
                   </div>
@@ -291,6 +366,14 @@ export default function Booking() {
           onOpenChange={setDialogOpen} 
         />
       )}
+      
+      <BatchBookingConfirmDialog
+        shifts={selectedShiftsData}
+        isOpen={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        onConfirm={handleConfirmBookings}
+        isPending={isBatchBooking}
+      />
     </PageLayout>
   );
 }
