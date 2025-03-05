@@ -1,81 +1,66 @@
 
-import { useWeeklyBookingSummary } from "@/hooks/useShiftBookings";
+import { format, addDays } from 'date-fns';
+import { sv } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, AlertCircle } from "lucide-react";
-import { format, parseISO } from "date-fns";
-import { sv } from "date-fns/locale";
+import { CheckCircle, AlertCircle } from "lucide-react";
+import { useWeeklyBookingSummary } from '@/hooks/useShiftBookings';
 
 interface WeeklyBookingsSummaryProps {
-  userId?: string;
   weekStartDate?: Date;
 }
 
-export function WeeklyBookingsSummary({ userId, weekStartDate }: WeeklyBookingsSummaryProps) {
-  const { summary, isLoading } = useWeeklyBookingSummary(userId, weekStartDate);
+export function WeeklyBookingsSummary({ weekStartDate }: WeeklyBookingsSummaryProps) {
+  const { summary, isLoading } = useWeeklyBookingSummary(undefined, weekStartDate);
   
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Veckans bokningar</CardTitle>
+          <CardTitle className="text-lg">Din bokningsöversikt</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-center py-4 text-muted-foreground">Laddar...</p>
+          <p>Laddar bokningssammanställning...</p>
         </CardContent>
       </Card>
     );
   }
   
-  if (!summary) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Veckans bokningar</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-center py-4 text-muted-foreground">Kunde inte ladda bokningsöversikt</p>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  const weekStart = parseISO(summary.week_start);
-  const weekEnd = parseISO(summary.week_end);
-  
-  const weekDateRange = `${format(weekStart, 'd MMM', { locale: sv })} - ${format(weekEnd, 'd MMM', { locale: sv })}`;
+  const startDate = weekStartDate || new Date(Date.now());
+  const endDate = addDays(startDate, 6);
+  const dateRange = `${format(startDate, 'd MMM', { locale: sv })} - ${format(endDate, 'd MMM yyyy', { locale: sv })}`;
   
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Veckans bokningar: {weekDateRange}</CardTitle>
+      <CardHeader>
+        <CardTitle className="text-lg">Din bokningsöversikt</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between mb-2">
-          <span>Antal bokade pass:</span>
-          <span className="font-medium">{summary.total_bookings}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span>Minimikrav uppfyllt:</span>
-          <div className="flex items-center space-x-1">
-            {summary.meets_minimum_requirement ? (
-              <>
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                <span className="font-medium text-green-500">Ja</span>
-              </>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Vecka:</span>
+            <span className="font-medium">{dateRange}</span>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Bokade pass:</span>
+            <span className="font-medium">{summary?.total_bookings || 0}</span>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Status:</span>
+            {summary?.meets_minimum_requirement ? (
+              <div className="flex items-center gap-1 text-green-600">
+                <CheckCircle className="h-4 w-4" />
+                <span className="text-sm font-medium">Bokningskrav uppfyllt</span>
+              </div>
             ) : (
-              <>
-                <AlertCircle className="h-5 w-5 text-destructive" />
-                <span className="font-medium text-destructive">Nej</span>
-              </>
+              <div className="flex items-center gap-1 text-amber-600">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-sm font-medium">Boka minst {2 - (summary?.total_bookings || 0)} pass till</span>
+              </div>
             )}
           </div>
         </div>
-        
-        {!summary.meets_minimum_requirement && (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Du måste boka minst 2 pass per vecka. Vänligen boka fler pass eller kontakta en säljledare.
-          </p>
-        )}
       </CardContent>
     </Card>
   );

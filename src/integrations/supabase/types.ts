@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       articles: {
         Row: {
           category: Database["public"]["Enums"]["article_category"]
@@ -358,6 +385,77 @@ export type Database = {
         }
         Relationships: []
       }
+      shift_bookings: {
+        Row: {
+          created_at: string | null
+          id: string
+          shift_id: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          shift_id: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          shift_id?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_bookings_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shifts: {
+        Row: {
+          available_slots: number
+          created_at: string | null
+          created_by: string
+          date: string
+          description: string | null
+          end_time: string
+          id: string
+          start_time: string
+          updated_at: string | null
+        }
+        Insert: {
+          available_slots: number
+          created_at?: string | null
+          created_by: string
+          date: string
+          description?: string | null
+          end_time: string
+          id?: string
+          start_time: string
+          updated_at?: string | null
+        }
+        Update: {
+          available_slots?: number
+          created_at?: string | null
+          created_by?: string
+          date?: string
+          description?: string | null
+          end_time?: string
+          id?: string
+          start_time?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       staff_historical_points: {
         Row: {
           id: string
@@ -584,6 +682,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_user_weekly_bookings: {
+        Args: {
+          user_uuid: string
+          week_start: string
+        }
+        Returns: boolean
+      }
       delete_invitation: {
         Args: {
           invitation_id: string

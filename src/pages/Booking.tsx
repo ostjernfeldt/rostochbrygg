@@ -1,293 +1,250 @@
 
 import { useState, useEffect } from 'react';
-import { startOfWeek, endOfWeek, addWeeks, format, isSameDay } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Calendar, Plus, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { CreateShiftForm } from "@/components/booking/CreateShiftForm";
-import { ShiftCard } from "@/components/booking/ShiftCard";
-import { ShiftDetailsDialog } from "@/components/booking/ShiftDetailsDialog";
-import { WeeklyBookingsSummary } from "@/components/booking/WeeklyBookingsSummary";
-import { AdminToggleFeature } from "@/components/booking/AdminToggleFeature";
-import { useShifts, useShiftDetails } from "@/hooks/useShifts";
-import { useWeeklyBookingSummary } from "@/hooks/useShiftBookings";
-import { useBookingSystemEnabled } from "@/hooks/useAppSettings";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { useAuth } from '@supabase/auth-helpers-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ShiftWithBookings } from '@/types/booking';
+import { ShiftCard } from '@/components/booking/ShiftCard';
+import { ShiftDetailsDialog } from '@/components/booking/ShiftDetailsDialog';
+import { CreateShiftForm } from '@/components/booking/CreateShiftForm';
+import { AdminToggleFeature } from '@/components/booking/AdminToggleFeature';
+import { WeeklyBookingsSummary } from '@/components/booking/WeeklyBookingsSummary';
+import { useShifts, useShiftDetails } from '@/hooks/useShifts';
+import { useBookingSystemEnabled } from '@/hooks/useAppSettings';
+import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const Booking = () => {
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    const today = new Date();
-    return startOfWeek(today, { weekStartsOn: 1 });
-  });
-  const currentWeekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
-  
-  const [userRole, setUserRole] = useState<string | null>(null);
+export default function Booking() {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
-  const [showShiftDialog, setShowShiftDialog] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   
-  const { shifts, isLoading: isLoadingShifts } = useShifts(currentWeekStart, currentWeekEnd);
-  const { shift } = useShiftDetails(selectedShiftId || '');
-  const { summary } = useWeeklyBookingSummary(undefined, currentWeekStart);
-  const { isEnabled: isBookingEnabled } = useBookingSystemEnabled();
+  const user = useAuth();
+  const navigate = useNavigate();
+  
+  const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
+  const formattedDateRange = `${format(currentWeekStart, 'd MMM', { locale: sv })} - ${format(weekEnd, 'd MMM yyyy', { locale: sv })}`;
+  
+  const { isEnabled: bookingSystemEnabled } = useBookingSystemEnabled();
+  
+  const { shifts, isLoading: shiftsLoading } = useShifts(currentWeekStart, weekEnd);
+  const { shift: selectedShift, isLoading: shiftDetailsLoading } = useShiftDetails(
+    selectedShiftId || ''
+  );
   
   useEffect(() => {
-    const getUserRole = async () => {
+    const checkUserRole = async () => {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+      
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        
-        const { data: roleData } = await supabase
+        const { data, error } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
           .single();
         
-        setUserRole(roleData?.role || 'user');
+        if (error) {
+          console.error('Error checking user role:', error);
+          return;
+        }
+        
+        setIsAdmin(data.role === 'admin');
       } catch (error) {
-        console.error('Error fetching user role:', error);
+        console.error('Error checking user role:', error);
       }
     };
     
-    getUserRole();
-  }, []);
-  
-  const isAdmin = userRole === 'admin';
-  
-  const handleViewShiftDetails = (shiftId: string) => {
-    setSelectedShiftId(shiftId);
-    setShowShiftDialog(true);
-  };
+    checkUserRole();
+  }, [user, navigate]);
   
   const handlePreviousWeek = () => {
-    setCurrentWeekStart(prev => addWeeks(prev, -1));
+    setCurrentWeekStart(prevDate => subWeeks(prevDate, 1));
   };
   
   const handleNextWeek = () => {
-    setCurrentWeekStart(prev => addWeeks(prev, 1));
+    setCurrentWeekStart(prevDate => addWeeks(prevDate, 1));
   };
   
-  const groupShiftsByDate = () => {
-    const groupedShifts: Record<string, typeof shifts> = {};
+  const handleViewShiftDetails = (shiftId: string) => {
+    setSelectedShiftId(shiftId);
+    setDialogOpen(true);
+  };
+  
+  // Get shifts with booking data for admin users
+  const processedShifts: ShiftWithBookings[] = shifts.map(shift => {
+    // For regular users without detailed booking data, we create a placeholder version
+    return {
+      ...shift,
+      bookings: [],
+      available_slots_remaining: shift.available_slots,
+      is_booked_by_current_user: false
+    };
+  });
+  
+  const renderContent = () => {
+    if (!user) return null;
     
-    shifts.forEach(shift => {
-      const date = shift.date;
-      if (!groupedShifts[date]) {
-        groupedShifts[date] = [];
-      }
-      groupedShifts[date].push(shift);
-    });
-    
-    return groupedShifts;
-  };
-  
-  const formatWeekRange = () => {
-    return `${format(currentWeekStart, 'd', { locale: sv })} - ${format(currentWeekEnd, 'd MMM', { locale: sv })}`;
-  };
-  
-  const isCurrentWeek = () => {
-    const today = new Date();
-    const startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 });
-    return isSameDay(startOfCurrentWeek, currentWeekStart);
-  };
-  
-  // For regular users, show a message if the booking system is disabled
-  if (!isAdmin && !isBookingEnabled) {
-    return (
-      <div className="container max-w-6xl py-8">
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Bokningssystemet är stängt</h1>
-          <p className="text-muted-foreground mb-8 max-w-md">
-            Bokningssystemet är för närvarande stängt. Vänligen försök igen senare eller kontakta din säljledare för att boka säljpass.
-          </p>
-          <Button onClick={() => window.history.back()}>
-            Gå tillbaka
-          </Button>
-        </div>
-      </div>
-    );
-  }
-  
-  return (
-    <div className="container max-w-6xl py-6">
-      <div className="grid gap-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Bokningar</h1>
+    if (isAdmin) {
+      return (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Skapa nytt säljpass</CardTitle>
+                <CardDescription>Lägg till ett nytt säljpass för bokningar</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CreateShiftForm />
+              </CardContent>
+            </Card>
+            
+            <AdminToggleFeature />
+          </div>
           
-          {isCurrentWeek() && summary && (
-            <Badge variant={summary.meets_minimum_requirement ? "outline" : "destructive"}>
-              {summary.total_bookings} / 2 pass bokade denna vecka
-            </Badge>
-          )}
-        </div>
-        
-        {isAdmin ? (
-          <Tabs defaultValue="bookings">
-            <TabsList className="w-full mb-2">
-              <TabsTrigger value="bookings" className="flex-1">Bokningar</TabsTrigger>
-              <TabsTrigger value="create" className="flex-1">Skapa säljpass</TabsTrigger>
-              <TabsTrigger value="admin" className="flex-1">Admin</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="bookings">
-              <div className="grid gap-6">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handlePreviousWeek}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <div className="flex items-center">
-                      <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span>Vecka {formatWeekRange()}</span>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleNextWeek}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                {isLoadingShifts ? (
-                  <p className="text-center py-10 text-muted-foreground">Laddar säljpass...</p>
-                ) : shifts.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-10 text-center">
-                      <h3 className="text-lg font-semibold mb-2">Inga säljpass för denna vecka</h3>
-                      <p className="text-muted-foreground">Gå till "Skapa säljpass" för att skapa nya pass</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div>
-                    {Object.entries(groupShiftsByDate()).map(([date, dateShifts]) => (
-                      <div key={date} className="mb-6">
-                        <h3 className="capitalize text-lg font-medium mb-3">
-                          {format(new Date(date), 'EEEE d MMMM', { locale: sv })}
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {dateShifts.map(shift => (
-                            <ShiftCard 
-                              key={shift.id} 
-                              shift={shift} 
-                              isUserAdmin={isAdmin}
-                              onViewDetails={handleViewShiftDetails}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+          <Card>
+            <CardHeader className="flex-row justify-between items-center">
+              <div>
+                <CardTitle className="text-lg">Säljpass denna vecka</CardTitle>
+                <CardDescription>{formattedDateRange}</CardDescription>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="create">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Plus className="h-5 w-5" />
-                    Skapa nytt säljpass
-                  </CardTitle>
-                  <CardDescription>
-                    Fyll i uppgifterna nedan för att skapa ett nytt säljpass
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <CreateShiftForm />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="admin">
-              <AdminToggleFeature />
-            </TabsContent>
-          </Tabs>
-        ) : (
-          // Regular user view
-          <div className="grid gap-6">
-            <WeeklyBookingsSummary weekStartDate={currentWeekStart} />
-            
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
                   onClick={handlePreviousWeek}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <div className="flex items-center">
-                  <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Vecka {formatWeekRange()}</span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="icon"
+                <Button 
+                  variant="outline" 
+                  size="icon" 
                   onClick={handleNextWeek}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
-            
-            {isLoadingShifts ? (
-              <p className="text-center py-10 text-muted-foreground">Laddar säljpass...</p>
-            ) : shifts.length === 0 ? (
-              <Card>
-                <CardContent className="py-10 text-center">
-                  <h3 className="text-lg font-semibold mb-2">Inga säljpass för denna vecka</h3>
-                  <p className="text-muted-foreground">Det finns inga säljpass tillgängliga för denna vecka</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div>
-                {Object.entries(groupShiftsByDate()).map(([date, dateShifts]) => (
-                  <div key={date} className="mb-6">
-                    <h3 className="capitalize text-lg font-medium mb-3">
-                      {format(new Date(date), 'EEEE d MMMM', { locale: sv })}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {dateShifts.map(shift => (
-                        <ShiftCard 
-                          key={shift.id} 
-                          shift={shift} 
-                          isUserAdmin={isAdmin}
-                          onViewDetails={handleViewShiftDetails}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+            </CardHeader>
+            <CardContent>
+              {shiftsLoading ? (
+                <p>Laddar säljpass...</p>
+              ) : processedShifts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {processedShifts.map(shift => (
+                    <ShiftCard 
+                      key={shift.id} 
+                      shift={shift} 
+                      isUserAdmin={isAdmin}
+                      onViewDetails={handleViewShiftDetails}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">Inga säljpass schemalagda för denna vecka.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      );
+    } else {
+      // Regular user view
+      if (!bookingSystemEnabled) {
+        return (
+          <Card className="w-full max-w-3xl mx-auto">
+            <CardHeader>
+              <CardTitle className="text-lg">Bokningssystemet är stängt</CardTitle>
+              <CardDescription>
+                Bokningssystemet är för närvarande inte tillgängligt.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Säljledningen har stängt av bokningssystemet tillfälligt. Vänligen återkom senare eller kontakta din säljledare för mer information.
+              </p>
+            </CardContent>
+          </Card>
+        );
+      }
       
-      {shift && (
-        <ShiftDetailsDialog
-          shift={shift}
+      return (
+        <div className="space-y-6">
+          <WeeklyBookingsSummary weekStartDate={currentWeekStart} />
+          
+          <Card>
+            <CardHeader className="flex-row justify-between items-center">
+              <div>
+                <CardTitle className="text-lg">Tillgängliga säljpass</CardTitle>
+                <CardDescription>{formattedDateRange}</CardDescription>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={handlePreviousWeek}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={handleNextWeek}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {shiftsLoading ? (
+                <p>Laddar säljpass...</p>
+              ) : processedShifts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {processedShifts.map(shift => (
+                    <ShiftCard 
+                      key={shift.id} 
+                      shift={shift} 
+                      isUserAdmin={isAdmin}
+                      onViewDetails={handleViewShiftDetails}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">Inga säljpass tillgängliga för denna vecka.</p>
+              )}
+            </CardContent>
+          </Card>
+          
+          <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md">
+            <h3 className="font-medium text-yellow-800 mb-2">Viktigt om bokningar</h3>
+            <p className="text-yellow-700 text-sm">
+              Kom ihåg att boka minst 2 pass per vecka. Om du behöver avboka ett pass måste du kontakta din säljledare direkt.
+            </p>
+          </div>
+        </div>
+      );
+    }
+  };
+  
+  return (
+    <div className="container mx-auto py-6">
+      <h1 className="text-2xl font-bold mb-6">Bokningssystem för säljpass</h1>
+      
+      {renderContent()}
+      
+      {selectedShift && (
+        <ShiftDetailsDialog 
+          shift={selectedShift} 
           isUserAdmin={isAdmin}
-          open={showShiftDialog}
-          onOpenChange={setShowShiftDialog}
+          open={dialogOpen} 
+          onOpenChange={setDialogOpen} 
         />
       )}
     </div>
   );
-};
-
-export default Booking;
+}

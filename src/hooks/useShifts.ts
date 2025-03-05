@@ -50,7 +50,10 @@ export const useShiftDetails = (shiftId: string) => {
       // Fetch all bookings for this shift
       const { data: bookings, error: bookingsError } = await supabase
         .from('shift_bookings')
-        .select('*, staff_roles(user_display_name)')
+        .select(`
+          *,
+          staff_roles!inner(user_display_name)
+        `)
         .eq('shift_id', shiftId);
       
       if (bookingsError) throw bookingsError;

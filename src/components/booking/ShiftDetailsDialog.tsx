@@ -42,10 +42,6 @@ export function ShiftDetailsDialog({
     onOpenChange(false);
   };
   
-  const getUserBooking = () => {
-    return shift.bookings.find(b => b.is_booked_by_current_user);
-  };
-  
   const formattedDate = format(new Date(shift.date), 'EEEE d MMMM', { locale: sv });
   const startTime = shift.start_time.substring(0, 5);
   const endTime = shift.end_time.substring(0, 5);
