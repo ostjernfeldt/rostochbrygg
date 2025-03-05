@@ -2,6 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { Invitation } from '@/components/invite/types';
 
 export const useAddUserToShift = () => {
   const queryClient = useQueryClient();
@@ -48,6 +49,9 @@ export const useAddUserToShift = () => {
         }
         
         if (invitation) {
+          // Type assertion to ensure TypeScript recognizes the email property
+          const typedInvitation = invitation as Invitation;
+          
           // Find the user ID from auth.users table using the email
           const { data: authUser, error: authError } = await supabase.auth
             .admin.listUsers();
@@ -59,7 +63,7 @@ export const useAddUserToShift = () => {
           
           // Find the user with matching email
           const matchingUser = authUser?.users?.find(user => 
-            user.email?.toLowerCase() === invitation.email.toLowerCase());
+            user.email?.toLowerCase() === typedInvitation.email.toLowerCase());
             
           if (matchingUser) {
             userId = matchingUser.id;
