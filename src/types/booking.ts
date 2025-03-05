@@ -1,3 +1,4 @@
+
 export interface Shift {
   id: string;
   date: string;
@@ -40,13 +41,4 @@ export interface WeeklyBookingSummary {
   week_end: string;
   total_bookings: number;
   meets_minimum_requirement: boolean;
-}
-
-export interface Invitation {
-  id: string;
-  email: string;
-  display_name?: string;
-  status: string;
-  created_at: string;
-  updated_at?: string;
 }

@@ -4,5 +4,3 @@ export { useGetShifts } from './useGetShifts';
 export { useGetShiftDetails } from './useGetShiftDetails';
 export { useCreateShift } from './useCreateShift';
 export { useDeleteShift } from './useDeleteShift';
-export { useAddUserToShift } from './useAddUserToShift';
-export { useGetAllSellers } from './useGetAllSellers';
