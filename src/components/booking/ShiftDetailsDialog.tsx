@@ -15,9 +15,15 @@ import { Button } from "@/components/ui/button";
 import { ShiftWithBookings } from '@/types/booking';
 import { useCancelBooking, useBookShift } from '@/hooks/useShiftBookings';
 import { Separator } from '@/components/ui/separator';
-import { useDeleteShift, useAddUserToShift } from '@/hooks/shifts';
+import { useDeleteShift, useAddUserToShift, useGetAllSellers } from '@/hooks/shifts';
 import { toast } from '@/components/ui/use-toast';
-import { Input } from '@/components/ui/input';
+import { 
+  Select,
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 
 interface ShiftDetailsDialogProps {
   shift: ShiftWithBookings;
@@ -36,8 +42,9 @@ export function ShiftDetailsDialog({
   const { mutate: cancelBooking, isPending: isCancelling } = useCancelBooking();
   const { mutate: deleteShift, isPending: isDeleting } = useDeleteShift();
   const { mutate: addUserToShift, isPending: isAddingUser } = useAddUserToShift();
+  const { data: sellers = [], isLoading: isLoadingSellers } = useGetAllSellers();
   
-  const [newUserName, setNewUserName] = useState('');
+  const [selectedSellerId, setSelectedSellerId] = useState<string>('');
   const [showAddUserForm, setShowAddUserForm] = useState(false);
   
   const handleBookShift = () => {
@@ -70,27 +77,46 @@ export function ShiftDetailsDialog({
   };
   
   const handleAddUser = () => {
-    if (!newUserName.trim()) {
+    if (!selectedSellerId) {
       toast({
         variant: "destructive",
-        title: "Inget namn angivet",
-        description: "Du måste ange ett namn på säljaren"
+        title: "Ingen säljare vald",
+        description: "Du måste välja en säljare"
+      });
+      return;
+    }
+    
+    // Find the selected seller from the list
+    const selectedSeller = sellers.find(seller => seller.id === selectedSellerId);
+    
+    if (!selectedSeller) {
+      toast({
+        variant: "destructive",
+        title: "Fel vid val av säljare",
+        description: "Den valda säljaren kunde inte hittas"
       });
       return;
     }
     
     addUserToShift({
       shiftId: shift.id,
-      userDisplayName: newUserName.trim()
+      userDisplayName: selectedSeller.user_display_name
     });
     
-    setNewUserName('');
+    setSelectedSellerId('');
     setShowAddUserForm(false);
   };
   
   const formattedDate = format(new Date(shift.date), 'EEEE d MMMM', { locale: sv });
   const startTime = shift.start_time.substring(0, 5);
   const endTime = shift.end_time.substring(0, 5);
+  
+  // Filter out sellers that are already booked on this shift
+  const availableSellers = sellers.filter(seller => 
+    !shift.bookings.some(booking => 
+      booking.user_display_name.toLowerCase() === seller.user_display_name.toLowerCase()
+    )
+  );
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -155,22 +181,41 @@ export function ShiftDetailsDialog({
             </div>
             
             {isUserAdmin && showAddUserForm && (
-              <div className="flex gap-2 mb-3 bg-[#151A25] p-3 rounded-lg border border-[#33333A]/30">
-                <Input
-                  value={newUserName}
-                  onChange={(e) => setNewUserName(e.target.value)}
-                  placeholder="Namn på säljare"
-                  className="h-8 text-sm flex-1"
-                />
-                <Button
-                  size="sm"
-                  variant="default"
-                  onClick={handleAddUser}
-                  disabled={isAddingUser || !newUserName.trim()}
-                  className="h-8 text-xs whitespace-nowrap"
-                >
-                  {isAddingUser ? "Lägger till..." : "Lägg till"}
-                </Button>
+              <div className="flex flex-col gap-2 mb-3 bg-[#151A25] p-3 rounded-lg border border-[#33333A]/30">
+                {isLoadingSellers ? (
+                  <div className="text-sm text-muted-foreground">Laddar säljare...</div>
+                ) : availableSellers.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">
+                    Alla säljare är redan bokade på detta pass
+                  </div>
+                ) : (
+                  <>
+                    <Select 
+                      value={selectedSellerId} 
+                      onValueChange={setSelectedSellerId}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="Välj säljare" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableSellers.map((seller) => (
+                          <SelectItem key={seller.id} value={seller.id}>
+                            {seller.user_display_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={handleAddUser}
+                      disabled={isAddingUser || !selectedSellerId}
+                      className="h-8 text-xs whitespace-nowrap mt-2"
+                    >
+                      {isAddingUser ? "Lägger till..." : "Lägg till"}
+                    </Button>
+                  </>
+                )}
               </div>
             )}
             
