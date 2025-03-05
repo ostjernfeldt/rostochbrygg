@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateShift } from "@/hooks/useShifts";
+import { useCreateShift } from "@/hooks/shifts";
 
 interface CreateShiftFormValues {
   date: Date;

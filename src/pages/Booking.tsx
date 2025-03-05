@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
@@ -11,7 +10,7 @@ import { ShiftDetailsDialog } from '@/components/booking/ShiftDetailsDialog';
 import { CreateShiftForm } from '@/components/booking/CreateShiftForm';
 import { AdminToggleFeature } from '@/components/booking/AdminToggleFeature';
 import { WeeklyBookingsSummary } from '@/components/booking/WeeklyBookingsSummary';
-import { useShifts, useShiftDetails } from '@/hooks/useShifts';
+import { useGetShifts, useGetShiftDetails } from '@/hooks/shifts';
 import { useBookingSystemEnabled } from '@/hooks/useAppSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Clock, InfoIcon, Settings, User, X, Check, AlertTriangle } from 'lucide-react';
@@ -47,11 +46,11 @@ export default function Booking() {
   const {
     shifts,
     isLoading: shiftsLoading
-  } = useShifts(currentWeekStart, weekEnd);
+  } = useGetShifts(currentWeekStart, weekEnd);
   const {
     shift: selectedShift,
     isLoading: shiftDetailsLoading
-  } = useShiftDetails(selectedShiftId || '');
+  } = useGetShiftDetails(selectedShiftId || '');
   const {
     mutate: batchBookShifts,
     isPending: isBatchBooking
