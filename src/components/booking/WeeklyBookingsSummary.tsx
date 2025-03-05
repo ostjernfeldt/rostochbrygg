@@ -53,14 +53,24 @@ export function WeeklyBookingsSummary() {
           </div>
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-80 bg-gradient-to-br from-amber-950/90 to-amber-900/95 border border-amber-800/50 shadow-lg p-5">
-        <div className="flex gap-3">
-          <InfoIcon className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
-          <div>
-            <h3 className="font-medium text-amber-400 mb-2">Viktigt om bokningar</h3>
-            <p className="text-sm text-muted-foreground">
-              Kom ihåg att boka minst 2 pass per vecka. Om du behöver avboka ett pass måste du kontakta din säljledare direkt.
-            </p>
+      <PopoverContent className="w-80 bg-gradient-to-br from-[#2A1F15] to-[#332210] border border-amber-600/30 shadow-xl rounded-xl p-0 overflow-hidden">
+        <div className="relative">
+          {/* Decorative top header */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500/80 via-amber-400 to-amber-500/80"></div>
+          
+          {/* Main content with improved spacing */}
+          <div className="px-6 pt-6 pb-5">
+            <div className="flex gap-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <InfoIcon className="h-4 w-4 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-amber-300 mb-2">Viktigt om bokningar</h3>
+                <p className="text-sm text-amber-100/80 leading-relaxed">
+                  Kom ihåg att boka minst 2 pass per vecka. Om du behöver avboka ett pass måste du kontakta din säljledare direkt.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </PopoverContent>
