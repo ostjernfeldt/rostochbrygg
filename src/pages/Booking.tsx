@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameDay } from 'date-fns';
+import { format, startOfWeek, endOfWeek, isSameDay } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,12 +14,11 @@ import { WeeklyBookingsSummary } from '@/components/booking/WeeklyBookingsSummar
 import { useShifts, useShiftDetails } from '@/hooks/useShifts';
 import { useBookingSystemEnabled } from '@/hooks/useAppSettings';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, ChevronLeft, ChevronRight, Clock, InfoIcon, Settings, User } from 'lucide-react';
+import { Calendar, Clock, InfoIcon, Settings, User } from 'lucide-react';
 import { PageLayout } from '@/components/PageLayout';
 
 export default function Booking() {
   const [isAdmin, setIsAdmin] = useState(false);
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
@@ -27,7 +26,11 @@ export default function Booking() {
   
   const navigate = useNavigate();
   
+  // Always use the current week
+  const today = new Date();
+  const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
+  
   const formattedDateRange = `${format(currentWeekStart, 'd MMM', { locale: sv })} - ${format(weekEnd, 'd MMM yyyy', { locale: sv })}`;
   
   const { isEnabled: bookingSystemEnabled } = useBookingSystemEnabled();
@@ -82,14 +85,6 @@ export default function Booking() {
     
     checkUserSession();
   }, [navigate]);
-  
-  const handlePreviousWeek = () => {
-    setCurrentWeekStart(prevDate => subWeeks(prevDate, 1));
-  };
-  
-  const handleNextWeek = () => {
-    setCurrentWeekStart(prevDate => addWeeks(prevDate, 1));
-  };
   
   const handleViewShiftDetails = (shiftId: string) => {
     setSelectedShiftId(shiftId);
@@ -148,24 +143,6 @@ export default function Booking() {
                   <CardTitle className="text-lg font-medium">Säljpass denna vecka</CardTitle>
                   <div className="text-sm text-muted-foreground">{formattedDateRange}</div>
                 </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={handlePreviousWeek}
-                  className="border-[#33333A] bg-card/80 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={handleNextWeek}
-                  className="border-[#33333A] bg-card/80 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -228,7 +205,7 @@ export default function Booking() {
             <h1 className="text-xl font-semibold">Välkommen {userName || ''}</h1>
           </div>
           
-          <WeeklyBookingsSummary weekStartDate={currentWeekStart} />
+          <WeeklyBookingsSummary />
           
           {userBookedShifts.length > 0 && (
             <div className="mt-8 mb-6">
@@ -256,24 +233,8 @@ export default function Booking() {
                 <Calendar className="h-5 w-5 text-primary" />
                 <h2 className="font-medium text-base">Tillgängliga pass</h2>
               </div>
-              <div className="flex items-center gap-1 text-sm bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 px-2 py-1 rounded-md shadow-md border border-[#33333A]/50">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6 hover:bg-primary/10 hover:text-primary"
-                  onClick={handlePreviousWeek}
-                >
-                  <ChevronLeft className="h-3 w-3" />
-                </Button>
+              <div className="text-sm bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 px-3 py-1.5 rounded-md shadow-md border border-[#33333A]/50">
                 <span className="text-xs text-muted-foreground">{formattedDateRange}</span>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6 hover:bg-primary/10 hover:text-primary"
-                  onClick={handleNextWeek}
-                >
-                  <ChevronRight className="h-3 w-3" />
-                </Button>
               </div>
             </div>
             

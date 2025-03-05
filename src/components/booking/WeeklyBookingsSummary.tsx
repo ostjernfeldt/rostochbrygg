@@ -4,12 +4,16 @@ import { sv } from 'date-fns/locale';
 import { AlertCircle, Calendar, CheckCircle } from "lucide-react";
 import { useWeeklyBookingSummary } from '@/hooks/useShiftBookings';
 
-interface WeeklyBookingsSummaryProps {
-  weekStartDate?: Date;
-}
-
-export function WeeklyBookingsSummary({ weekStartDate }: WeeklyBookingsSummaryProps) {
-  const { summary, isLoading } = useWeeklyBookingSummary(undefined, weekStartDate);
+export function WeeklyBookingsSummary() {
+  // Always use the current week's start date
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const startOfWeek = new Date(today);
+  // Adjust to Monday as first day (1 = Monday, 0 = Sunday)
+  startOfWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  const { summary, isLoading } = useWeeklyBookingSummary(undefined, startOfWeek);
   
   if (isLoading) {
     return (
@@ -19,8 +23,7 @@ export function WeeklyBookingsSummary({ weekStartDate }: WeeklyBookingsSummaryPr
     );
   }
   
-  const startDate = weekStartDate || new Date(Date.now());
-  const endDate = addDays(startDate, 6);
+  const endDate = addDays(startOfWeek, 6);
   
   // Check if requirement is met
   const requirementMet = (summary?.total_bookings || 0) >= 2;
