@@ -75,9 +75,14 @@ export function BatchBookingConfirmDialog({
         </ScrollArea>
         
         {notEnoughShifts && (
-          <div className="mt-4 p-3 bg-amber-950/20 border border-amber-600/20 rounded-lg flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
-            <p className="text-sm text-amber-200">Du behöver välja minst 2 pass för att kunna boka</p>
+          <div className="mt-4 p-3.5 bg-gradient-to-r from-amber-950/30 to-amber-900/20 border border-amber-700/30 rounded-lg shadow-inner flex items-center gap-3">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-amber-600/30 text-amber-400 flex-shrink-0">
+              <AlertTriangle className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-amber-300">Minst 2 pass krävs</p>
+              <p className="text-xs text-amber-300/70">Du behöver välja minst 2 pass för att kunna boka</p>
+            </div>
           </div>
         )}
         
@@ -92,7 +97,9 @@ export function BatchBookingConfirmDialog({
               e.preventDefault();
               onConfirm();
             }}
-            className={`${notEnoughShifts ? 'bg-primary/50 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'} text-white`}
+            className={`${notEnoughShifts ? 
+              'bg-gray-600/50 text-gray-300 cursor-not-allowed hover:bg-gray-600/50 border border-gray-600/30' : 
+              'bg-primary hover:bg-primary/90 text-white'} transition-all duration-200`}
             disabled={isPending || notEnoughShifts}
           >
             {isPending ? "Bokar..." : "Bekräfta bokningar"}
