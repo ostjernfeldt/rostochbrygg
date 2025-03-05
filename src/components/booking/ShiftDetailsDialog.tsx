@@ -48,15 +48,15 @@ export function ShiftDetailsDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-sm border-[#404049] shadow-xl">
+      <DialogContent className="sm:max-w-md bg-gradient-to-br from-[#1A1F2C]/95 to-[#222632]/98 backdrop-blur-sm border-[#404049] shadow-xl">
         <DialogHeader className="flex-row justify-between items-start">
           <div>
             <DialogTitle className="capitalize flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="h-4 w-4 text-primary" />
               {formattedDate}
             </DialogTitle>
             <div className="flex items-center gap-2 text-muted-foreground text-sm mt-1">
-              <Clock className="h-4 w-4" />
+              <Clock className="h-4 w-4 text-primary/80" />
               {startTime} - {endTime}
             </div>
           </div>
@@ -79,7 +79,7 @@ export function ShiftDetailsDialog({
           )}
           
           <div className="flex items-center gap-2 mb-3">
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-primary/80" />
             <span className="text-sm">
               {shift.bookings.length} av {shift.available_slots} platser bokade
               ({shift.available_slots_remaining} lediga)
@@ -93,7 +93,7 @@ export function ShiftDetailsDialog({
             {shift.bookings.length > 0 ? (
               <ul className="space-y-2">
                 {shift.bookings.map((booking) => (
-                  <li key={booking.id} className="flex justify-between text-sm items-center bg-card/80 p-2.5 rounded-lg border border-[#33333A]/30">
+                  <li key={booking.id} className="flex justify-between text-sm items-center bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 p-2.5 rounded-lg border border-[#33333A]/30">
                     <span>{booking.user_display_name || 'Okänd säljare'}</span>
                     
                     {isUserAdmin && (
@@ -111,7 +111,7 @@ export function ShiftDetailsDialog({
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground bg-card/80 p-2.5 rounded-lg border border-[#33333A]/30">
+              <p className="text-sm text-muted-foreground bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 p-2.5 rounded-lg border border-[#33333A]/30">
                 Inga bokningar ännu
               </p>
             )}
@@ -123,7 +123,7 @@ export function ShiftDetailsDialog({
             <Button 
               onClick={handleBookShift} 
               disabled={isBooking}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white"
             >
               {isBooking ? "Bokar..." : "Boka pass"}
             </Button>

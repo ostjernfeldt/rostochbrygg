@@ -20,7 +20,6 @@ export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps)
     bookShift(shift.id);
   };
   
-  const formattedDate = format(new Date(shift.date), 'EEEE d MMMM', { locale: sv });
   const startTime = shift.start_time.substring(0, 5);
   const endTime = shift.end_time.substring(0, 5);
   
@@ -32,12 +31,12 @@ export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps)
 
   return (
     <div 
-      className={`rounded-xl p-4 border shadow-sm transition-all duration-200 ${
+      className={`rounded-xl p-4 border shadow-sm transition-all duration-300 ${
         isBooked 
-          ? 'bg-card/90 border-primary/40 shadow-primary/5' 
+          ? 'bg-gradient-to-br from-[#1F2937]/90 to-[#1A2333]/95 backdrop-blur-sm border-primary/40 shadow-primary/10' 
           : isFull 
-            ? 'bg-card/70 border-[#33333A]/50 opacity-80' 
-            : 'bg-card/80 border-[#33333A] hover:border-primary/30 hover:shadow-md'
+            ? 'bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 backdrop-blur-sm border-[#33333A]/50 opacity-80' 
+            : 'bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm border-[#33333A] hover:border-primary/30 hover:shadow-md hover:shadow-primary/5'
       } cursor-pointer`}
       onClick={() => onViewDetails(shift.id)}
     >
@@ -47,7 +46,7 @@ export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps)
           <p className="text-sm text-muted-foreground">{dateNumber}</p>
         </div>
         <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-          <Clock className="h-3.5 w-3.5 text-primary/80" />
+          <Clock className="h-3.5 w-3.5 text-primary" />
           <span>{startTime} - {endTime}</span>
         </div>
       </div>
@@ -58,7 +57,7 @@ export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps)
       
       <div className="flex justify-between items-center mt-3">
         <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-          <Users className="h-3.5 w-3.5 text-primary/80" />
+          <Users className="h-3.5 w-3.5 text-primary" />
           <span>{shift.bookings.length} / {shift.available_slots}</span>
         </div>
         

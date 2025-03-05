@@ -58,7 +58,7 @@ export function CreateShiftForm() {
             <Button
               variant="outline"
               className={cn(
-                "w-full justify-start text-left font-normal border-[#33333A] bg-card/80",
+                "w-full justify-start text-left font-normal border-[#33333A] bg-black/20 hover:bg-black/30 hover:border-primary/30",
                 !date && "text-muted-foreground"
               )}
             >
@@ -89,7 +89,7 @@ export function CreateShiftForm() {
             <Input
               id="startTime"
               type="time"
-              className="pl-10 bg-card/80 border-[#33333A]"
+              className="pl-10 bg-black/20 border-[#33333A] focus-visible:border-primary/30"
               {...register("startTime", { required: "Starttid krävs" })}
             />
           </div>
@@ -105,7 +105,7 @@ export function CreateShiftForm() {
             <Input
               id="endTime"
               type="time"
-              className="pl-10 bg-card/80 border-[#33333A]"
+              className="pl-10 bg-black/20 border-[#33333A] focus-visible:border-primary/30"
               {...register("endTime", { required: "Sluttid krävs" })}
             />
           </div>
@@ -121,7 +121,7 @@ export function CreateShiftForm() {
           id="availableSlots"
           type="number"
           min="1"
-          className="bg-card/80 border-[#33333A]"
+          className="bg-black/20 border-[#33333A] focus-visible:border-primary/30"
           {...register("availableSlots", { 
             required: "Antal platser krävs",
             min: { value: 1, message: "Minst 1 plats krävs" },
@@ -138,14 +138,14 @@ export function CreateShiftForm() {
         <Textarea
           id="description"
           placeholder="Lägg till information om säljpasset"
-          className="bg-card/80 resize-none min-h-24 border-[#33333A]"
+          className="bg-black/20 resize-none min-h-24 border-[#33333A] focus-visible:border-primary/30"
           {...register("description")}
         />
       </div>
       
       <Button 
         type="submit" 
-        className="w-full"
+        className="w-full bg-primary hover:bg-primary/90 text-white shadow-md transition-all"
         disabled={createShift.isPending || !date}
       >
         {createShift.isPending ? "Skapar..." : "Skapa säljpass"}

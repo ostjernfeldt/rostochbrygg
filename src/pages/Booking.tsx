@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameDay } from 'date-fns';
@@ -124,11 +125,11 @@ export default function Booking() {
       return (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="bg-card border-[#33333A]">
+            <Card className="bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm border-[#33333A] shadow-lg hover:shadow-xl transition-all duration-300">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
-                  <CardTitle className="text-lg">Skapa nytt säljpass</CardTitle>
+                  <Calendar className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg font-medium">Skapa nytt säljpass</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
@@ -139,12 +140,12 @@ export default function Booking() {
             <AdminToggleFeature />
           </div>
           
-          <Card className="bg-card border-[#33333A]">
+          <Card className="bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm border-[#33333A] shadow-lg">
             <CardHeader className="flex-row justify-between items-center pb-2">
               <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-muted-foreground" />
+                <Calendar className="h-5 w-5 text-primary" />
                 <div>
-                  <CardTitle className="text-lg">Säljpass denna vecka</CardTitle>
+                  <CardTitle className="text-lg font-medium">Säljpass denna vecka</CardTitle>
                   <div className="text-sm text-muted-foreground">{formattedDateRange}</div>
                 </div>
               </div>
@@ -153,6 +154,7 @@ export default function Booking() {
                   variant="outline" 
                   size="icon" 
                   onClick={handlePreviousWeek}
+                  className="border-[#33333A] bg-card/80 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -160,6 +162,7 @@ export default function Booking() {
                   variant="outline" 
                   size="icon" 
                   onClick={handleNextWeek}
+                  className="border-[#33333A] bg-card/80 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -199,11 +202,11 @@ export default function Booking() {
         return (
           <div className="max-w-md mx-auto px-4">
             <div className="flex items-center gap-2 mb-4">
-              <User className="h-5 w-5 text-muted-foreground" />
+              <User className="h-5 w-5 text-primary" />
               <h1 className="text-xl font-semibold">Välkommen {userName || ''}</h1>
             </div>
             
-            <Card className="w-full bg-card/50 border-[#33333A] mb-6">
+            <Card className="w-full bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm border-[#33333A] shadow-lg mb-6">
               <CardContent className="pt-6">
                 <div className="flex flex-col items-center text-center p-4">
                   <Clock className="h-16 w-16 text-muted-foreground mb-4 opacity-20" />
@@ -220,21 +223,21 @@ export default function Booking() {
       
       return (
         <div className="max-w-md mx-auto px-4">
-          <div className="flex items-center gap-2 mb-4">
-            <User className="h-5 w-5 text-muted-foreground" />
+          <div className="flex items-center gap-2 mb-6">
+            <User className="h-5 w-5 text-primary" />
             <h1 className="text-xl font-semibold">Välkommen {userName || ''}</h1>
           </div>
           
           <WeeklyBookingsSummary weekStartDate={currentWeekStart} />
           
           {userBookedShifts.length > 0 && (
-            <div className="mt-6 mb-4">
+            <div className="mt-8 mb-6">
               <div className="flex items-center gap-2 mb-3">
-                <Clock className="h-5 w-5 text-muted-foreground" />
-                <h2 className="font-medium text-[15px]">Dina pass</h2>
+                <Clock className="h-5 w-5 text-primary" />
+                <h2 className="font-medium text-base">Dina pass</h2>
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {userBookedShifts.map(shift => (
                   <ShiftCard 
                     key={shift.id} 
@@ -247,17 +250,17 @@ export default function Booking() {
             </div>
           )}
           
-          <div className="mt-6">
-            <div className="flex items-center justify-between mb-3">
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-muted-foreground" />
-                <h2 className="font-medium text-[15px]">Tillgängliga pass</h2>
+                <Calendar className="h-5 w-5 text-primary" />
+                <h2 className="font-medium text-base">Tillgängliga pass</h2>
               </div>
-              <div className="flex items-center gap-1 text-sm bg-card/60 px-2 py-1 rounded">
+              <div className="flex items-center gap-1 text-sm bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 px-2 py-1 rounded-md shadow-md border border-[#33333A]/50">
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-6 w-6"
+                  className="h-6 w-6 hover:bg-primary/10 hover:text-primary"
                   onClick={handlePreviousWeek}
                 >
                   <ChevronLeft className="h-3 w-3" />
@@ -266,7 +269,7 @@ export default function Booking() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-6 w-6"
+                  className="h-6 w-6 hover:bg-primary/10 hover:text-primary"
                   onClick={handleNextWeek}
                 >
                   <ChevronRight className="h-3 w-3" />
@@ -283,7 +286,7 @@ export default function Booking() {
                 </div>
               ) : processedShifts.length > 0 ? (
                 Object.entries(shiftsByDate).map(([date, dateShifts]) => (
-                  <div key={date} className="space-y-2">
+                  <div key={date} className="space-y-3">
                     {dateShifts.map(shift => (
                       <ShiftCard 
                         key={shift.id} 
@@ -295,7 +298,7 @@ export default function Booking() {
                   </div>
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center bg-card/50 rounded-xl border border-[#33333A]">
+                <div className="flex flex-col items-center justify-center py-8 text-center bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 rounded-xl border border-[#33333A] shadow-lg">
                   <Calendar className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
                   <p className="text-muted-foreground">Inga säljpass tillgängliga för denna vecka.</p>
                 </div>
@@ -303,8 +306,8 @@ export default function Booking() {
             </div>
           </div>
           
-          <div className="mt-6 bg-amber-950/30 border border-amber-800/50 rounded-lg p-4 mb-8">
-            <div className="flex gap-2">
+          <div className="mt-8 bg-amber-950/30 border border-amber-800/50 rounded-lg p-4 mb-8 shadow-md">
+            <div className="flex gap-3">
               <InfoIcon className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
               <div>
                 <h3 className="font-medium text-amber-400 mb-1">Viktigt om bokningar</h3>

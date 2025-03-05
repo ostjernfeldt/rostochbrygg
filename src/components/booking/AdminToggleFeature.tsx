@@ -13,7 +13,7 @@ export function AdminToggleFeature() {
   };
 
   return (
-    <Card className="bg-card/90 border-[#33333A] shadow-md hover:shadow-lg transition-all duration-200">
+    <Card className="bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm border-[#33333A] shadow-lg hover:shadow-xl transition-all duration-300">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
           <Settings className="h-5 w-5 text-primary" />
@@ -21,7 +21,7 @@ export function AdminToggleFeature() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="bg-black/20 p-4 rounded-xl border border-[#33333A]/50 shadow-sm">
+        <div className="bg-black/20 p-5 rounded-xl border border-[#33333A]/50 shadow-sm">
           <div className="flex items-center justify-between space-y-0">
             <div className="space-y-0.5">
               <Label htmlFor="booking-system-toggle" className="text-base font-medium">
