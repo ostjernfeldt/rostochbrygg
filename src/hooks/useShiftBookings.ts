@@ -335,25 +335,39 @@ export const useCancelBooking = () => {
         throw new Error('Du måste vara admin för att avboka säljpass');
       }
       
-      // Update the booking status
+      // Get the booking information before cancellation (to get the shift_id for cache invalidation)
+      const { data: booking, error: fetchError } = await supabase
+        .from('shift_bookings')
+        .select('*')
+        .eq('id', bookingId)
+        .single();
+        
+      if (fetchError) {
+        console.error('Error fetching booking:', fetchError);
+        throw fetchError;
+      }
+      
+      // Update the booking status to cancelled
       const { data, error } = await supabase
         .from('shift_bookings')
-        .update({ status: 'cancelled' })
+        .delete()
         .eq('id', bookingId)
-        .select()
-        .single();
+        .select();
       
       if (error) {
         console.error('Error cancelling booking:', error);
         throw error;
       }
       
-      return data;
+      return { data, shiftId: booking.shift_id };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      // Invalidate all relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['shift', result.shiftId] });
       queryClient.invalidateQueries({ queryKey: ['userBookings'] });
       queryClient.invalidateQueries({ queryKey: ['weeklyBookingSummary'] });
+      
       toast({
         title: 'Bokning avbokad',
         description: 'Säljpasset har avbokats framgångsrikt.',
