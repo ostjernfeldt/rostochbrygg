@@ -36,7 +36,7 @@ export const useAddUserToShift = () => {
       
       if (!userId) {
         // Try to find a user from invitations with this display name
-        const { data: invitationData, error: invitationError } = await supabase
+        const { data, error: invitationError } = await supabase
           .from('invitations')
           .select('*')
           .eq('display_name', userDisplayName)
@@ -48,11 +48,11 @@ export const useAddUserToShift = () => {
           throw invitationError;
         }
         
-        if (invitationData) {
-          console.log('Found invitation data:', invitationData);
+        if (data) {
+          console.log('Found invitation data:', data);
           
-          // Type assertion for the invitation data - explicitly define all properties we know exist
-          const typedInvitation = invitationData as Invitation;
+          // Explicitly type the data as Invitation
+          const invitation = data as Invitation;
           
           // Find the user ID from auth.users table using the email
           const { data: authUserData, error: authError } = await supabase.auth
@@ -65,7 +65,7 @@ export const useAddUserToShift = () => {
           
           // Find the user with matching email
           const matchingUser = authUserData?.users?.find(user => 
-            user.email?.toLowerCase() === typedInvitation.email.toLowerCase());
+            user.email?.toLowerCase() === invitation.email.toLowerCase());
             
           if (matchingUser) {
             userId = matchingUser.id;
