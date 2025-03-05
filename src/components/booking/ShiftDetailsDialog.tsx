@@ -1,8 +1,7 @@
 
-
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Calendar, Clock, Users, X } from "lucide-react";
+import { Calendar, Clock, Users } from "lucide-react";
 import { 
   Dialog, 
   DialogContent, 
@@ -50,8 +49,11 @@ export function ShiftDetailsDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-gradient-to-br from-[#1A1F2C]/95 to-[#222632]/98 backdrop-blur-sm border-[#404049] shadow-xl">
-        <DialogHeader>
+      <DialogContent 
+        className="sm:max-w-md bg-[#1A1F2C] border-[#33333A] shadow-xl"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <DialogHeader className="pb-2">
           <DialogTitle className="capitalize text-lg flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
             {formattedDate}
@@ -62,18 +64,9 @@ export function ShiftDetailsDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="absolute right-4 top-4 rounded-full h-8 w-8 hover:bg-card/50"
-          onClick={() => onOpenChange(false)}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-        
         <div className="py-2 space-y-4">
           {shift.description && (
-            <div className="bg-gradient-to-br from-[#1A1F2C]/50 to-[#222632]/60 p-3.5 rounded-lg border border-[#33333A]/30">
+            <div className="bg-[#151A25] p-3.5 rounded-lg border border-[#33333A]/30">
               <h3 className="text-sm font-medium mb-1 flex items-center gap-1.5">
                 <Calendar className="h-4 w-4 text-primary/80" />
                 Beskrivning
@@ -82,7 +75,7 @@ export function ShiftDetailsDialog({
             </div>
           )}
           
-          <div className="flex items-center gap-2 bg-gradient-to-br from-[#1A1F2C]/50 to-[#222632]/60 p-3.5 rounded-lg border border-[#33333A]/30">
+          <div className="flex items-center gap-2 bg-[#151A25] p-3.5 rounded-lg border border-[#33333A]/30">
             <Users className="h-5 w-5 text-primary/80" />
             <span className="text-sm">
               {shift.bookings.length} av {shift.available_slots} platser bokade
@@ -100,7 +93,7 @@ export function ShiftDetailsDialog({
             {shift.bookings.length > 0 ? (
               <ul className="space-y-2">
                 {shift.bookings.map((booking) => (
-                  <li key={booking.id} className="flex justify-between text-sm items-center bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 p-3 rounded-lg border border-[#33333A]/30">
+                  <li key={booking.id} className="flex justify-between text-sm items-center bg-[#151A25] p-3 rounded-lg border border-[#33333A]/30">
                     <span>{booking.user_display_name || 'Okänd säljare'}</span>
                     
                     {isUserAdmin && (
@@ -118,7 +111,7 @@ export function ShiftDetailsDialog({
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 p-3 rounded-lg border border-[#33333A]/30">
+              <p className="text-sm text-muted-foreground bg-[#151A25] p-3 rounded-lg border border-[#33333A]/30">
                 Inga bokningar ännu
               </p>
             )}
@@ -151,4 +144,3 @@ export function ShiftDetailsDialog({
     </Dialog>
   );
 }
-
