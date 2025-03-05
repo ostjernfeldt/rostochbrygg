@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameDay } from 'date-fns';
@@ -15,6 +14,7 @@ import { useShifts, useShiftDetails } from '@/hooks/useShifts';
 import { useBookingSystemEnabled } from '@/hooks/useAppSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar, ChevronLeft, ChevronRight, Clock, InfoIcon, Settings, User } from 'lucide-react';
+import { PageLayout } from '@/components/PageLayout';
 
 export default function Booking() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -104,7 +104,6 @@ export default function Booking() {
     };
   });
 
-  // Group shifts by date for better organization
   const shiftsByDate = processedShifts.reduce((acc, shift) => {
     const date = shift.date;
     if (!acc[date]) {
@@ -114,7 +113,6 @@ export default function Booking() {
     return acc;
   }, {} as Record<string, ShiftWithBookings[]>);
 
-  // Get user's booked shifts for this week
   const userBookedShifts = processedShifts.filter(shift => 
     shift.is_booked_by_current_user
   );
@@ -322,17 +320,19 @@ export default function Booking() {
   };
   
   return (
-    <div className="container mx-auto py-6">
-      {renderContent()}
-      
-      {selectedShift && (
-        <ShiftDetailsDialog 
-          shift={selectedShift} 
-          isUserAdmin={isAdmin}
-          open={dialogOpen} 
-          onOpenChange={setDialogOpen} 
-        />
-      )}
-    </div>
+    <PageLayout>
+      <div className="container mx-auto">
+        {renderContent()}
+        
+        {selectedShift && (
+          <ShiftDetailsDialog 
+            shift={selectedShift} 
+            isUserAdmin={isAdmin}
+            open={dialogOpen} 
+            onOpenChange={setDialogOpen} 
+          />
+        )}
+      </div>
+    </PageLayout>
   );
 }
