@@ -91,8 +91,15 @@ export const useBookingSystemEnabled = () => {
       } else {
         // For JSON values stored in Supabase
         try {
-          const parsedValue = JSON.parse(value);
-          setIsEnabled(!!parsedValue);
+          // Fix: Type check before parsing JSON
+          if (typeof value === 'string') {
+            const parsedValue = JSON.parse(value);
+            setIsEnabled(!!parsedValue);
+          } else {
+            // If not a string, just use truthy/falsy check
+            setIsEnabled(!!value);
+            console.log('Value is not a string for JSON parsing, using direct truthy check:', !!value);
+          }
         } catch (e) {
           // If parsing fails, treat as falsy
           console.error('Error parsing booking system value:', e);
