@@ -4,20 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useBookingSystemEnabled } from "@/hooks/useAppSettings";
-import { useEffect } from "react";
 
 export function AdminToggleFeature() {
   const { isEnabled, setEnabled, isLoading } = useBookingSystemEnabled();
 
-  // Add debugging to check the value when the component mounts and when it changes
-  useEffect(() => {
-    console.log('AdminToggleFeature rendered, isEnabled:', isEnabled);
-    console.log('isLoading:', isLoading);
-  }, [isEnabled, isLoading]);
-
   const handleToggle = async () => {
-    console.log('Toggling booking system from', isEnabled, 'to', !isEnabled);
-    // Explicitly convert to boolean to ensure consistent type
     await setEnabled(!isEnabled);
   };
 
