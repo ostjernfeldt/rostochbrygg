@@ -1,7 +1,7 @@
 
 import { format, addDays } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { AlertCircle, Calendar, CheckCircle, InfoIcon, Clock } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle, InfoIcon, Clock, ListChecks, CalendarCheck } from "lucide-react";
 import { useWeeklyBookingSummary } from '@/hooks/useShiftBookings';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -30,31 +30,31 @@ export function WeeklyBookingsSummary() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <div className="w-full bg-gradient-to-br from-[#151a29]/95 to-[#1e2235]/95 backdrop-blur-sm rounded-xl border border-[#33333A]/80 shadow-lg cursor-pointer hover:border-primary/50 transition-all duration-300 overflow-hidden group relative">
+        <div className="w-full bg-gradient-to-br from-[#19243e]/90 to-[#23294a]/95 backdrop-blur-sm rounded-xl border border-indigo-900/30 shadow-lg cursor-pointer hover:border-indigo-500/50 transition-all duration-300 overflow-hidden group relative">
           {/* Top highlight line */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/5 via-primary/30 to-primary/5"></div>
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-indigo-500/5 via-indigo-400/30 to-indigo-500/5"></div>
           
           {/* Side highlight */}
-          <div className="absolute top-0 bottom-0 left-0 w-[2px] bg-gradient-to-b from-primary/30 via-primary/10 to-transparent"></div>
+          <div className="absolute top-0 bottom-0 left-0 w-[2px] bg-gradient-to-b from-indigo-400/30 via-indigo-500/10 to-transparent"></div>
           
           {/* Content with better padding */}
           <div className="px-5 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="p-1.5 bg-primary/10 rounded-full">
-                  <Calendar className="h-4 w-4 text-primary" />
+                <div className="p-1.5 bg-indigo-500/15 rounded-full">
+                  <CalendarCheck className="h-4 w-4 text-indigo-400" />
                 </div>
-                <h3 className="font-semibold text-[15px]">Denna vecka</h3>
+                <h3 className="font-semibold text-[15px] text-indigo-50">Dina bokningar</h3>
               </div>
-              <div className="flex items-center gap-2 bg-black/20 px-2.5 py-1.5 rounded-full">
-                <Clock className="h-3.5 w-3.5 text-amber-400" />
+              <div className="flex items-center gap-2 bg-indigo-950/50 px-2.5 py-1.5 rounded-full border border-indigo-800/30">
+                <ListChecks className="h-3.5 w-3.5 text-amber-400" />
                 <span className="text-sm font-medium text-amber-400">
                   {summary?.total_bookings || 0}/2 pass
                 </span>
               </div>
             </div>
             
-            <div className="mt-2 text-xs text-gray-400 font-medium">
+            <div className="mt-2 text-xs text-indigo-200/60 font-medium">
               {format(startOfWeek, 'd', { locale: sv })} mars - {format(endDate, 'd', { locale: sv })} mars
             </div>
           </div>
