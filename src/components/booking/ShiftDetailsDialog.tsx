@@ -1,3 +1,4 @@
+
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { Calendar, Clock, Users } from "lucide-react";
@@ -113,7 +114,7 @@ export function ShiftDetailsDialog({
               <ul className="space-y-2">
                 {shift.bookings.map((booking) => (
                   <li key={booking.id} className="flex justify-between text-sm items-center bg-[#151A25] p-3 rounded-lg border border-[#33333A]/30">
-                    <span>{booking.user_display_name || 'Okänd säljare'}</span>
+                    <span>{booking.user_display_name}</span>
                     
                     {isUserAdmin && (
                       <Button

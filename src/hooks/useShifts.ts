@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
@@ -88,18 +89,45 @@ export const useShiftDetails = (shiftId: string) => {
       
       const bookingsWithNames = await Promise.all(
         bookings.map(async (booking) => {
-          const { data: userData, error: userError } = await supabase
+          // Get the user's display name from staff_roles
+          const { data: staffData, error: staffError } = await supabase
             .from('staff_roles')
             .select('user_display_name')
             .eq('id', booking.user_id)
-            .single();
+            .maybeSingle();
+          
+          // If no staff_role found or there was an error, try to get the name from invitations
+          let displayName = staffData?.user_display_name;
+          
+          if (!displayName || staffError) {
+            console.log(`No staff role found for user ${booking.user_id}, checking invitations`);
+            
+            // Get user email to match with invitation
+            const { data: userData, error: userError } = await supabase.auth.admin.getUserById(
+              booking.user_id
+            );
+            
+            if (!userError && userData?.user?.email) {
+              // Find invitation by email
+              const { data: invitationData, error: invitationError } = await supabase
+                .from('invitations')
+                .select('display_name')
+                .eq('email', userData.user.email)
+                .maybeSingle();
+              
+              if (!invitationError && invitationData?.display_name) {
+                displayName = invitationData.display_name;
+                console.log(`Found display name in invitations: ${displayName}`);
+              }
+            }
+          }
           
           const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
           
           return {
             ...booking,
             status: typedStatus,
-            user_display_name: userData?.user_display_name || 'Okänd säljare'
+            user_display_name: displayName || 'Okänd säljare'
           } as ShiftBooking & { user_display_name: string };
         })
       );
