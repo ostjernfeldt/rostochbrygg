@@ -36,7 +36,7 @@ export const useAddUserToShift = () => {
       
       if (!userId) {
         // Try to find a user from invitations with this display name
-        const { data, error: invitationError } = await supabase
+        const { data: invitationData, error: invitationError } = await supabase
           .from('invitations')
           .select('*')
           .eq('display_name', userDisplayName)
@@ -48,11 +48,17 @@ export const useAddUserToShift = () => {
           throw invitationError;
         }
         
-        if (data) {
-          console.log('Found invitation data:', data);
+        if (invitationData) {
+          console.log('Found invitation data:', invitationData);
           
-          // Explicitly type the data as Invitation
-          const invitation = data as Invitation;
+          // Ensure we're working with the correct type by casting to Invitation
+          const invitation = invitationData as unknown as Invitation;
+          
+          // Now safely access email property
+          if (!invitation.email) {
+            console.error('Invitation found but email is missing:', invitation);
+            throw new Error(`Kunde inte hitta e-post för användaren "${userDisplayName}"`);
+          }
           
           // Find the user ID from auth.users table using the email
           const { data: authUserData, error: authError } = await supabase.auth
