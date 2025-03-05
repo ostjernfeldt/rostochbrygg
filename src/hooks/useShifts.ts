@@ -8,6 +8,8 @@ export const useShifts = (startDate: Date, endDate: Date) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['shifts', startDate.toISOString(), endDate.toISOString()],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from('shifts')
         .select('*')
@@ -21,7 +23,32 @@ export const useShifts = (startDate: Date, endDate: Date) => {
         throw error;
       }
       
-      return data as Shift[];
+      // Get all bookings for retrieved shifts
+      const shiftIds = data.map(shift => shift.id);
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('shift_bookings')
+        .select('*')
+        .in('shift_id', shiftIds);
+      
+      if (bookingsError) {
+        console.error('Error fetching shift bookings:', bookingsError);
+        throw bookingsError;
+      }
+      
+      // Transform shifts to ShiftWithBookings
+      const shiftsWithBookings: ShiftWithBookings[] = data.map(shift => {
+        const shiftBookings = bookings.filter(booking => booking.shift_id === shift.id);
+        const isBooked = user ? shiftBookings.some(booking => booking.user_id === user.id) : false;
+        
+        return {
+          ...shift,
+          bookings: shiftBookings,
+          available_slots_remaining: shift.available_slots - shiftBookings.length,
+          is_booked_by_current_user: isBooked
+        };
+      });
+      
+      return shiftsWithBookings;
     },
   });
   

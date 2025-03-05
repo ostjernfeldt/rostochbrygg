@@ -125,17 +125,20 @@ export default function Booking() {
     });
   };
   
-  const selectedShiftsData = shifts.filter(shift => selectedShifts.includes(shift.id));
-  
   const processedShifts: ShiftWithBookings[] = shifts.map(shift => {
     return {
       ...shift,
-      bookings: [],
-      available_slots_remaining: shift.available_slots,
-      is_booked_by_current_user: false
+      bookings: shift.bookings || [],
+      available_slots_remaining: shift.available_slots_remaining !== undefined 
+        ? shift.available_slots_remaining 
+        : shift.available_slots,
+      is_booked_by_current_user: shift.is_booked_by_current_user || false
     };
   });
 
+  const selectedShiftsData: ShiftWithBookings[] = processedShifts
+    .filter(shift => selectedShifts.includes(shift.id));
+  
   const shiftsByDate = processedShifts.reduce((acc, shift) => {
     const date = shift.date;
     if (!acc[date]) {
