@@ -6,10 +6,10 @@ import { Label } from "@/components/ui/label";
 import { useBookingSystemEnabled } from "@/hooks/useAppSettings";
 
 export function AdminToggleFeature() {
-  const { isEnabled, toggleEnabled, isLoading } = useBookingSystemEnabled();
+  const { isEnabled, setEnabled, isLoading } = useBookingSystemEnabled();
 
   const handleToggle = async () => {
-    await toggleEnabled();
+    await setEnabled(!isEnabled);
   };
 
   return (
