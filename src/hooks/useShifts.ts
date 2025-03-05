@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
-import { Shift, ShiftWithBookings } from '@/types/booking';
+import { Shift, ShiftWithBookings, ShiftBooking } from '@/types/booking';
 
 export const useShifts = (startDate: Date, endDate: Date) => {
   const { data, isLoading, error } = useQuery({
@@ -37,7 +37,17 @@ export const useShifts = (startDate: Date, endDate: Date) => {
       
       // Transform shifts to ShiftWithBookings
       const shiftsWithBookings: ShiftWithBookings[] = data.map(shift => {
-        const shiftBookings = bookings.filter(booking => booking.shift_id === shift.id);
+        const shiftBookings = bookings.filter(booking => booking.shift_id === shift.id)
+          .map(booking => {
+            // Ensure status is correctly typed as "confirmed" | "cancelled"
+            const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
+            
+            return {
+              ...booking,
+              status: typedStatus
+            } as ShiftBooking;
+          });
+          
         const isBooked = user ? shiftBookings.some(booking => booking.user_id === user.id) : false;
         
         return {
@@ -82,7 +92,7 @@ export const useShiftDetails = (shiftId: string) => {
       
       if (bookingsError) throw bookingsError;
       
-      // Get user display names for each booking
+      // Get user display names for each booking and ensure status is correctly typed
       const bookingsWithNames = await Promise.all(
         bookings.map(async (booking) => {
           const { data: userData, error: userError } = await supabase
@@ -91,10 +101,14 @@ export const useShiftDetails = (shiftId: string) => {
             .eq('id', booking.user_id)
             .maybeSingle();
           
+          // Ensure status is correctly typed as "confirmed" | "cancelled"
+          const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
+          
           return {
             ...booking,
+            status: typedStatus,
             user_display_name: userData?.user_display_name || 'Okänd säljare'
-          };
+          } as ShiftBooking & { user_display_name: string };
         })
       );
       
