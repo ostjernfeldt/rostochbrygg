@@ -44,8 +44,22 @@ export default function Booking() {
     isEnabled: bookingSystemEnabled
   } = useBookingSystemEnabled();
 
+  const {
+    shifts,
+    isLoading: shiftsLoading
+  } = useGetShifts(currentWeekStart, weekEnd);
+  const {
+    shift: selectedShift,
+    isLoading: shiftDetailsLoading
+  } = useGetShiftDetails(selectedShiftId || '');
+  const {
+    mutate: batchBookShifts,
+    isPending: isBatchBooking
+  } = useBatchBookShifts();
+
   useEffect(() => {
     console.log('Booking page rendered, bookingSystemEnabled:', bookingSystemEnabled);
+    console.log('bookingSystemEnabled type:', typeof bookingSystemEnabled);
     const checkUserSession = async () => {
       const {
         data: {
@@ -290,19 +304,6 @@ export default function Booking() {
         </div>;
     }
   };
-
-  const {
-    shifts,
-    isLoading: shiftsLoading
-  } = useGetShifts(currentWeekStart, weekEnd);
-  const {
-    shift: selectedShift,
-    isLoading: shiftDetailsLoading
-  } = useGetShiftDetails(selectedShiftId || '');
-  const {
-    mutate: batchBookShifts,
-    isPending: isBatchBooking
-  } = useBatchBookShifts();
 
   return <PageLayout>
       {renderContent()}
