@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
@@ -254,7 +255,6 @@ export default function Booking() {
                         </div>
                         <div className="font-medium">
                           <span className="text-amber-400">Minst 2 krävs</span>
-                          <span className="text-muted-foreground text-sm ml-1.5">({selectedShifts.length} valda)</span>
                         </div>
                       </div>
                     ) : (
