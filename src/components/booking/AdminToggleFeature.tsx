@@ -13,15 +13,15 @@ export function AdminToggleFeature() {
   };
 
   return (
-    <Card className="bg-card border-[#33333A]">
+    <Card className="bg-card/90 border-[#33333A] shadow-md hover:shadow-lg transition-all duration-200">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
-          <Settings className="h-5 w-5 text-muted-foreground" />
-          <CardTitle className="text-lg">Bokningssystem</CardTitle>
+          <Settings className="h-5 w-5 text-primary" />
+          <CardTitle className="text-lg font-medium">Bokningssystem</CardTitle>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="bg-card/80 p-4 rounded-xl border border-[#33333A]/50 shadow-sm">
+        <div className="bg-black/20 p-4 rounded-xl border border-[#33333A]/50 shadow-sm">
           <div className="flex items-center justify-between space-y-0">
             <div className="space-y-0.5">
               <Label htmlFor="booking-system-toggle" className="text-base font-medium">
@@ -38,6 +38,7 @@ export function AdminToggleFeature() {
               checked={isEnabled}
               onCheckedChange={handleToggle}
               disabled={isLoading}
+              className="data-[state=checked]:bg-primary"
             />
           </div>
         </div>

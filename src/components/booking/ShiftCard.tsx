@@ -32,12 +32,12 @@ export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps)
 
   return (
     <div 
-      className={`rounded-xl p-4 border shadow-sm transition-all ${
+      className={`rounded-xl p-4 border shadow-sm transition-all duration-200 ${
         isBooked 
-          ? 'bg-card/90 border-primary/30' 
+          ? 'bg-card/90 border-primary/40 shadow-primary/5' 
           : isFull 
-            ? 'bg-card/70 border-[#33333A]/50' 
-            : 'bg-card/80 border-[#33333A] hover:border-primary/30'
+            ? 'bg-card/70 border-[#33333A]/50 opacity-80' 
+            : 'bg-card/80 border-[#33333A] hover:border-primary/30 hover:shadow-md'
       } cursor-pointer`}
       onClick={() => onViewDetails(shift.id)}
     >
@@ -47,7 +47,7 @@ export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps)
           <p className="text-sm text-muted-foreground">{dateNumber}</p>
         </div>
         <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-          <Clock className="h-3.5 w-3.5" />
+          <Clock className="h-3.5 w-3.5 text-primary/80" />
           <span>{startTime} - {endTime}</span>
         </div>
       </div>
@@ -58,7 +58,7 @@ export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps)
       
       <div className="flex justify-between items-center mt-3">
         <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-          <Users className="h-3.5 w-3.5" />
+          <Users className="h-3.5 w-3.5 text-primary/80" />
           <span>{shift.bookings.length} / {shift.available_slots}</span>
         </div>
         
@@ -70,20 +70,20 @@ export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps)
             }} 
             size="sm"
             disabled={isPending}
-            className="text-xs h-8 bg-primary/90 hover:bg-primary"
+            className="text-xs h-8 bg-primary hover:bg-primary/90 shadow-sm transition-all"
           >
             {isPending ? "Bokar..." : "Boka"}
           </Button>
         )}
         
         {!isUserAdmin && shift.is_booked_by_current_user && (
-          <Badge variant="secondary" className="text-xs bg-primary/20 text-primary border border-primary/20">Bokad</Badge>
+          <Badge variant="secondary" className="text-xs bg-primary/20 text-primary border border-primary/20 shadow-sm">Bokad</Badge>
         )}
         
         {isUserAdmin && (
           <Badge 
             variant={shift.available_slots_remaining > 0 ? "outline" : "destructive"} 
-            className={`text-xs ${shift.available_slots_remaining > 0 ? 'bg-card/50' : ''}`}
+            className={`text-xs shadow-sm ${shift.available_slots_remaining > 0 ? 'bg-card/50' : ''}`}
           >
             {shift.available_slots_remaining} platser kvar
           </Badge>
