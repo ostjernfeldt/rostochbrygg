@@ -38,12 +38,12 @@ export const useAddUserToShift = () => {
         console.log('No staff member found, checking invitations for:', userDisplayName);
         
         // Try to find a user from invitations with this display name
-        // Explicitly define a type for the returned data using Postgres table structure
-        interface InvitationData {
+        // Define a type that matches exactly what we're selecting from the database
+        type InvitationResult = {
           email: string;
           display_name: string | null;
           status: string;
-        }
+        };
         
         const { data: invitationData, error: invitationError } = await supabase
           .from('invitations')
@@ -57,14 +57,17 @@ export const useAddUserToShift = () => {
           throw invitationError;
         }
         
+        // Log the full data structure to see what we're getting
+        console.log('Raw invitation data:', JSON.stringify(invitationData));
+        
         if (invitationData) {
-          console.log('Found invitation data:', invitationData);
+          // Use a type assertion that matches our expected structure
+          const typedInvitation = invitationData as InvitationResult;
+          console.log('Found invitation data:', typedInvitation);
           
-          // Safely access email with proper type checking
-          const email = (invitationData as InvitationData).email;
-          
-          if (!email) {
-            console.error('Invitation found but email is missing:', invitationData);
+          // Now safely access email with proper type checking
+          if (!typedInvitation.email) {
+            console.error('Invitation found but email is missing:', typedInvitation);
             throw new Error(`Kunde inte hitta e-post för användaren "${userDisplayName}"`);
           }
           
@@ -79,7 +82,7 @@ export const useAddUserToShift = () => {
           
           // Find the user with matching email
           const matchingUser = authUserData?.users?.find(user => 
-            user.email?.toLowerCase() === email.toLowerCase());
+            user.email?.toLowerCase() === typedInvitation.email.toLowerCase());
             
           if (matchingUser) {
             userId = matchingUser.id;
