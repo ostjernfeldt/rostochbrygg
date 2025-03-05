@@ -1,6 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Invitation } from '@/types/booking';
 
 type Seller = {
   id: string;
@@ -26,7 +27,7 @@ export const useGetAllSellers = () => {
       // Get all users who registered through invitations but don't have staff roles yet
       const { data: invitedUsers, error: invitedError } = await supabase
         .from('invitations')
-        .select('display_name, email')
+        .select('display_name, email, status')
         .eq('status', 'used');
         
       if (invitedError) {
@@ -34,8 +35,11 @@ export const useGetAllSellers = () => {
         throw invitedError;
       }
       
+      // Make sure invitedUsers has the expected shape with email property
+      const typedInvitations = invitedUsers as Invitation[];
+      
       // Check if invitedUsers with display_name are already in staffRoles
-      const additionalSellers = invitedUsers
+      const additionalSellers = typedInvitations
         .filter(invitation => invitation.display_name)
         .filter(invitation => 
           !staffRoles.some(staff => 
