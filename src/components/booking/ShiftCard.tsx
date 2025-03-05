@@ -35,7 +35,7 @@ export function ShiftCard({
   const handleCardClick = () => {
     if (isSelectable && onSelectShift && !isBooked && !isFull) {
       onSelectShift(shift.id);
-    } else {
+    } else if (!isSelectable) {
       onViewDetails(shift.id);
     }
   };
@@ -50,7 +50,7 @@ export function ShiftCard({
             : isFull 
               ? 'bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 backdrop-blur-sm border-[#33333A]/50 opacity-80' 
               : 'bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm border-[#33333A] hover:border-primary/30 hover:shadow-md hover:shadow-primary/5'
-      } ${(isSelectable && !isBooked && !isFull) ? 'cursor-pointer' : isFull ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+      } ${(!isBooked && !isFull) ? 'cursor-pointer' : isFull ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       onClick={handleCardClick}
     >
       <div className="flex items-start justify-between mb-2">
