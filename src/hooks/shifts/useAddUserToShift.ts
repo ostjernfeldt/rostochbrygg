@@ -49,15 +49,16 @@ export const useAddUserToShift = () => {
         }
         
         if (invitationData) {
-          // Create a properly typed invitation object
-          // Ensure invitationData is not null/undefined before using it
-          const invitation: Invitation = {
-            id: invitationData.id,
-            email: invitationData.email, // Accessing email should now work
-            display_name: invitationData.display_name,
-            status: invitationData.status,
-            created_at: invitationData.created_at
-            // updated_at is optional so we don't need to include it
+          console.log('Found invitation data:', invitationData);
+          
+          // Type assertion to ensure TypeScript knows the shape of the data
+          // This prevents the "Property 'email' does not exist on type 'never'" error
+          const typedInvitation = invitationData as {
+            id: string;
+            email: string;
+            display_name: string;
+            status: string;
+            created_at: string;
           };
           
           // Find the user ID from auth.users table using the email
@@ -71,7 +72,7 @@ export const useAddUserToShift = () => {
           
           // Find the user with matching email
           const matchingUser = authUserData?.users?.find(user => 
-            user.email?.toLowerCase() === invitation.email.toLowerCase());
+            user.email?.toLowerCase() === typedInvitation.email.toLowerCase());
             
           if (matchingUser) {
             userId = matchingUser.id;
