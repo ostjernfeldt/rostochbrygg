@@ -1,9 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { useAuth } from '@supabase/auth-helpers-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShiftWithBookings } from '@/types/booking';
@@ -23,8 +21,8 @@ export default function Booking() {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
   
-  const user = useAuth();
   const navigate = useNavigate();
   
   const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
@@ -38,17 +36,19 @@ export default function Booking() {
   );
   
   useEffect(() => {
-    const checkUserRole = async () => {
-      if (!user) {
+    const checkUserSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         navigate('/login');
         return;
       }
+      setUser(session.user);
       
       try {
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', user.id)
+          .eq('user_id', session.user.id)
           .single();
         
         if (error) {
@@ -62,8 +62,8 @@ export default function Booking() {
       }
     };
     
-    checkUserRole();
-  }, [user, navigate]);
+    checkUserSession();
+  }, [navigate]);
   
   const handlePreviousWeek = () => {
     setCurrentWeekStart(prevDate => subWeeks(prevDate, 1));
@@ -78,9 +78,7 @@ export default function Booking() {
     setDialogOpen(true);
   };
   
-  // Get shifts with booking data for admin users
   const processedShifts: ShiftWithBookings[] = shifts.map(shift => {
-    // For regular users without detailed booking data, we create a placeholder version
     return {
       ...shift,
       bookings: [],
@@ -154,7 +152,6 @@ export default function Booking() {
         </div>
       );
     } else {
-      // Regular user view
       if (!bookingSystemEnabled) {
         return (
           <Card className="w-full max-w-3xl mx-auto">

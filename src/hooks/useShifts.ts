@@ -50,29 +50,36 @@ export const useShiftDetails = (shiftId: string) => {
       // Fetch all bookings for this shift
       const { data: bookings, error: bookingsError } = await supabase
         .from('shift_bookings')
-        .select(`
-          *,
-          staff_roles!inner(user_display_name)
-        `)
+        .select('*, user_id')
         .eq('shift_id', shiftId);
       
       if (bookingsError) throw bookingsError;
       
-      // Format the bookings
-      const formattedBookings = bookings.map(booking => ({
-        ...booking,
-        user_display_name: booking.staff_roles?.user_display_name || null
-      }));
+      // Get user display names for each booking
+      const bookingsWithNames = await Promise.all(
+        bookings.map(async (booking) => {
+          const { data: userData, error: userError } = await supabase
+            .from('staff_roles')
+            .select('user_display_name')
+            .eq('id', booking.user_id)
+            .maybeSingle();
+          
+          return {
+            ...booking,
+            user_display_name: userData?.user_display_name || 'Okänd säljare'
+          };
+        })
+      );
       
       // Check if current user has booked this shift
-      const isBookedByCurrentUser = user ? formattedBookings.some(b => b.user_id === user.id) : false;
+      const isBookedByCurrentUser = user ? bookings.some(b => b.user_id === user.id) : false;
       
       // Calculate remaining slots
-      const availableSlotsRemaining = shift.available_slots - formattedBookings.length;
+      const availableSlotsRemaining = shift.available_slots - bookings.length;
       
       return {
         ...shift,
-        bookings: formattedBookings,
+        bookings: bookingsWithNames,
         available_slots_remaining: availableSlotsRemaining,
         is_booked_by_current_user: isBookedByCurrentUser
       } as ShiftWithBookings;
