@@ -197,8 +197,8 @@ export default function Booking() {
       }
       return <div className="max-w-md mx-auto">
           <div className="flex items-center gap-2 mb-6">
-            <User className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-semibold">Välkommen {userName || ''}</h1>
+            
+            
           </div>
           
           <WeeklyBookingsSummary />
