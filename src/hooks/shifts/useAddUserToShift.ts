@@ -38,6 +38,13 @@ export const useAddUserToShift = () => {
         console.log('No staff member found, checking invitations for:', userDisplayName);
         
         // Try to find a user from invitations with this display name
+        // Explicitly define a type for the returned data using Postgres table structure
+        interface InvitationData {
+          email: string;
+          display_name: string | null;
+          status: string;
+        }
+        
         const { data: invitationData, error: invitationError } = await supabase
           .from('invitations')
           .select('email, display_name, status')
@@ -53,8 +60,10 @@ export const useAddUserToShift = () => {
         if (invitationData) {
           console.log('Found invitation data:', invitationData);
           
-          // Since we specifically selected 'email' in the query, it should be available directly
-          if (!invitationData.email) {
+          // Safely access email with proper type checking
+          const email = (invitationData as InvitationData).email;
+          
+          if (!email) {
             console.error('Invitation found but email is missing:', invitationData);
             throw new Error(`Kunde inte hitta e-post för användaren "${userDisplayName}"`);
           }
@@ -70,7 +79,7 @@ export const useAddUserToShift = () => {
           
           // Find the user with matching email
           const matchingUser = authUserData?.users?.find(user => 
-            user.email?.toLowerCase() === invitationData.email.toLowerCase());
+            user.email?.toLowerCase() === email.toLowerCase());
             
           if (matchingUser) {
             userId = matchingUser.id;
