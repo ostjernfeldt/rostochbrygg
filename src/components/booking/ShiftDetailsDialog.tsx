@@ -1,4 +1,3 @@
-
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { useState } from 'react';
@@ -17,13 +16,7 @@ import { useCancelBooking, useBookShift } from '@/hooks/useShiftBookings';
 import { Separator } from '@/components/ui/separator';
 import { useDeleteShift, useAddUserToShift, useGetAllSellers } from '@/hooks/shifts';
 import { toast } from '@/components/ui/use-toast';
-import { 
-  Select,
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import { SellerSelect } from '@/components/booking/SellerSelect';
 
 interface ShiftDetailsDialogProps {
   shift: ShiftWithBookings;
@@ -190,21 +183,13 @@ export function ShiftDetailsDialog({
                   </div>
                 ) : (
                   <>
-                    <Select 
-                      value={selectedSellerId} 
-                      onValueChange={setSelectedSellerId}
-                    >
-                      <SelectTrigger className="h-8 text-sm">
-                        <SelectValue placeholder="Välj säljare" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableSellers.map((seller) => (
-                          <SelectItem key={seller.id} value={seller.id}>
-                            {seller.user_display_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SellerSelect
+                      sellers={availableSellers}
+                      selectedSellerId={selectedSellerId}
+                      onSellerChange={setSelectedSellerId}
+                      isLoading={isLoadingSellers}
+                      placeholder="Välj säljare..."
+                    />
                     <Button
                       size="sm"
                       variant="default"
