@@ -1,7 +1,8 @@
 
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Calendar, Clock, Users } from "lucide-react";
+import { useState } from 'react';
+import { Calendar, Clock, Users, Plus, X } from "lucide-react";
 import { 
   Dialog, 
   DialogContent, 
@@ -14,8 +15,9 @@ import { Button } from "@/components/ui/button";
 import { ShiftWithBookings } from '@/types/booking';
 import { useCancelBooking, useBookShift } from '@/hooks/useShiftBookings';
 import { Separator } from '@/components/ui/separator';
-import { useDeleteShift } from '@/hooks/shifts';
+import { useDeleteShift, useAddUserToShift } from '@/hooks/shifts';
 import { toast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
 
 interface ShiftDetailsDialogProps {
   shift: ShiftWithBookings;
@@ -33,6 +35,10 @@ export function ShiftDetailsDialog({
   const { mutate: bookShift, isPending: isBooking } = useBookShift();
   const { mutate: cancelBooking, isPending: isCancelling } = useCancelBooking();
   const { mutate: deleteShift, isPending: isDeleting } = useDeleteShift();
+  const { mutate: addUserToShift, isPending: isAddingUser } = useAddUserToShift();
+  
+  const [newUserName, setNewUserName] = useState('');
+  const [showAddUserForm, setShowAddUserForm] = useState(false);
   
   const handleBookShift = () => {
     bookShift(shift.id);
@@ -61,6 +67,25 @@ export function ShiftDetailsDialog({
   const handleDeleteShift = () => {
     deleteShift(shift.id);
     onOpenChange(false);
+  };
+  
+  const handleAddUser = () => {
+    if (!newUserName.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Inget namn angivet",
+        description: "Du måste ange ett namn på säljaren"
+      });
+      return;
+    }
+    
+    addUserToShift({
+      shiftId: shift.id,
+      userDisplayName: newUserName.trim()
+    });
+    
+    setNewUserName('');
+    setShowAddUserForm(false);
   };
   
   const formattedDate = format(new Date(shift.date), 'EEEE d MMMM', { locale: sv });
@@ -106,10 +131,49 @@ export function ShiftDetailsDialog({
           <Separator className="my-4 bg-[#33333A]/50" />
           
           <div>
-            <h3 className="text-sm font-medium mb-2 flex items-center gap-1.5">
-              <Users className="h-4 w-4 text-primary/80" />
-              Bokade säljare
-            </h3>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-sm font-medium flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-primary/80" />
+                Bokade säljare
+              </h3>
+              
+              {isUserAdmin && shift.available_slots_remaining > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setShowAddUserForm(!showAddUserForm)}
+                >
+                  {showAddUserForm ? (
+                    <X className="h-3.5 w-3.5 mr-1" />
+                  ) : (
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                  )}
+                  {showAddUserForm ? "Avbryt" : "Lägg till säljare"}
+                </Button>
+              )}
+            </div>
+            
+            {isUserAdmin && showAddUserForm && (
+              <div className="flex gap-2 mb-3 bg-[#151A25] p-3 rounded-lg border border-[#33333A]/30">
+                <Input
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                  placeholder="Namn på säljare"
+                  className="h-8 text-sm flex-1"
+                />
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={handleAddUser}
+                  disabled={isAddingUser || !newUserName.trim()}
+                  className="h-8 text-xs whitespace-nowrap"
+                >
+                  {isAddingUser ? "Lägger till..." : "Lägg till"}
+                </Button>
+              </div>
+            )}
+            
             {shift.bookings.length > 0 ? (
               <ul className="space-y-2">
                 {shift.bookings.map((booking) => (
