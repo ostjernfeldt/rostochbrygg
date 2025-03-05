@@ -26,8 +26,8 @@ export function WeeklyBookingsSummary({ weekStartDate }: WeeklyBookingsSummaryPr
   const requirementMet = (summary?.total_bookings || 0) >= 2;
   
   return (
-    <div className={`w-full ${requirementMet ? 'bg-[#1A2E22]/50' : 'bg-[#2E1A1A]/50'} rounded-xl p-4 border ${requirementMet ? 'border-[#2A3E32]' : 'border-[#3E2A2A]'}`}>
-      <div className="flex items-center gap-2 mb-2">
+    <div className={`w-full rounded-xl p-5 border shadow-sm ${requirementMet ? 'bg-[#1A2E22]/80 border-emerald-800/20' : 'bg-[#2E1A1A]/80 border-amber-800/20'}`}>
+      <div className="flex items-center gap-2 mb-3">
         <Calendar className="h-5 w-5 text-muted-foreground" />
         <h2 className="font-medium text-[15px]">Dina pass</h2>
       </div>

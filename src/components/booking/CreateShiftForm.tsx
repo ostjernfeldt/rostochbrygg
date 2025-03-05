@@ -58,7 +58,7 @@ export function CreateShiftForm() {
             <Button
               variant="outline"
               className={cn(
-                "w-full justify-start text-left font-normal",
+                "w-full justify-start text-left font-normal border-[#33333A] bg-card/80",
                 !date && "text-muted-foreground"
               )}
             >
@@ -89,7 +89,7 @@ export function CreateShiftForm() {
             <Input
               id="startTime"
               type="time"
-              className="pl-10 bg-background/50"
+              className="pl-10 bg-card/80 border-[#33333A]"
               {...register("startTime", { required: "Starttid krävs" })}
             />
           </div>
@@ -105,7 +105,7 @@ export function CreateShiftForm() {
             <Input
               id="endTime"
               type="time"
-              className="pl-10 bg-background/50"
+              className="pl-10 bg-card/80 border-[#33333A]"
               {...register("endTime", { required: "Sluttid krävs" })}
             />
           </div>
@@ -121,7 +121,7 @@ export function CreateShiftForm() {
           id="availableSlots"
           type="number"
           min="1"
-          className="bg-background/50"
+          className="bg-card/80 border-[#33333A]"
           {...register("availableSlots", { 
             required: "Antal platser krävs",
             min: { value: 1, message: "Minst 1 plats krävs" },
@@ -138,7 +138,7 @@ export function CreateShiftForm() {
         <Textarea
           id="description"
           placeholder="Lägg till information om säljpasset"
-          className="bg-background/50 resize-none"
+          className="bg-card/80 resize-none min-h-24 border-[#33333A]"
           {...register("description")}
         />
       </div>

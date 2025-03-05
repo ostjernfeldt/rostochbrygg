@@ -48,7 +48,7 @@ export function ShiftDetailsDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card border-[#33333A]">
+      <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-sm border-[#404049] shadow-xl">
         <DialogHeader className="flex-row justify-between items-start">
           <div>
             <DialogTitle className="capitalize flex items-center gap-2">
@@ -63,7 +63,7 @@ export function ShiftDetailsDialog({
           <Button 
             variant="ghost" 
             size="icon" 
-            className="rounded-full h-6 w-6"
+            className="rounded-full h-6 w-6 hover:bg-card/50"
             onClick={() => onOpenChange(false)}
           >
             <X className="h-4 w-4" />
@@ -86,14 +86,14 @@ export function ShiftDetailsDialog({
             </span>
           </div>
           
-          <Separator className="my-4" />
+          <Separator className="my-4 bg-[#33333A]/50" />
           
           <div>
             <h3 className="text-sm font-medium mb-2">Bokade säljare</h3>
             {shift.bookings.length > 0 ? (
               <ul className="space-y-2">
                 {shift.bookings.map((booking) => (
-                  <li key={booking.id} className="flex justify-between text-sm items-center bg-background/20 p-2 rounded-md">
+                  <li key={booking.id} className="flex justify-between text-sm items-center bg-card/80 p-2.5 rounded-lg border border-[#33333A]/30">
                     <span>{booking.user_display_name || 'Okänd säljare'}</span>
                     
                     {isUserAdmin && (
@@ -111,7 +111,7 @@ export function ShiftDetailsDialog({
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground bg-background/20 p-2 rounded-md">
+              <p className="text-sm text-muted-foreground bg-card/80 p-2.5 rounded-lg border border-[#33333A]/30">
                 Inga bokningar ännu
               </p>
             )}
@@ -123,6 +123,7 @@ export function ShiftDetailsDialog({
             <Button 
               onClick={handleBookShift} 
               disabled={isBooking}
+              className="w-full sm:w-auto"
             >
               {isBooking ? "Bokar..." : "Boka pass"}
             </Button>
@@ -133,6 +134,7 @@ export function ShiftDetailsDialog({
               variant="destructive" 
               onClick={handleDeleteShift}
               disabled={isDeleting}
+              className="w-full sm:w-auto"
             >
               {isDeleting ? "Tar bort..." : "Ta bort pass"}
             </Button>

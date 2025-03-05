@@ -27,9 +27,18 @@ export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps)
   const day = format(new Date(shift.date), 'EEEE', { locale: sv });
   const dateNumber = format(new Date(shift.date), 'd MMMM', { locale: sv });
 
+  const isBooked = shift.is_booked_by_current_user;
+  const isFull = shift.available_slots_remaining === 0;
+
   return (
     <div 
-      className="bg-card rounded-xl p-4 border border-[#33333A] shadow-lg hover:border-accent transition-colors"
+      className={`rounded-xl p-4 border shadow-sm transition-all ${
+        isBooked 
+          ? 'bg-card/90 border-primary/30' 
+          : isFull 
+            ? 'bg-card/70 border-[#33333A]/50' 
+            : 'bg-card/80 border-[#33333A] hover:border-primary/30'
+      } cursor-pointer`}
       onClick={() => onViewDetails(shift.id)}
     >
       <div className="flex items-start justify-between mb-2">
@@ -44,7 +53,7 @@ export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps)
       </div>
       
       {shift.description && (
-        <p className="text-sm text-muted-foreground mb-2">{shift.description}</p>
+        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{shift.description}</p>
       )}
       
       <div className="flex justify-between items-center mt-3">
@@ -61,18 +70,21 @@ export function ShiftCard({ shift, isUserAdmin, onViewDetails }: ShiftCardProps)
             }} 
             size="sm"
             disabled={isPending}
-            className="text-xs"
+            className="text-xs h-8 bg-primary/90 hover:bg-primary"
           >
             {isPending ? "Bokar..." : "Boka"}
           </Button>
         )}
         
         {!isUserAdmin && shift.is_booked_by_current_user && (
-          <Badge variant="secondary" className="text-xs">Bokad</Badge>
+          <Badge variant="secondary" className="text-xs bg-primary/20 text-primary border border-primary/20">Bokad</Badge>
         )}
         
         {isUserAdmin && (
-          <Badge variant={shift.available_slots_remaining > 0 ? "outline" : "destructive"} className="text-xs">
+          <Badge 
+            variant={shift.available_slots_remaining > 0 ? "outline" : "destructive"} 
+            className={`text-xs ${shift.available_slots_remaining > 0 ? 'bg-card/50' : ''}`}
+          >
             {shift.available_slots_remaining} platser kvar
           </Badge>
         )}
