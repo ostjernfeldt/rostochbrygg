@@ -76,12 +76,34 @@ export const useBookingSystemEnabled = () => {
   
   useEffect(() => {
     if (value !== undefined) {
-      // Handle the value being a string "true"/"false" or a boolean
-      setIsEnabled(value === true || value === 'true');
+      // Add console logging to see the actual value
+      console.log('Booking system enabled value:', value, 'type:', typeof value);
+      
+      // Handle various formats the value might be in
+      if (typeof value === 'boolean') {
+        setIsEnabled(value);
+      } else if (typeof value === 'string') {
+        setIsEnabled(value.toLowerCase() === 'true');
+      } else if (typeof value === 'number') {
+        setIsEnabled(value === 1);
+      } else if (value === null) {
+        setIsEnabled(false);
+      } else {
+        // For JSON values stored in Supabase
+        try {
+          const parsedValue = JSON.parse(value);
+          setIsEnabled(!!parsedValue);
+        } catch (e) {
+          // If parsing fails, treat as falsy
+          console.error('Error parsing booking system value:', e);
+          setIsEnabled(false);
+        }
+      }
     }
   }, [value]);
   
   const setEnabled = (enabled: boolean) => {
+    console.log('Setting booking system enabled to:', enabled, 'type:', typeof enabled);
     setValue(enabled);
   };
   

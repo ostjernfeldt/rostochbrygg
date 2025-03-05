@@ -42,3 +42,9 @@ export interface WeeklyBookingSummary {
   total_bookings: number;
   meets_minimum_requirement: boolean;
 }
+
+// Add a hook for getting weekly bookings by the current user
+export interface useGetWeeklyBookingsProps {
+  weekStart: Date;
+  userId?: string;
+}
