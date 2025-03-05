@@ -18,6 +18,7 @@ import Staff from "./pages/Staff";
 import StaffMember from "./pages/StaffMember";
 import HallOfFame from "./pages/HallOfFame";
 import CreateAccount from "./pages/CreateAccount";
+import Booking from "./pages/Booking";
 import { useQuery } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -180,6 +181,11 @@ const AppContent = () => {
         <Route path="/staff/:name" element={
           <PrivateRoute>
             <StaffMember />
+          </PrivateRoute>
+        } />
+        <Route path="/booking" element={
+          <PrivateRoute>
+            <Booking />
           </PrivateRoute>
         } />
         <Route path="*" element={

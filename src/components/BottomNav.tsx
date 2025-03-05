@@ -1,5 +1,5 @@
 
-import { Menu, LogOut, User } from "lucide-react";
+import { Menu, LogOut, User, Calendar } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -56,6 +56,7 @@ export const BottomNav = () => {
       { path: "/leaderboard", label: "Topplista" },
       { path: "/hall-of-fame", label: "Hall of Fame" },
       { path: "/staff", label: "Personal" },
+      { path: "/booking", label: "Bokningar" },
     ];
 
     // Only show "Idag" and "Bjud in" for admin users
