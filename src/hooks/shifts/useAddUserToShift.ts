@@ -36,7 +36,7 @@ export const useAddUserToShift = () => {
       
       if (!userId) {
         // Try to find a user from invitations with this display name
-        const { data, error: invitationError } = await supabase
+        const { data: invitationData, error: invitationError } = await supabase
           .from('invitations')
           .select('*')
           .eq('display_name', userDisplayName)
@@ -48,14 +48,15 @@ export const useAddUserToShift = () => {
           throw invitationError;
         }
         
-        if (data) {
+        if (invitationData) {
           // Create a properly typed invitation object
+          // Ensure invitationData is not null/undefined before using it
           const invitation: Invitation = {
-            id: data.id,
-            email: data.email,
-            display_name: data.display_name,
-            status: data.status,
-            created_at: data.created_at
+            id: invitationData.id,
+            email: invitationData.email, // Accessing email should now work
+            display_name: invitationData.display_name,
+            status: invitationData.status,
+            created_at: invitationData.created_at
             // updated_at is optional so we don't need to include it
           };
           
