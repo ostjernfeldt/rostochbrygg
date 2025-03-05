@@ -1,7 +1,7 @@
 
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Calendar, Clock, CheckCircle } from "lucide-react";
+import { Calendar, Clock, CheckCircle, AlertTriangle } from "lucide-react";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +32,8 @@ export function BatchBookingConfirmDialog({
   isPending
 }: BatchBookingConfirmDialogProps) {
   if (shifts.length === 0) return null;
+
+  const notEnoughShifts = shifts.length < 2;
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
@@ -72,6 +74,13 @@ export function BatchBookingConfirmDialog({
           </div>
         </ScrollArea>
         
+        {notEnoughShifts && (
+          <div className="mt-4 p-3 bg-amber-950/20 border border-amber-600/20 rounded-lg flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+            <p className="text-sm text-amber-200">Du behöver välja minst 2 pass för att kunna boka</p>
+          </div>
+        )}
+        
         <AlertDialogFooter className="mt-4">
           <AlertDialogCancel 
             className="bg-[#151A25] border-[#33333A] text-white hover:bg-[#1A1F2C] hover:text-white"
@@ -83,8 +92,8 @@ export function BatchBookingConfirmDialog({
               e.preventDefault();
               onConfirm();
             }}
-            className="bg-primary hover:bg-primary/90 text-white"
-            disabled={isPending}
+            className={`${notEnoughShifts ? 'bg-primary/50 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'} text-white`}
+            disabled={isPending || notEnoughShifts}
           >
             {isPending ? "Bokar..." : "Bekräfta bokningar"}
           </AlertDialogAction>

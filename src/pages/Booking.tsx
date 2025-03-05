@@ -13,10 +13,11 @@ import { WeeklyBookingsSummary } from '@/components/booking/WeeklyBookingsSummar
 import { useShifts, useShiftDetails } from '@/hooks/useShifts';
 import { useBookingSystemEnabled } from '@/hooks/useAppSettings';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Clock, InfoIcon, Settings, User, X, Check } from 'lucide-react';
+import { Calendar, Clock, InfoIcon, Settings, User, X, Check, AlertTriangle } from 'lucide-react';
 import { PageLayout } from '@/components/PageLayout';
 import { BatchBookingConfirmDialog } from '@/components/booking/BatchBookingConfirmDialog';
 import { useBatchBookShifts } from '@/hooks/useShiftBookings';
+import { toast } from "@/hooks/use-toast";
 
 export default function Booking() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -117,6 +118,18 @@ export default function Booking() {
         setSelectedShifts([]);
       }
     });
+  };
+
+  const handleOpenBookingDialog = () => {
+    if (selectedShifts.length < 2) {
+      toast({
+        title: "För få pass valda",
+        description: "Du behöver välja minst 2 pass för att kunna boka",
+        variant: "destructive",
+      });
+      return;
+    }
+    setConfirmDialogOpen(true);
   };
 
   const processedShifts: ShiftWithBookings[] = shifts.map(shift => {
@@ -230,12 +243,27 @@ export default function Booking() {
               </div>
             </div>
             
-            {selectedShifts.length > 0 && <div className="mb-4 flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg">
-                <span className="text-sm">{selectedShifts.length} pass valda</span>
-                <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={() => setConfirmDialogOpen(true)}>
+            {selectedShifts.length > 0 && (
+              <div className="mb-4 flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">{selectedShifts.length} pass valda</span>
+                  {selectedShifts.length < 2 && (
+                    <div className="flex items-center gap-1 bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded text-xs">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      <span>Minst 2 krävs</span>
+                    </div>
+                  )}
+                </div>
+                <Button 
+                  size="sm" 
+                  className={`${selectedShifts.length < 2 ? 'bg-primary/50 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'}`}
+                  onClick={handleOpenBookingDialog}
+                  disabled={selectedShifts.length < 2}
+                >
                   Boka valda pass
                 </Button>
-              </div>}
+              </div>
+            )}
             
             <div className="space-y-2">
               {shiftsLoading ? <div className="space-y-3">
