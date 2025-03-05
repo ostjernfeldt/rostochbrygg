@@ -211,19 +211,7 @@ export default function Booking() {
           
           <WeeklyBookingsSummary />
           
-          <div className="mt-8 bg-amber-950/30 border border-amber-800/50 rounded-lg p-4 mb-8 shadow-md">
-            <div className="flex gap-3">
-              <InfoIcon className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="font-medium text-amber-400 mb-1">Viktigt om bokningar</h3>
-                <p className="text-sm text-muted-foreground">
-                  Kom ihåg att boka minst 2 pass per vecka. Om du behöver avboka ett pass måste du kontakta din säljledare direkt.
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          {userBookedShifts.length > 0 && <div className="mt-0 mb-6">
+          {userBookedShifts.length > 0 && <div className="mt-8 mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <Clock className="h-5 w-5 text-primary" />
                 <h2 className="font-medium text-base">Dina pass</h2>
