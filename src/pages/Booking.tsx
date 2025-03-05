@@ -17,6 +17,7 @@ import { Calendar, Clock, InfoIcon, Settings, User, X, Check } from 'lucide-reac
 import { PageLayout } from '@/components/PageLayout';
 import { BatchBookingConfirmDialog } from '@/components/booking/BatchBookingConfirmDialog';
 import { useBatchBookShifts } from '@/hooks/useShiftBookings';
+
 export default function Booking() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
@@ -53,6 +54,7 @@ export default function Booking() {
     mutate: batchBookShifts,
     isPending: isBatchBooking
   } = useBatchBookShifts();
+
   useEffect(() => {
     const checkUserSession = async () => {
       const {
@@ -92,10 +94,12 @@ export default function Booking() {
     };
     checkUserSession();
   }, [navigate]);
+
   const handleViewShiftDetails = (shiftId: string) => {
     setSelectedShiftId(shiftId);
     setDialogOpen(true);
   };
+
   const handleSelectShift = (shiftId: string) => {
     setSelectedShifts(prevSelected => {
       if (prevSelected.includes(shiftId)) {
@@ -105,6 +109,7 @@ export default function Booking() {
       }
     });
   };
+
   const handleConfirmBookings = () => {
     batchBookShifts(selectedShifts, {
       onSuccess: () => {
@@ -113,6 +118,7 @@ export default function Booking() {
       }
     });
   };
+
   const processedShifts: ShiftWithBookings[] = shifts.map(shift => {
     return {
       ...shift,
@@ -121,7 +127,9 @@ export default function Booking() {
       is_booked_by_current_user: shift.is_booked_by_current_user || false
     };
   });
+
   const selectedShiftsData: ShiftWithBookings[] = processedShifts.filter(shift => selectedShifts.includes(shift.id));
+
   const shiftsByDate = processedShifts.reduce((acc, shift) => {
     const date = shift.date;
     if (!acc[date]) {
@@ -130,7 +138,9 @@ export default function Booking() {
     acc[date].push(shift);
     return acc;
   }, {} as Record<string, ShiftWithBookings[]>);
+
   const userBookedShifts = processedShifts.filter(shift => shift.is_booked_by_current_user);
+
   const renderContent = () => {
     if (!user) return null;
     if (isAdmin) {
@@ -197,13 +207,23 @@ export default function Booking() {
       }
       return <div className="max-w-md mx-auto">
           <div className="flex items-center gap-2 mb-6">
-            
-            
           </div>
           
           <WeeklyBookingsSummary />
           
-          {userBookedShifts.length > 0 && <div className="mt-8 mb-6">
+          <div className="mt-8 bg-amber-950/30 border border-amber-800/50 rounded-lg p-4 mb-8 shadow-md">
+            <div className="flex gap-3">
+              <InfoIcon className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-medium text-amber-400 mb-1">Viktigt om bokningar</h3>
+                <p className="text-sm text-muted-foreground">
+                  Kom ihåg att boka minst 2 pass per vecka. Om du behöver avboka ett pass måste du kontakta din säljledare direkt.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {userBookedShifts.length > 0 && <div className="mt-0 mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <Clock className="h-5 w-5 text-primary" />
                 <h2 className="font-medium text-base">Dina pass</h2>
@@ -220,7 +240,6 @@ export default function Booking() {
                 <Calendar className="h-5 w-5 text-primary" />
                 <h2 className="font-medium text-base">Tillgängliga pass</h2>
               </div>
-              
             </div>
             
             {selectedShifts.length > 0 && <div className="mb-4 flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg">
@@ -241,21 +260,10 @@ export default function Booking() {
                 </div>}
             </div>
           </div>
-          
-          <div className="mt-8 bg-amber-950/30 border border-amber-800/50 rounded-lg p-4 mb-8 shadow-md">
-            <div className="flex gap-3">
-              <InfoIcon className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="font-medium text-amber-400 mb-1">Viktigt om bokningar</h3>
-                <p className="text-sm text-muted-foreground">
-                  Kom ihåg att boka minst 2 pass per vecka. Om du behöver avboka ett pass måste du kontakta din säljledare direkt.
-                </p>
-              </div>
-            </div>
-          </div>
         </div>;
     }
   };
+
   return <PageLayout>
       {renderContent()}
       
