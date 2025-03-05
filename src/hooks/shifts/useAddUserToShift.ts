@@ -51,15 +51,8 @@ export const useAddUserToShift = () => {
         if (invitationData) {
           console.log('Found invitation data:', invitationData);
           
-          // Type assertion to ensure TypeScript knows the shape of the data
-          // This prevents the "Property 'email' does not exist on type 'never'" error
-          const typedInvitation = invitationData as {
-            id: string;
-            email: string;
-            display_name: string;
-            status: string;
-            created_at: string;
-          };
+          // Type assertion for the invitation data - explicitly define all properties we know exist
+          const typedInvitation = invitationData as Invitation;
           
           // Find the user ID from auth.users table using the email
           const { data: authUserData, error: authError } = await supabase.auth
