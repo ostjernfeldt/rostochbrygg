@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
-import { Invitation } from '@/components/invite/types';
+import { Invitation } from '@/types/booking';
 
 export const useAddUserToShift = () => {
   const queryClient = useQueryClient();
