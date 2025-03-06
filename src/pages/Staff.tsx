@@ -19,7 +19,7 @@ const Staff = () => {
       console.log("Fetching staff members data...");
       
       try {
-        // Fetch all staff roles without any role-based filtering
+        // Fetch all staff roles including hidden staff members
         const rolesResponse = await supabase
           .from("staff_roles")
           .select("*");
@@ -53,7 +53,7 @@ const Staff = () => {
         // Initialize staff stats from roles data
         const staffStats: { [key: string]: StaffMemberStats } = {};
         
-        // Create base stats for all staff members from roles
+        // Create base stats for all staff members from roles, including hidden ones
         roles.forEach(roleData => {
           const displayName = roleData.user_display_name;
           staffStats[displayName] = {
@@ -66,7 +66,8 @@ const Staff = () => {
             averageAmount: 0,
             daysActive: 0,
             salesCount: 0,
-            sales: []
+            sales: [],
+            hidden: roleData.hidden || false // Track hidden status for UI filtering if needed
           };
         });
         
@@ -115,8 +116,9 @@ const Staff = () => {
           });
         }
         
-        // Convert to array and return
-        return Object.values(staffStats);
+        // Convert to array, but filter out hidden staff for display
+        // Note: We could move this filtering to the UI if we want to add a toggle to show/hide
+        return Object.values(staffStats).filter(staff => !staff.hidden);
       } catch (error) {
         console.error("Error in staffMembers query:", error);
         return [];

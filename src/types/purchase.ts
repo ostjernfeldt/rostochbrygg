@@ -87,4 +87,5 @@ export interface StaffMemberStats {
   totalSales?: number;
   sales: TotalPurchase[];
   historicalPoints?: number; // Add this to store historical manual points
+  hidden?: boolean; // Add hidden flag to track if staff should be visible in UI
 }

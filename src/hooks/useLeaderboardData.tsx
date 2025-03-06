@@ -10,6 +10,7 @@ interface UserSales {
   "User Display Name": string;
   points: number;
   salesCount: number;
+  hidden?: boolean; // Add hidden flag to track status
 }
 
 // Defining a union type for the supported time periods
@@ -64,15 +65,21 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             throw new Error(`Unsupported time period: ${type}`);
         }
 
-        // Get all staff members - removed any role-based filtering
+        // Get all staff members including hidden ones - without any filtering
         const { data: allStaff, error: staffError } = await supabase
           .from("staff_roles")
-          .select("user_display_name");
+          .select("*");
 
         if (staffError) {
           console.error("Error fetching staff:", staffError);
           throw staffError;
         }
+
+        // Create a map of staff names to their hidden status
+        const staffMap = new Map<string, boolean>();
+        allStaff.forEach(staff => {
+          staffMap.set(staff.user_display_name, !!staff.hidden);
+        });
 
         const allStaffNames = new Set(allStaff.map(s => s.user_display_name));
         
@@ -81,7 +88,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           return { [type + 'Leaders']: [] as UserSales[] };
         }
 
-        // Get all relevant sales within the date range - removed any role-based filtering
+        // Get all relevant sales within the date range - without any filtering
         const { data: sales, error: salesError } = await supabase
           .from("total_purchases")
           .select("*")
@@ -135,7 +142,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           endDate.setHours(23, 59, 59, 999);
           useLatestDate = true;
           
-          // Fetch sales for this latest date - removed any role-based filtering
+          // Fetch sales for this latest date - without any filtering
           const { data: latestSales, error: latestSalesError } = await supabase
             .from("total_purchases")
             .select("*")
@@ -155,20 +162,26 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           }
           
           // Calculate leaders with the latest sales
-          const leaders = calculateLeaders(latestSales, allStaffNames);
+          const leaders = calculateLeaders(latestSales, allStaffNames, staffMap);
+          
+          // Filter out hidden staff for display purposes
+          const visibleLeaders = leaders.filter(leader => !leader.hidden);
           
           return { 
-            [type + 'Leaders']: leaders, 
+            [type + 'Leaders']: visibleLeaders,
             latestDate: startDate.toISOString() 
           };
         }
 
         // Calculate leaders with the originally requested date range
-        const leaders = calculateLeaders(sales, allStaffNames);
+        const leaders = calculateLeaders(sales, allStaffNames, staffMap);
+        
+        // Filter out hidden staff for display purposes
+        const visibleLeaders = leaders.filter(leader => !leader.hidden);
         
         // Create result object based on the requested type
         return { 
-          [type + 'Leaders']: leaders,
+          [type + 'Leaders']: visibleLeaders,
           latestDate: useLatestDate ? startDate.toISOString() : null 
         } as LeaderboardData;
       } catch (error) {
@@ -179,14 +192,18 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
   });
 };
 
-// Simplified leader calculation
-const calculateLeaders = (sales: TotalPurchase[] | null, staffNames: Set<string>): UserSales[] => {
+// Updated leader calculation to include hidden status
+const calculateLeaders = (
+  sales: TotalPurchase[] | null, 
+  staffNames: Set<string>,
+  staffHiddenMap: Map<string, boolean>
+): UserSales[] => {
   if (!sales || sales.length === 0) {
     return [];
   }
   
   // Process sales only once and track totals by user
-  const userTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[] }> = {};
+  const userTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[], hidden: boolean }> = {};
   
   // Process transactions once
   const processedSales = processTransactions(sales);
@@ -200,7 +217,8 @@ const calculateLeaders = (sales: TotalPurchase[] | null, staffNames: Set<string>
       userTotals[name] = {
         points: 0,
         salesCount: 0,
-        sales: []
+        sales: [],
+        hidden: staffHiddenMap.get(name) || false // Get hidden status from map
       };
     }
     
@@ -214,7 +232,8 @@ const calculateLeaders = (sales: TotalPurchase[] | null, staffNames: Set<string>
       return {
         "User Display Name": name,
         points: calculateTotalPoints(data.sales),
-        salesCount: getValidSalesCount(data.sales)
+        salesCount: getValidSalesCount(data.sales),
+        hidden: data.hidden // Include hidden status
       };
     })
     .sort((a, b) => b.points - a.points);
