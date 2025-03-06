@@ -80,14 +80,22 @@ const useUserRole = () => {
 interface PrivateRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  // New property to bypass authentication for specific routes
+  bypassAuth?: boolean;
 }
 
-const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => {
+const PrivateRoute = ({ children, requireAdmin = false, bypassAuth = false }: PrivateRouteProps) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const { data: userRole, isLoading: isRoleLoading, refetch } = useUserRole();
 
   useEffect(() => {
+    // If this route bypasses authentication, don't check session
+    if (bypassAuth) {
+      setIsAuthenticated(true);
+      return;
+    }
+
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -122,7 +130,12 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, refetch]);
+  }, [navigate, refetch, bypassAuth]);
+
+  // For routes that bypass auth, we don't need to show loading state
+  if (bypassAuth) {
+    return <>{children}</>;
+  }
 
   // Add a loading state to prevent flashing of unauthorized content
   if (isAuthenticated === null || (isAuthenticated && isRoleLoading)) {
@@ -174,30 +187,16 @@ const AppContent = () => {
           </PrivateRoute>
         } />
         
-        {/* Routes for all authenticated users */}
-        <Route path="/leaderboard" element={
-          <PrivateRoute>
-            <Leaderboard />
-          </PrivateRoute>
-        } />
-        <Route path="/hall-of-fame" element={
-          <PrivateRoute>
-            <HallOfFame />
-          </PrivateRoute>
-        } />
+        {/* Routes for all users - bypassing authentication */}
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/hall-of-fame" element={<HallOfFame />} />
+        <Route path="/staff" element={<Staff />} />
+        <Route path="/staff/:name" element={<StaffMember />} />
+        
+        {/* Routes that still require authentication */}
         <Route path="/transactions" element={
           <PrivateRoute>
             <TransactionList />
-          </PrivateRoute>
-        } />
-        <Route path="/staff" element={
-          <PrivateRoute>
-            <Staff />
-          </PrivateRoute>
-        } />
-        <Route path="/staff/:name" element={
-          <PrivateRoute>
-            <StaffMember />
           </PrivateRoute>
         } />
         <Route path="/booking" element={

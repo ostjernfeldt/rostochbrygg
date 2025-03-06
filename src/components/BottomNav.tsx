@@ -36,35 +36,67 @@ export const BottomNav = () => {
   const { data: userRole } = useUserRole();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
     const getUserInfo = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      
       if (user) {
+        setIsAuthenticated(true);
         setUserEmail(user.email);
         if (user.user_metadata?.username) {
           setUsername(user.user_metadata.username);
         }
+      } else {
+        setIsAuthenticated(false);
       }
     };
     
     getUserInfo();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        getUserInfo();
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setUserEmail(null);
+        setUsername(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // Define menu items based on user role
-  const menuItems = [
-    { path: "/leaderboard", label: "Topplista", showFor: ["admin", "user"] },
-    { path: "/hall-of-fame", label: "Hall of Fame", showFor: ["admin", "user"] },
-    { path: "/staff", label: "Personal", showFor: ["admin", "user"] },
+  // Define always visible menu items
+  const publicMenuItems = [
+    { path: "/leaderboard", label: "Topplista", showFor: ["public"] },
+    { path: "/hall-of-fame", label: "Hall of Fame", showFor: ["public"] },
+    { path: "/staff", label: "Personal", showFor: ["public"] },
+  ];
+  
+  // Define menu items that require authentication
+  const authMenuItems = [
     { path: "/booking", label: "Bokningar", showFor: ["admin", "user"] },
   ];
   
   // Only admins can see "Idag" and "Bjud in" pages
-  if (userRole === 'admin') {
-    // Add "Idag" as the first item for admins
-    menuItems.unshift({ path: "/", label: "Idag", showFor: ["admin"] });
-    // Add "Bjud in" as the last item for admins
-    menuItems.push({ path: "/invite", label: "Bjud in", showFor: ["admin"] });
+  const adminMenuItems = [
+    { path: "/", label: "Idag", showFor: ["admin"] },
+    { path: "/invite", label: "Bjud in", showFor: ["admin"] },
+  ];
+
+  // Combine menu items based on authentication state
+  let menuItems = [...publicMenuItems];
+  
+  if (isAuthenticated) {
+    menuItems = [...menuItems, ...authMenuItems];
+    
+    if (userRole === 'admin') {
+      menuItems = [...adminMenuItems, ...menuItems];
+    }
   }
 
   const handleSignOut = async () => {
@@ -86,11 +118,6 @@ export const BottomNav = () => {
     }
   };
 
-  // Filter menu items based on user role
-  const filteredMenuItems = menuItems.filter(item => 
-    item.showFor.includes(userRole || 'user')
-  );
-
   return (
     <div className="fixed top-4 left-4 z-50">
       <Sheet open={open} onOpenChange={setOpen}>
@@ -100,7 +127,7 @@ export const BottomNav = () => {
           </button>
         </SheetTrigger>
         <SheetContent side="left" className="w-[250px] bg-card border-r border-gray-800">
-          {(username || userEmail) && (
+          {isAuthenticated && (username || userEmail) && (
             <div className="border-b border-gray-800 py-4 mb-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
@@ -119,7 +146,7 @@ export const BottomNav = () => {
           )}
           
           <nav className="flex flex-col gap-2 mt-8">
-            {filteredMenuItems.map((item) => (
+            {menuItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => {
@@ -135,16 +162,31 @@ export const BottomNav = () => {
                 {item.label}
               </button>
             ))}
-            <button
-              onClick={() => {
-                handleSignOut();
-                setOpen(false);
-              }}
-              className="p-3 text-left rounded-lg transition-colors text-gray-400 hover:bg-card/80 mt-4 flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Logga ut
-            </button>
+            
+            {isAuthenticated && (
+              <button
+                onClick={() => {
+                  handleSignOut();
+                  setOpen(false);
+                }}
+                className="p-3 text-left rounded-lg transition-colors text-gray-400 hover:bg-card/80 mt-4 flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logga ut
+              </button>
+            )}
+            
+            {!isAuthenticated && (
+              <button
+                onClick={() => {
+                  navigate("/login");
+                  setOpen(false);
+                }}
+                className="p-3 text-left rounded-lg transition-colors text-gray-400 hover:bg-card/80 mt-4"
+              >
+                Logga in
+              </button>
+            )}
           </nav>
         </SheetContent>
       </Sheet>
