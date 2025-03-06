@@ -54,6 +54,7 @@ export const BottomNav = () => {
   }, []);
 
   const getMenuItems = () => {
+    // All users should have access to these menu items
     const baseItems = [
       { path: "/leaderboard", label: "Topplista" },
       { path: "/hall-of-fame", label: "Hall of Fame" },

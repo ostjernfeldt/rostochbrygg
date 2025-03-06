@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -60,7 +61,7 @@ const useUserRole = () => {
     },
     staleTime: 1000 * 60 * 5,
     retry: 3,
-    enabled: false
+    enabled: true
   });
 };
 
@@ -142,6 +143,7 @@ const BookingRoute = ({ children }: { children: React.ReactNode }) => {
   
   if (isLoading || isRoleLoading) return null;
   
+  // If booking system is disabled and user is not admin, redirect to leaderboard
   if (!isEnabled && userRole !== 'admin') {
     console.log("Booking system disabled and user is not admin, redirecting to leaderboard");
     return <Navigate to="/leaderboard" replace />;
