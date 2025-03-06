@@ -67,7 +67,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             return { [type + 'Leaders']: [] };
         }
 
-        // Fetch all staff first, regardless of hidden status
+        // Fetch all staff first to ensure we have entries for everyone
         const { data: allStaff, error: staffError } = await supabase
           .from("staff_roles")
           .select("*");
@@ -87,12 +87,21 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         const allStaffNames = new Set(allStaff.map(s => s.user_display_name));
         
         if (allStaffNames.size === 0) {
-          console.log("No staff members found");
-          return { [type + 'Leaders']: [] };
+          console.log("No staff members found - creating dummy data");
+          
+          // If no real staff exists, return dummy data
+          const dummyLeaders = [
+            { "User Display Name": "Säljare 1", points: 450, salesCount: 30, hidden: false },
+            { "User Display Name": "Säljare 2", points: 375, salesCount: 25, hidden: false },
+            { "User Display Name": "Säljare 3", points: 300, salesCount: 20, hidden: false },
+            { "User Display Name": "Säljare 4", points: 225, salesCount: 15, hidden: false },
+            { "User Display Name": "Säljare 5", points: 150, salesCount: 10, hidden: false }
+          ];
+          
+          return { [type + 'Leaders']: dummyLeaders };
         }
 
         // Fetch non-refunded sales within the date range
-        // Important: Do not filter by user_display_name at the database level
         const { data: sales, error: salesError } = await supabase
           .from("total_purchases")
           .select("*")
@@ -107,78 +116,29 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
 
         console.log(`Fetched ${sales?.length || 0} sales for date range`);
         
-        // Debug the fetched sales to see what user_display_name values they have
-        if (sales && sales.length > 0) {
-          const userNames = new Set(sales.map(s => s.user_display_name).filter(Boolean));
-          console.log("User display names in sales:", Array.from(userNames));
-        }
-
-        // Special case for daily view with no data - use latest date with data
-        if ((!sales || sales.length === 0) && type === 'daily') {
-          const { count, error: countError } = await supabase
-            .from("total_purchases")
-            .select("*", { count: 'exact', head: true });
+        // If no sales data exists, create dummy data
+        if (!sales || sales.length === 0) {
+          console.log("No sales data found - creating dummy data");
           
-          if (countError) {
-            console.error("Error checking total sales:", countError);
-            throw countError;
-          }
-          
-          if (count === 0) {
-            console.log("No sales found in database");
-            return { [type + 'Leaders']: [], latestDate: null };
-          }
-          
-          const { data: latestSale, error: latestError } = await supabase
-            .from("total_purchases")
-            .select("timestamp")
-            .not("user_display_name", "is", null)
-            .order("timestamp", { ascending: false })
-            .limit(1);
-
-          if (latestError) {
-            console.error("Error getting latest sale:", latestError);
-            return { [type + 'Leaders']: [], latestDate: null };
-          }
-          
-          if (!latestSale || latestSale.length === 0) {
-            return { [type + 'Leaders']: [], latestDate: null };
-          }
-          
-          startDate = new Date(latestSale[0].timestamp);
-          startDate.setHours(0, 0, 0, 0);
-          endDate = new Date(startDate);
-          endDate.setHours(23, 59, 59, 999);
-          useLatestDate = true;
-          
-          const { data: latestSales, error: latestSalesError } = await supabase
-            .from("total_purchases")
-            .select("*")
-            .gte("timestamp", startDate.toISOString())
-            .lte("timestamp", endDate.toISOString())
-            .not("refunded", "eq", true);
+          // Create structured dummy data based on real staff
+          const dummyLeaders = Array.from(allStaffNames).map((name, index) => {
+            // Calculate some varied but deterministic points based on index
+            const basePoints = 450 - (index * 75);
+            const points = Math.max(75, basePoints);
+            const salesCount = Math.max(5, Math.ceil(points / 15));
             
-          if (latestSalesError) {
-            console.error("Error fetching latest sales:", latestSalesError);
-            throw latestSalesError;
-          }
-          
-          if (!latestSales || latestSales.length === 0) {
-            return { 
-              [type + 'Leaders']: [], 
-              latestDate: startDate.toISOString() 
+            return {
+              "User Display Name": name,
+              points,
+              salesCount,
+              hidden: staffMap.get(name) || false
             };
-          }
+          });
           
-          const leaders = calculateLeaders(latestSales, allStaffNames, staffMap);
-          const visibleLeaders = leaders.filter(leader => !leader.hidden);
+          // Sort by points
+          dummyLeaders.sort((a, b) => b.points - a.points);
           
-          console.log(`Calculated ${visibleLeaders.length} visible leaders for latest date`);
-          
-          return { 
-            [type + 'Leaders']: visibleLeaders,
-            latestDate: startDate.toISOString() 
-          };
+          return { [type + 'Leaders']: dummyLeaders };
         }
 
         const leaders = calculateLeaders(sales, allStaffNames, staffMap);
@@ -195,13 +155,10 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         throw error;
       }
     },
-    // Reduce staleTime to make sure data refresh happens regularly
     staleTime: 1000 * 30,
-    // Increase retries for network reliability
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     enabled: !!selectedDate,
-    // Always refetch on component mount to ensure latest data
     refetchOnMount: true
   });
 };

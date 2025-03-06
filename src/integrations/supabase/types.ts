@@ -500,6 +500,7 @@ export type Database = {
       staff_roles: {
         Row: {
           created_at: string | null
+          email: string | null
           hidden: boolean
           id: string
           role: string
@@ -508,6 +509,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          email?: string | null
           hidden?: boolean
           id?: string
           role?: string
@@ -516,6 +518,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          email?: string | null
           hidden?: boolean
           id?: string
           role?: string
@@ -709,6 +712,10 @@ export type Database = {
           user_id: string
         }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      link_staff_to_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       mark_invitation_used: {
         Args: {

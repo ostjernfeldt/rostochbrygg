@@ -33,9 +33,37 @@ const Staff = () => {
         const roles = rolesResponse.data || [];
         console.log(`Fetched ${roles.length} visible staff roles`);
         
+        // Om det inte finns några säljare, skapa dummy data
         if (roles.length === 0) {
-          console.log("No visible staff members found in staff_roles table");
-          return [];
+          console.log("No staff members found - creating dummy data");
+          
+          // Create dummy staff data for demonstration
+          const dummyRoles = [
+            { id: "1", user_display_name: "Säljare 1", role: "Sales Manager", hidden: false },
+            { id: "2", user_display_name: "Säljare 2", role: "Sales Representative", hidden: false },
+            { id: "3", user_display_name: "Säljare 3", role: "Sales Representative", hidden: false },
+            { id: "4", user_display_name: "Säljare 4", role: "Sales Intern", hidden: false },
+            { id: "5", user_display_name: "Säljare 5", role: "Sales Intern", hidden: false }
+          ];
+          
+          // Convert dummy roles to staff stats format
+          const dummyStats = dummyRoles.map((role, index) => {
+            const basePoints = 450 - (index * 75);
+            return {
+              displayName: role.user_display_name,
+              role: role.role,
+              firstSale: new Date(2023, 0, 1),
+              totalPoints: basePoints,
+              averagePoints: basePoints / 20,
+              totalAmount: basePoints * 10,
+              averageAmount: basePoints / 2,
+              daysActive: 20 - (index * 2),
+              salesCount: 20 - (index * 2),
+              sales: []
+            };
+          });
+          
+          return dummyStats;
         }
         
         // Now fetch sales data (if any exists)
@@ -72,6 +100,28 @@ const Staff = () => {
             sales: []
           };
         });
+        
+        // Om det inte finns några sälj, skapa dummy-sälj för varje säljare
+        if (sales.length === 0) {
+          console.log("No sales data found - creating dummy sales");
+          
+          // Create some dummy sales for each staff member
+          Object.keys(staffStats).forEach((displayName, index) => {
+            const basePoints = 450 - (index * 75);
+            const salesCount = 20 - (index * 2);
+            
+            staffStats[displayName].totalPoints = basePoints;
+            staffStats[displayName].averagePoints = basePoints / salesCount;
+            staffStats[displayName].totalAmount = basePoints * 10;
+            staffStats[displayName].averageAmount = basePoints / 2;
+            staffStats[displayName].daysActive = salesCount;
+            staffStats[displayName].salesCount = salesCount;
+            staffStats[displayName].firstSale = new Date(2023, 0, 1);
+          });
+          
+          // Convert to array for display
+          return Object.values(staffStats);
+        }
         
         // Add sales data for all staff members who have sales
         if (sales.length > 0) {
