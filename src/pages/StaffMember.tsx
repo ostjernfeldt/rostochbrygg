@@ -8,6 +8,7 @@ import { StaffStats } from "@/components/staff/StaffStats";
 import { StaffMemberStats, TotalPurchase } from "@/types/purchase";
 import { processTransactions } from "@/components/transactions/TransactionProcessor";
 import { calculatePoints, calculateTotalPoints } from "@/utils/pointsCalculation";
+import { useEffect } from "react";
 
 const StaffMember = () => {
   const { name } = useParams();
@@ -55,6 +56,8 @@ const StaffMember = () => {
       if (salesError) {
         console.error("Error fetching sales:", salesError);
       }
+
+      console.log(`Fetched ${sales?.length || 0} sales for ${name}`);
 
       // Initialize default values for a staff member without sales
       let validSales: TotalPurchase[] = [];
@@ -157,8 +160,17 @@ const StaffMember = () => {
         highestSale: highestSingleSale,
         worstDay
       };
-    }
+    },
+    staleTime: 1000 * 60 * 5, // Add stale time to prevent unnecessary refetches
+    retry: 3 // Add retry to handle network issues
   });
+
+  // Add debug logging
+  useEffect(() => {
+    if (memberData) {
+      console.log("Staff member data loaded:", memberData.displayName);
+    }
+  }, [memberData]);
 
   if (isLoading) {
     return (

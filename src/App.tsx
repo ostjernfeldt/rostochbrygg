@@ -187,7 +187,7 @@ const AppContent = () => {
           </PrivateRoute>
         } />
         
-        {/* Routes for all users - bypassing authentication */}
+        {/* Routes for all users - no authentication required */}
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/hall-of-fame" element={<HallOfFame />} />
         <Route path="/staff" element={<Staff />} />

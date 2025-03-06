@@ -28,13 +28,14 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
   return useQuery({
     queryKey: ["challengeLeaders", type, selectedDate],
     queryFn: async (): Promise<LeaderboardData> => {
-      console.log(`Fetching ${type} challenge leaders from total_purchases...`);
+      console.log(`Fetching ${type} challenge leaders using date: ${selectedDate}`);
       
       try {
         // Parse the selectedDate once to ensure proper date handling
         let parsedDate;
         try {
           parsedDate = parseISO(selectedDate);
+          console.log(`Parsed date: ${parsedDate.toISOString()}`);
         } catch (error) {
           console.error("Invalid date format:", selectedDate, error);
           return { [type + 'Leaders']: [] as UserSales[] };
@@ -55,11 +56,13 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           case 'weekly':
             startDate = startOfWeek(parsedDate);
             endDate = endOfWeek(parsedDate);
+            console.log(`Weekly date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
             break;
           case 'monthly':
             const [year, month] = selectedDate.split('-').map(Number);
             startDate = startOfMonth(new Date(year, month - 1));
             endDate = endOfMonth(startDate);
+            console.log(`Monthly date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
             break;
           default:
             throw new Error(`Unsupported time period: ${type}`);
@@ -74,6 +77,8 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           console.error("Error fetching staff:", staffError);
           throw staffError;
         }
+
+        console.log(`Fetched ${allStaff?.length || 0} staff members`);
 
         // Create a map of staff names to their hidden status
         const staffMap = new Map<string, boolean>();
@@ -101,6 +106,8 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           console.error("Error fetching sales:", salesError);
           throw salesError;
         }
+
+        console.log(`Fetched ${sales?.length || 0} sales in date range`);
 
         // If no sales are found for the selected date range and we need the latest date
         if ((!sales || sales.length === 0) && type === 'daily') {
@@ -179,6 +186,8 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         // Filter out hidden staff for display purposes
         const visibleLeaders = leaders.filter(leader => !leader.hidden);
         
+        console.log(`${type} leaders found: ${visibleLeaders.length}`);
+        
         // Create result object based on the requested type
         return { 
           [type + 'Leaders']: visibleLeaders,
@@ -189,8 +198,10 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         return { [type + 'Leaders']: [] as UserSales[] };
       }
     },
-    staleTime: 1000 * 60 * 5, // Add a staleTime to prevent unnecessary refetches
-    retry: 3  // Add retries for network failures
+    staleTime: 1000 * 60 * 5, // 5 minute stale time to prevent unnecessary refetches
+    retry: 3,  // Add retries for network failures
+    // Ensure query is always enabled
+    enabled: !!selectedDate
   });
 };
 

@@ -14,8 +14,10 @@ const Leaderboard = () => {
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [previousMonthsWithData, setPreviousMonthsWithData] = useState<string[]>([]);
 
-  // Handle dates loaded from the server - identical for both user types
+  // Handle dates loaded from the server
   const handleDatesLoaded = (dates: string[]) => {
+    console.log("Dates loaded:", dates);
+    
     // If there are dates, set the selected week to the latest date
     if (dates.length > 0 && !selectedWeek) {
       console.log("Latest sale date:", dates[0]);
@@ -40,7 +42,7 @@ const Leaderboard = () => {
     setPreviousMonthsWithData(Array.from(monthsWithData).sort().reverse()); // Sort descending
   };
 
-  // Fetch dates with sales activity
+  // Fetch dates with sales activity - explicitly enable the query
   const { data: salesDates } = useLeaderboardDates(handleDatesLoaded);
 
   // Generate weeks based on sales dates or current date if no sales
@@ -67,7 +69,7 @@ const Leaderboard = () => {
     };
   });
 
-  // Fetch leaderboard data for each time period - identical for both user types
+  // Fetch leaderboard data for each time period - make sure enabled is true
   const { data: weeklyLeaderboard, isLoading: isWeeklyLoading } = useLeaderboardData('weekly', selectedWeek);
   const { 
     data: monthlyLeaderboard, 
@@ -95,6 +97,12 @@ const Leaderboard = () => {
       }
     }
   }, [monthlyLeaderboard, isMonthlyLoading, previousMonthsWithData, selectedMonth]);
+
+  // Debug logs to track data loading
+  useEffect(() => {
+    console.log("Weekly leaderboard data:", weeklyLeaderboard);
+    console.log("Monthly leaderboard data:", monthlyLeaderboard);
+  }, [weeklyLeaderboard, monthlyLeaderboard]);
 
   return (
     <PageLayout>

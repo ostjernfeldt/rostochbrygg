@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { PageLayout } from "@/components/PageLayout";
 import { StaffMemberStats } from "@/types/purchase";
 import { calculatePoints } from "@/utils/pointsCalculation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Staff = () => {
   const navigate = useNavigate();
@@ -30,6 +30,7 @@ const Staff = () => {
         }
         
         const roles = rolesResponse.data || [];
+        console.log(`Fetched ${roles.length} staff roles`);
         
         if (roles.length === 0) {
           console.log("No staff members found in staff_roles table");
@@ -49,6 +50,7 @@ const Staff = () => {
         }
         
         const sales = salesResponse.data || [];
+        console.log(`Fetched ${sales.length} sales records`);
         
         // Initialize staff stats from roles data
         const staffStats: { [key: string]: StaffMemberStats } = {};
@@ -127,6 +129,13 @@ const Staff = () => {
     staleTime: 1000 * 60 * 5, // Add staleTime to prevent unnecessary refetches
     retry: 3 // Add retry to handle network issues
   });
+
+  // Add debug logging to track data loading
+  useEffect(() => {
+    if (staffMembers) {
+      console.log(`Loaded ${staffMembers.length} visible staff members`);
+    }
+  }, [staffMembers]);
 
   if (error) {
     console.error("Error loading staff data:", error);
