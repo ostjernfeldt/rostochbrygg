@@ -15,16 +15,22 @@ export const useBookShift = () => {
 
       console.log('Booking shift for user:', user.id, user.email);
 
-      // First check if user already has a booking for this shift
-      const { data: existingBookings, error: bookingCheckError } = await supabase
+      // First check if user already has a CONFIRMED booking for this shift
+      const { data: existingConfirmedBookings, error: bookingCheckError } = await supabase
         .from('shift_bookings')
         .select('*')
         .eq('shift_id', shiftId)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('status', 'confirmed');
 
       if (bookingCheckError) {
         console.error('Error checking existing bookings:', bookingCheckError);
         throw bookingCheckError;
+      }
+
+      // If user already has a confirmed booking, prevent rebooking
+      if (existingConfirmedBookings && existingConfirmedBookings.length > 0) {
+        throw new Error('Du har redan bokat detta pass');
       }
 
       // Get the user's display name from staff_roles table by matching email
@@ -49,59 +55,24 @@ export const useBookShift = () => {
       let data;
       let error;
 
-      if (existingBookings && existingBookings.length > 0) {
-        // If there's an existing booking, update its status to 'confirmed'
-        const existingBooking = existingBookings[0];
-        if (existingBooking.status === 'confirmed') {
-          throw new Error('Du har redan bokat detta pass');
-        }
-
-        console.log('Updating existing booking:', existingBooking.id);
-        
-        // Update the existing booking to confirmed status with explicit returning
-        const result = await supabase
-          .from('shift_bookings')
-          .update({ 
-            status: 'confirmed',
-            user_display_name: displayName
-          })
-          .eq('id', existingBooking.id)
-          .select();
-        
-        data = result.data && result.data.length > 0 ? result.data[0] : null;
-        error = result.error;
-        
-        // If no data was returned but the update was successful
-        if (!data && !error) {
-          data = {
-            ...existingBooking,
-            status: 'confirmed',
-            user_display_name: displayName,
-            updated_at: new Date().toISOString()
-          };
-        }
-        
-        console.log('Update booking result:', { data, error });
-      } else {
-        // Create a new booking if none exists
-        console.log('Creating new booking for shift:', shiftId);
-        
-        const result = await supabase
-          .from('shift_bookings')
-          .insert([{ 
-            shift_id: shiftId, 
-            user_id: user.id,
-            user_email: user.email,
-            user_display_name: displayName,
-            status: 'confirmed'
-          }])
-          .select();
-        
-        data = result.data && result.data.length > 0 ? result.data[0] : null;
-        error = result.error;
-        
-        console.log('Create booking result:', { data, error });
-      }
+      // Always create a new booking entry, even if there was a cancelled one before
+      console.log('Creating new booking for shift:', shiftId);
+      
+      const result = await supabase
+        .from('shift_bookings')
+        .insert([{ 
+          shift_id: shiftId, 
+          user_id: user.id,
+          user_email: user.email,
+          user_display_name: displayName,
+          status: 'confirmed'
+        }])
+        .select();
+      
+      data = result.data && result.data.length > 0 ? result.data[0] : null;
+      error = result.error;
+      
+      console.log('Create booking result:', { data, error });
 
       if (error) {
         console.error('Error booking shift:', error);

@@ -34,7 +34,7 @@ export const useBatchBookShifts = () => {
       const displayName = staffRoleData.user_display_name;
       console.log('Using display name from staff_roles:', displayName);
 
-      // For each shift, check if user already has a booking
+      // For each shift, check if user already has a CONFIRMED booking
       const results = [];
       const errors = [];
       
@@ -42,12 +42,13 @@ export const useBatchBookShifts = () => {
         try {
           console.log('Processing shift:', shiftId);
           
-          // Check for existing bookings for this shift
-          const { data: existingBookings, error: existingBookingsError } = await supabase
+          // Check for existing CONFIRMED bookings for this shift
+          const { data: existingConfirmedBookings, error: existingBookingsError } = await supabase
             .from('shift_bookings')
             .select('*')
             .eq('shift_id', shiftId)
-            .eq('user_id', user.id);
+            .eq('user_id', user.id)
+            .eq('status', 'confirmed');
           
           if (existingBookingsError) {
             console.error(`Error checking existing bookings for shift ${shiftId}:`, existingBookingsError);
@@ -55,85 +56,39 @@ export const useBatchBookShifts = () => {
             continue;
           }
           
-          let bookingResult;
-          
-          if (existingBookings && existingBookings.length > 0) {
-            // If there's an existing booking that's already confirmed, skip it
-            if (existingBookings[0].status === 'confirmed') {
-              console.log(`Shift ${shiftId} already booked, skipping`);
-              // Include it in results so we know it was processed
-              results.push({...existingBookings[0], already_booked: true});
-              continue;
-            }
-            
-            // If it's cancelled, update it to confirmed
-            console.log(`Updating booking for shift ${shiftId} to confirmed status`);
-            const { data, error } = await supabase
-              .from('shift_bookings')
-              .update({ 
-                status: 'confirmed',
-                user_display_name: displayName
-              })
-              .eq('id', existingBookings[0].id)
-              .select();
-            
-            if (error) {
-              console.error(`Error updating booking for shift ${shiftId}:`, error);
-              errors.push({ shiftId, error });
-              continue;
-            }
-            
-            // Check if data is returned and has at least one entry
-            if (data && data.length > 0) {
-              bookingResult = data[0];
-              console.log(`Updated booking result for shift ${shiftId}:`, bookingResult);
-            } else {
-              // If no data is returned, we'll use the existing booking info but mark as updated
-              console.log(`No data returned for update of shift ${shiftId}, using existing booking info`);
-              bookingResult = {
-                ...existingBookings[0],
-                status: 'confirmed',
-                user_display_name: displayName,
-                updated_at: new Date().toISOString()
-              };
-            }
-          } else {
-            // Create a new booking if none exists
-            console.log(`Creating new booking for shift ${shiftId}`);
-            const { data, error } = await supabase
-              .from('shift_bookings')
-              .insert([{
-                shift_id: shiftId,
-                user_id: user.id,
-                user_email: user.email,
-                user_display_name: displayName,
-                status: 'confirmed'
-              }])
-              .select();
-            
-            if (error) {
-              console.error(`Error creating booking for shift ${shiftId}:`, error);
-              errors.push({ shiftId, error });
-              continue;
-            }
-            
-            if (data && data.length > 0) {
-              bookingResult = data[0];
-              console.log(`Created booking result for shift ${shiftId}:`, bookingResult);
-            } else {
-              console.error(`No data returned for new booking of shift ${shiftId}`);
-              errors.push({ 
-                shiftId, 
-                error: new Error('Ingen data returnerades från bokningsoperationen') 
-              });
-              continue;
-            }
+          // If user already has a confirmed booking for this shift, skip it
+          if (existingConfirmedBookings && existingConfirmedBookings.length > 0) {
+            console.log(`Shift ${shiftId} already booked, skipping`);
+            // Include it in results so we know it was processed
+            results.push({...existingConfirmedBookings[0], already_booked: true});
+            continue;
           }
           
-          if (bookingResult) {
+          // Always create a new booking entry (regardless of whether there was a cancelled one before)
+          console.log(`Creating new booking for shift ${shiftId}`);
+          const { data, error } = await supabase
+            .from('shift_bookings')
+            .insert([{
+              shift_id: shiftId,
+              user_id: user.id,
+              user_email: user.email,
+              user_display_name: displayName,
+              status: 'confirmed'
+            }])
+            .select();
+          
+          if (error) {
+            console.error(`Error creating booking for shift ${shiftId}:`, error);
+            errors.push({ shiftId, error });
+            continue;
+          }
+          
+          if (data && data.length > 0) {
+            const bookingResult = data[0];
+            console.log(`Created booking result for shift ${shiftId}:`, bookingResult);
             results.push(bookingResult);
           } else {
-            console.error(`No result data for shift ${shiftId}`);
+            console.error(`No data returned for new booking of shift ${shiftId}`);
             errors.push({ 
               shiftId, 
               error: new Error('Ingen data returnerades från bokningsoperationen') 
