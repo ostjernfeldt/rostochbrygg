@@ -188,7 +188,9 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         console.error(`Error in ${type} challenge leaders query:`, error);
         return { [type + 'Leaders']: [] as UserSales[] };
       }
-    }
+    },
+    staleTime: 1000 * 60 * 5, // Add a staleTime to prevent unnecessary refetches
+    retry: 3  // Add retries for network failures
   });
 };
 

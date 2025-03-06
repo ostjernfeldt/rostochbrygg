@@ -21,7 +21,19 @@ import CreateAccount from "./pages/CreateAccount";
 import Booking from "./pages/Booking";
 import { useQuery } from "@tanstack/react-query";
 
-const queryClient = new QueryClient();
+// Create a new QueryClient with better defaults for error handling and retries
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: 1000 * 60 * 5,
+      // Make refetching more consistent
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true
+    }
+  }
+});
 
 const useUserRole = () => {
   return useQuery({
@@ -60,7 +72,8 @@ const useUserRole = () => {
     },
     staleTime: 1000 * 60 * 5,
     retry: 3,
-    enabled: false
+    // Important: enable this query by default to avoid authentication flash
+    enabled: true
   });
 };
 
@@ -111,8 +124,17 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
     };
   }, [navigate, refetch]);
 
+  // Add a loading state to prevent flashing of unauthorized content
   if (isAuthenticated === null || (isAuthenticated && isRoleLoading)) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse space-y-4 w-full max-w-md">
+          <div className="h-8 bg-card rounded w-1/3 mx-auto"></div>
+          <div className="h-24 bg-card rounded mx-auto"></div>
+          <div className="h-24 bg-card rounded mx-auto"></div>
+        </div>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {

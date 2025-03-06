@@ -67,7 +67,7 @@ const Staff = () => {
             daysActive: 0,
             salesCount: 0,
             sales: [],
-            hidden: roleData.hidden || false // Track hidden status for UI filtering if needed
+            hidden: roleData.hidden || false // Track hidden status for UI filtering
           };
         });
         
@@ -116,14 +116,16 @@ const Staff = () => {
           });
         }
         
-        // Convert to array, but filter out hidden staff for display
-        // Note: We could move this filtering to the UI if we want to add a toggle to show/hide
+        // Convert to array, but filter out hidden staff only for display
+        // This ensures data consistency between admin and user views
         return Object.values(staffStats).filter(staff => !staff.hidden);
       } catch (error) {
         console.error("Error in staffMembers query:", error);
-        return [];
+        throw error; // Make sure errors are thrown to be caught by React Query
       }
-    }
+    },
+    staleTime: 1000 * 60 * 5, // Add staleTime to prevent unnecessary refetches
+    retry: 3 // Add retry to handle network issues
   });
 
   if (error) {
