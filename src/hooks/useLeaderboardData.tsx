@@ -70,24 +70,27 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         // Fetch all staff first to ensure we have entries for everyone
         const { data: allStaff, error: staffError } = await supabase
           .from("staff_roles")
-          .select("*")
-          .eq("hidden", false); // Only fetch non-hidden staff
+          .select("*");
 
         if (staffError) {
           console.error("Error fetching staff:", staffError);
           throw staffError;
         }
 
-        console.log(`Fetched ${allStaff?.length || 0} non-hidden staff members`);
+        console.log(`Fetched ${allStaff?.length || 0} staff members`);
+        
+        // Filter out hidden staff members
+        const visibleStaff = allStaff.filter(staff => !staff.hidden);
+        console.log(`${visibleStaff.length} non-hidden staff members`);
         
         // Create a map of staff members and their hidden status
         const staffMap = new Map<string, boolean>();
-        allStaff.forEach(staff => {
-          staffMap.set(staff.user_display_name, !!staff.hidden);
+        visibleStaff.forEach(staff => {
+          staffMap.set(staff.user_display_name, false);
         });
 
-        // Create a set of all staff display names for easier lookup
-        const allStaffNames = new Set(allStaff.map(s => s.user_display_name));
+        // Create a set of all visible staff display names for easier lookup
+        const allStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
         
         if (allStaffNames.size === 0) {
           console.log("No active staff members found - creating dummy data");
@@ -109,8 +112,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           .from("total_purchases")
           .select("*")
           .gte("timestamp", startDate.toISOString())
-          .lte("timestamp", endDate.toISOString())
-          .not("refunded", "eq", true);
+          .lte("timestamp", endDate.toISOString());
 
         if (salesError) {
           console.error("Error fetching sales:", salesError);
@@ -119,10 +121,9 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
 
         console.log(`Fetched ${sales?.length || 0} sales for date range`);
         
-        // If no sales data exists but we have staff, create empty entries for all staff
+        // If no sales data exists but we have staff, return empty array
         if (!sales || sales.length === 0) {
           console.log("No sales data found for period - returning empty array");
-          // Modified: Return empty array instead of creating zero entries for all staff
           return { [type + 'Leaders']: [] };
         }
 
@@ -143,7 +144,6 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           }
           
           // Create an entry for this user if they don't exist yet
-          // (this handles sales from users not in staff_roles)
           if (!userTotals[name]) {
             userTotals[name] = {
               points: 0,
@@ -168,9 +168,9 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
               hidden: data.hidden
             };
           })
-          // Modified: Filter out sellers with zero sales
+          // Filter out sellers with zero sales
           .filter(leader => leader.salesCount > 0)
-          // Modified: Ensure we exclude hidden sellers
+          // Ensure we exclude hidden sellers
           .filter(leader => !leader.hidden)
           .sort((a, b) => b.points - a.points);
         
@@ -185,10 +185,10 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         throw error;
       }
     },
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 30, // Keep data fresh for 30 seconds
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     enabled: !!selectedDate,
-    refetchOnMount: true
+    refetchOnMount: true // Ensure data is fresh when the component mounts
   });
 };

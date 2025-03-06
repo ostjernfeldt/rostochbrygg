@@ -24,20 +24,11 @@ const isSameDay = (date1: Date, date2: Date): boolean => {
 };
 
 export const getValidSalesCount = (transactions: TotalPurchase[]): number => {
-  // Optimize by using filter directly to avoid double array processing
-  return transactions.filter(t => 
-    !t.refunded && t.amount > 0 && 
-    !(t.refund_timestamp && isSameDay(new Date(t.timestamp), new Date(t.refund_timestamp)))
-  ).length;
+  // Use the same filter logic as getValidTransactions for consistency
+  return getValidTransactions(transactions).length;
 };
 
 export const getValidTotalAmount = (transactions: TotalPurchase[]): number => {
-  // Optimize by doing filter and sum in a single pass
-  return transactions.reduce((sum, t) => {
-    if (!t.refunded && t.amount > 0 && 
-        !(t.refund_timestamp && isSameDay(new Date(t.timestamp), new Date(t.refund_timestamp)))) {
-      return sum + Number(t.amount);
-    }
-    return sum;
-  }, 0);
+  // Use the same filter logic and sum amounts in a single pass
+  return getValidTransactions(transactions).reduce((sum, t) => sum + Number(t.amount), 0);
 };
