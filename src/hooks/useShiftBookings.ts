@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -18,12 +19,7 @@ export const useBookShift = () => {
         .from('shift_bookings')
         .select('*')
         .eq('shift_id', shiftId)
-        .eq('user_id', user.id)
-        .eq('status', 'confirmed');
-
-      if (existingBookings && existingBookings.length > 0) {
-        throw new Error('Du har redan bokat detta pass');
-      }
+        .eq('user_id', user.id);
 
       // Get the user's email and display_name from invitations table
       const { data: invitationData } = await supabase
@@ -32,17 +28,42 @@ export const useBookShift = () => {
         .eq('email', user.email)
         .single();
 
-      // Create the booking with user's info
-      const { data, error } = await supabase
-        .from('shift_bookings')
-        .insert([{ 
-          shift_id: shiftId, 
-          user_id: user.id,
-          user_email: user.email,
-          user_display_name: invitationData?.display_name || user.email
-        }])
-        .select()
-        .single();
+      let data;
+      let error;
+
+      if (existingBookings && existingBookings.length > 0) {
+        // If there's an existing booking, update its status to 'confirmed'
+        const existingBooking = existingBookings[0];
+        if (existingBooking.status === 'confirmed') {
+          throw new Error('Du har redan bokat detta pass');
+        }
+
+        // Update the existing booking to confirmed status
+        const result = await supabase
+          .from('shift_bookings')
+          .update({ status: 'confirmed' })
+          .eq('id', existingBooking.id)
+          .select()
+          .single();
+        
+        data = result.data;
+        error = result.error;
+      } else {
+        // Create a new booking if none exists
+        const result = await supabase
+          .from('shift_bookings')
+          .insert([{ 
+            shift_id: shiftId, 
+            user_id: user.id,
+            user_email: user.email,
+            user_display_name: invitationData?.display_name || user.email
+          }])
+          .select()
+          .single();
+        
+        data = result.data;
+        error = result.error;
+      }
 
       if (error) {
         console.error('Error booking shift:', error);
@@ -85,24 +106,59 @@ export const useBatchBookShifts = () => {
         .select('email, display_name')
         .eq('email', user.email)
         .single();
+
+      // For each shift, check if user already has a booking
+      const results = [];
       
-      const bookingData = shiftIds.map(shiftId => ({
-        shift_id: shiftId,
-        user_id: user.id,
-        user_email: user.email,
-        user_display_name: invitationData?.display_name || user.email
-      }));
-
-      const { data, error } = await supabase
-        .from('shift_bookings')
-        .insert(bookingData);
-
-      if (error) {
-        console.error('Error batch booking shifts:', error);
-        throw error;
+      for (const shiftId of shiftIds) {
+        // Check for existing bookings for this shift
+        const { data: existingBookings } = await supabase
+          .from('shift_bookings')
+          .select('*')
+          .eq('shift_id', shiftId)
+          .eq('user_id', user.id);
+        
+        if (existingBookings && existingBookings.length > 0) {
+          // If there's an existing booking that's already confirmed, skip it
+          if (existingBookings[0].status === 'confirmed') {
+            continue;
+          }
+          
+          // If it's cancelled, update it to confirmed
+          const { data, error } = await supabase
+            .from('shift_bookings')
+            .update({ status: 'confirmed' })
+            .eq('id', existingBookings[0].id)
+            .select();
+          
+          if (error) {
+            console.error(`Error updating booking for shift ${shiftId}:`, error);
+            throw error;
+          }
+          
+          if (data) results.push(data[0]);
+        } else {
+          // Create a new booking if none exists
+          const { data, error } = await supabase
+            .from('shift_bookings')
+            .insert([{
+              shift_id: shiftId,
+              user_id: user.id,
+              user_email: user.email,
+              user_display_name: invitationData?.display_name || user.email
+            }])
+            .select();
+          
+          if (error) {
+            console.error(`Error creating booking for shift ${shiftId}:`, error);
+            throw error;
+          }
+          
+          if (data) results.push(data[0]);
+        }
       }
 
-      return data;
+      return results;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
