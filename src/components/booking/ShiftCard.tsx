@@ -23,17 +23,33 @@ export function ShiftCard({
   isSelected = false,
   onSelectShift 
 }: ShiftCardProps) {
+  // Guard against undefined shift data
+  if (!shift || !shift.start_time || !shift.end_time || !shift.date) {
+    return null;
+  }
+
   const startTime = shift.start_time.substring(0, 5);
   const endTime = shift.end_time.substring(0, 5);
   
-  const day = format(new Date(shift.date), 'EEEE', { locale: sv });
-  const dateNumber = format(new Date(shift.date), 'd MMMM', { locale: sv });
-
-  // Filter to only display confirmed bookings
-  const confirmedBookings = shift.bookings.filter(booking => booking.status === 'confirmed');
+  let day = '';
+  let dateNumber = '';
   
-  const isBooked = shift.is_booked_by_current_user;
-  const isFull = shift.available_slots - confirmedBookings.length === 0;
+  try {
+    day = format(new Date(shift.date), 'EEEE', { locale: sv });
+    dateNumber = format(new Date(shift.date), 'd MMMM', { locale: sv });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    day = 'Ogiltig dag';
+    dateNumber = 'Ogiltigt datum';
+  }
+
+  // Filter to only display confirmed bookings, ensure bookings is an array
+  const bookings = Array.isArray(shift.bookings) ? shift.bookings : [];
+  const confirmedBookings = bookings.filter(booking => booking && booking.status === 'confirmed');
+  
+  const isBooked = !!shift.is_booked_by_current_user;
+  const availableSlots = shift.available_slots || 0;
+  const isFull = availableSlots - confirmedBookings.length <= 0;
 
   const handleCardClick = () => {
     if (isSelectable && onSelectShift && !isBooked && !isFull) {
@@ -74,7 +90,7 @@ export function ShiftCard({
       <div className="flex justify-between items-center mt-3">
         <div className="flex items-center space-x-1 text-xs text-muted-foreground">
           <Users className="h-3.5 w-3.5 text-primary" />
-          <span>{confirmedBookings.length} / {shift.available_slots}</span>
+          <span>{confirmedBookings.length} / {availableSlots}</span>
         </div>
         
         {isSelected && (
@@ -83,7 +99,7 @@ export function ShiftCard({
           </Badge>
         )}
         
-        {!isSelectable && !isUserAdmin && !shift.is_booked_by_current_user && (shift.available_slots - confirmedBookings.length) > 0 && (
+        {!isSelectable && !isUserAdmin && !isBooked && (availableSlots - confirmedBookings.length) > 0 && (
           <Button 
             onClick={(e) => {
               e.stopPropagation();
@@ -96,16 +112,16 @@ export function ShiftCard({
           </Button>
         )}
         
-        {!isUserAdmin && shift.is_booked_by_current_user && (
+        {!isUserAdmin && isBooked && (
           <Badge variant="secondary" className="text-xs bg-primary/20 text-primary border border-primary/20 shadow-sm">Bokad</Badge>
         )}
         
         {isUserAdmin && (
           <Badge 
-            variant={shift.available_slots - confirmedBookings.length > 0 ? "outline" : "destructive"} 
-            className={`text-xs shadow-sm ${shift.available_slots - confirmedBookings.length > 0 ? 'bg-card/50' : ''}`}
+            variant={availableSlots - confirmedBookings.length > 0 ? "outline" : "destructive"} 
+            className={`text-xs shadow-sm ${availableSlots - confirmedBookings.length > 0 ? 'bg-card/50' : ''}`}
           >
-            {shift.available_slots - confirmedBookings.length} platser kvar
+            {availableSlots - confirmedBookings.length} platser kvar
           </Badge>
         )}
       </div>

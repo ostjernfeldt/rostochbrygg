@@ -82,13 +82,18 @@ function BookingContent({
     error: shiftsError
   } = useShifts(currentWeekStart, weekEnd, isAdmin);
   
+  // Use null coalescing to ensure shifts is always an array
+  const safeShifts = Array.isArray(shifts) ? shifts : [];
+  
   const {
     shift: selectedShift,
     isLoading: shiftDetailsLoading
   } = useShiftDetails(selectedShiftId || '');
   
   // Ensure shifts is always an array and process each shift safely
-  const processedShifts: ShiftWithBookings[] = Array.isArray(shifts) ? shifts.map(shift => {
+  const processedShifts: ShiftWithBookings[] = safeShifts.map(shift => {
+    if (!shift) return null as unknown as ShiftWithBookings;
+    
     return {
       ...shift,
       // Ensure bookings is always an array
@@ -100,16 +105,11 @@ function BookingContent({
       // Ensure is_booked_by_current_user has a value
       is_booked_by_current_user: shift.is_booked_by_current_user || false
     };
-  }) : [];
+  }).filter(Boolean); // Filter out any null values
 
-  // Ensure we have arrays to work with
-  const userBookedShifts = Array.isArray(processedShifts) 
-    ? processedShifts.filter(shift => shift.is_booked_by_current_user)
-    : [];
-    
-  const availableShifts = Array.isArray(processedShifts) 
-    ? processedShifts.filter(shift => !shift.is_booked_by_current_user)
-    : [];
+  // Create safe arrays with null checks
+  const userBookedShifts = processedShifts.filter(shift => shift.is_booked_by_current_user);
+  const availableShifts = processedShifts.filter(shift => !shift.is_booked_by_current_user);
 
   const {
     selectedShifts,
@@ -126,10 +126,11 @@ function BookingContent({
     setDialogOpen(true);
   };
   
-  // Ensure all arrays are defined before using them
-  const selectedShiftsData = Array.isArray(processedShifts) && Array.isArray(selectedShifts) 
-    ? processedShifts.filter(shift => selectedShifts.includes(shift.id))
-    : [];
+  // Create a safe array for selected shifts data
+  const safeSelectedShifts = Array.isArray(selectedShifts) ? selectedShifts : [];
+  const selectedShiftsData = processedShifts.filter(shift => 
+    shift && safeSelectedShifts.includes(shift.id)
+  );
 
   if (shiftsError) {
     return (
@@ -158,7 +159,7 @@ function BookingContent({
         <UserBookingView
           availableShifts={availableShifts}
           userBookedShifts={userBookedShifts}
-          selectedShifts={selectedShifts || []} // Ensure selectedShifts is an array
+          selectedShifts={safeSelectedShifts}
           onSelectShift={handleSelectShift}
           onViewShiftDetails={handleViewShiftDetails}
           onOpenBookingDialog={handleOpenBookingDialog}

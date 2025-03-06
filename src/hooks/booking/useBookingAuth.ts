@@ -10,6 +10,7 @@ export const useBookingAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isRoleChecked, setIsRoleChecked] = useState(false);
   
   const navigate = useNavigate();
 
@@ -28,6 +29,7 @@ export const useBookingAuth = () => {
           setAuthError('Kunde inte verifiera din inloggning. Vänligen logga in igen.');
           setIsAuthenticated(false);
           setUser(null);
+          setIsRoleChecked(true);
           setIsLoading(false);
           return;
         }
@@ -37,6 +39,7 @@ export const useBookingAuth = () => {
           setAuthError('Din session har utgått. Vänligen logga in igen.');
           setIsAuthenticated(false);
           setUser(null);
+          setIsRoleChecked(true);
           setIsLoading(false);
           return;
         }
@@ -74,11 +77,13 @@ export const useBookingAuth = () => {
           }
           
           // Only set authenticated after we've checked the role
+          setIsRoleChecked(true);
           setIsAuthenticated(true);
           setAuthError(null);
         } catch (error) {
           console.error('Error checking user role:', error);
           setIsAdmin(false);
+          setIsRoleChecked(true);
           // Still set authenticated since we have a user
           setIsAuthenticated(true);
           setAuthError(null);
@@ -90,6 +95,7 @@ export const useBookingAuth = () => {
         setAuthError('Ett oväntat fel uppstod. Vänligen försök igen.');
         setIsAuthenticated(false);
         setUser(null);
+        setIsRoleChecked(true);
         setIsLoading(false);
       }
     };
@@ -119,8 +125,8 @@ export const useBookingAuth = () => {
     isAdmin,
     userName,
     user,
-    isLoading,
+    isLoading: isLoading || !isRoleChecked, // Consider loading until role is checked
     authError,
-    isAuthenticated
+    isAuthenticated: isAuthenticated && isRoleChecked // Only authenticated when role is checked
   };
 };

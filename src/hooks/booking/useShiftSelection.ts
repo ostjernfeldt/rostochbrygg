@@ -16,20 +16,29 @@ export const useShiftSelection = (userBookedShifts: ShiftWithBookings[] = []) =>
   } = useBatchBookShifts();
   
   const handleSelectShift = (shiftId: string) => {
+    if (!shiftId) return;
+    
     setSelectedShifts(prevSelected => {
-      if (prevSelected.includes(shiftId)) {
-        return prevSelected.filter(id => id !== shiftId);
+      // Ensure prevSelected is an array
+      const safeArray = Array.isArray(prevSelected) ? prevSelected : [];
+      
+      if (safeArray.includes(shiftId)) {
+        return safeArray.filter(id => id !== shiftId);
       } else {
-        return [...prevSelected, shiftId];
+        return [...safeArray, shiftId];
       }
     });
   };
 
   const handleOpenBookingDialog = () => {
-    const existingBookingsCount = userBookedShifts?.length || 0;
-    const totalBookedOrSelected = selectedShifts.length + existingBookingsCount;
+    // Ensure we're working with arrays
+    const safeUserBookedShifts = Array.isArray(userBookedShifts) ? userBookedShifts : [];
+    const safeSelectedShifts = Array.isArray(selectedShifts) ? selectedShifts : [];
     
-    if (selectedShifts.length === 0) {
+    const existingBookingsCount = safeUserBookedShifts.length;
+    const totalBookedOrSelected = safeSelectedShifts.length + existingBookingsCount;
+    
+    if (safeSelectedShifts.length === 0) {
       toast({
         title: "Inga pass valda",
         description: "Du behöver välja minst ett pass för att kunna boka",
@@ -51,8 +60,20 @@ export const useShiftSelection = (userBookedShifts: ShiftWithBookings[] = []) =>
   };
   
   const handleConfirmBookings = () => {
-    console.log('Confirming batch bookings for shifts:', selectedShifts);
-    batchBookShifts(selectedShifts, {
+    // Ensure selectedShifts is an array
+    const safeSelectedShifts = Array.isArray(selectedShifts) ? selectedShifts : [];
+    
+    if (safeSelectedShifts.length === 0) {
+      toast({
+        title: "Inga pass valda",
+        description: "Det finns inga pass att boka",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    console.log('Confirming batch bookings for shifts:', safeSelectedShifts);
+    batchBookShifts(safeSelectedShifts, {
       onSuccess: data => {
         console.log('Batch booking success:', data);
         setConfirmDialogOpen(false);

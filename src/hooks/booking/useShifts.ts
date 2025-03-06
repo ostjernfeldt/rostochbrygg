@@ -9,102 +9,110 @@ export const useShifts = (startDate: Date, endDate: Date, isAdmin = false) => {
     queryFn: async () => {
       console.log('Fetching shifts for date range:', startDate.toISOString(), 'to', endDate.toISOString());
       
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError) {
-        console.error('Error fetching user:', authError);
-        throw new Error('Authentication error. Please try logging in again.');
-      }
-      
-      if (!user) {
-        console.log('No authenticated user found, returning empty shifts array');
-        return [];
-      }
-      
-      console.log('Fetching shifts for user:', user.id);
-      
-      const { data, error } = await supabase
-        .from('shifts')
-        .select('*')
-        .gte('date', startDate.toISOString().split('T')[0])
-        .lte('date', endDate.toISOString().split('T')[0])
-        .order('date')
-        .order('start_time');
-      
-      if (error) {
-        console.error('Error fetching shifts:', error);
-        throw error;
-      }
-      
-      // Ensure we have an array to work with, even if data is null/undefined
-      const shiftsData = data || [];
-      console.log('Retrieved shifts:', shiftsData.length);
-      
-      // Get all bookings for retrieved shifts
-      const shiftIds = shiftsData.map(shift => shift.id);
-      
-      // If no shifts, return empty array
-      if (shiftIds.length === 0) {
-        console.log('No shifts found for the date range');
-        return [];
-      }
-      
-      let bookingsData = [];
-      
       try {
-        const { data: bookings, error: bookingsError } = await supabase
-          .from('shift_bookings')
-          .select('*')
-          .in('shift_id', shiftIds);
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
         
-        if (bookingsError) {
-          console.error('Error fetching shift bookings:', bookingsError);
-          throw bookingsError;
+        if (authError) {
+          console.error('Error fetching user:', authError);
+          throw new Error('Authentication error. Please try logging in again.');
         }
         
-        // Ensure we have an array to work with
-        bookingsData = bookings || [];
-        console.log('Retrieved bookings:', bookingsData.length);
-      } catch (error) {
-        console.error('Error in bookings fetch:', error);
-        // Continue with empty bookings rather than fail the whole query
-        bookingsData = [];
-      }
-      
-      // Transform shifts to ShiftWithBookings
-      const shiftsWithBookings: ShiftWithBookings[] = shiftsData.map(shift => {
-        // Filter bookings for this shift and ensure we have valid booking objects
-        const shiftBookings = bookingsData
-          .filter(booking => booking && booking.shift_id === shift.id)
-          .map(booking => {
-            // Ensure status is correctly typed as "confirmed" | "cancelled"
-            const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
-            
-            return {
-              ...booking,
-              status: typedStatus,
-              // Use user_display_name if available, otherwise use user_email or fallback to "Okänd säljare"
-              user_display_name: booking.user_display_name || booking.user_email || 'Okänd säljare'
-            } as ShiftBooking;
-          });
+        if (!user) {
+          console.log('No authenticated user found, returning empty shifts array');
+          return [];
+        }
+        
+        console.log('Fetching shifts for user:', user.id);
+        
+        const { data, error } = await supabase
+          .from('shifts')
+          .select('*')
+          .gte('date', startDate.toISOString().split('T')[0])
+          .lte('date', endDate.toISOString().split('T')[0])
+          .order('date')
+          .order('start_time');
+        
+        if (error) {
+          console.error('Error fetching shifts:', error);
+          throw error;
+        }
+        
+        // Ensure we have an array to work with, even if data is null/undefined
+        const shiftsData = data || [];
+        console.log('Retrieved shifts:', shiftsData.length);
+        
+        // Get all bookings for retrieved shifts
+        const shiftIds = shiftsData.map(shift => shift.id);
+        
+        // If no shifts, return empty array
+        if (shiftIds.length === 0) {
+          console.log('No shifts found for the date range');
+          return [];
+        }
+        
+        let bookingsData = [];
+        
+        try {
+          const { data: bookings, error: bookingsError } = await supabase
+            .from('shift_bookings')
+            .select('*')
+            .in('shift_id', shiftIds);
           
-        // Get only confirmed bookings for availability calculation
-        const confirmedBookings = shiftBookings.filter(booking => booking.status === 'confirmed');
+          if (bookingsError) {
+            console.error('Error fetching shift bookings:', bookingsError);
+            throw bookingsError;
+          }
+          
+          // Ensure we have an array to work with
+          bookingsData = bookings || [];
+          console.log('Retrieved bookings:', bookingsData.length);
+        } catch (error) {
+          console.error('Error in bookings fetch:', error);
+          // Continue with empty bookings rather than fail the whole query
+          bookingsData = [];
+        }
         
-        // Check if user has a confirmed booking for this shift
-        const isBooked = user 
-          ? confirmedBookings.some(booking => booking.user_id === user.id) 
-          : false;
+        // Transform shifts to ShiftWithBookings
+        const shiftsWithBookings: ShiftWithBookings[] = shiftsData.map(shift => {
+          // Ensure we have valid booking objects and filter out any null/undefined ones
+          const shiftBookings = Array.isArray(bookingsData) 
+            ? bookingsData
+                .filter(booking => booking && booking.shift_id === shift.id)
+                .map(booking => {
+                  // Ensure status is correctly typed as "confirmed" | "cancelled"
+                  const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
+                  
+                  return {
+                    ...booking,
+                    status: typedStatus,
+                    // Use user_display_name if available, otherwise use user_email or fallback to "Okänd säljare"
+                    user_display_name: booking.user_display_name || booking.user_email || 'Okänd säljare'
+                  } as ShiftBooking;
+                })
+            : [];
+            
+          // Get only confirmed bookings for availability calculation
+          const confirmedBookings = shiftBookings.filter(booking => booking.status === 'confirmed');
+          
+          // Check if user has a confirmed booking for this shift
+          const isBooked = user 
+            ? confirmedBookings.some(booking => booking.user_id === user.id) 
+            : false;
+          
+          return {
+            ...shift,
+            bookings: shiftBookings,
+            available_slots_remaining: shift.available_slots - confirmedBookings.length,
+            is_booked_by_current_user: isBooked
+          };
+        });
         
-        return {
-          ...shift,
-          bookings: shiftBookings,
-          available_slots_remaining: shift.available_slots - confirmedBookings.length,
-          is_booked_by_current_user: isBooked
-        };
-      });
-      
-      return shiftsWithBookings;
+        return shiftsWithBookings;
+      } catch (error) {
+        console.error('Unexpected error in useShifts query:', error);
+        // Always return an empty array instead of null/undefined
+        return [];
+      }
     },
     // Only run this query when startDate and endDate are valid
     enabled: !!startDate && !!endDate,
@@ -112,8 +120,9 @@ export const useShifts = (startDate: Date, endDate: Date, isAdmin = false) => {
     retry: 1, // Only retry once to avoid excessive retries on auth issues
   });
   
+  // Explicitly ensure we always return an array, even during loading or error states
   return {
-    shifts: data || [], // Always return an array, even if data is undefined
+    shifts: Array.isArray(data) ? data : [],
     isLoading,
     error,
   };

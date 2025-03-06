@@ -28,17 +28,22 @@ export const UserBookingView = ({
   onOpenBookingDialog,
   isLoading
 }: UserBookingViewProps) => {
-  // Group shifts by date - ensure availableShifts is an array
-  const shiftsByDate = Array.isArray(availableShifts) 
-    ? availableShifts.reduce((acc, shift) => {
-        const date = shift.date;
-        if (!acc[date]) {
-          acc[date] = [];
-        }
-        acc[date].push(shift);
-        return acc;
-      }, {} as Record<string, ShiftWithBookings[]>)
-    : {};
+  // Defensive check to ensure we're working with arrays
+  const safeAvailableShifts = Array.isArray(availableShifts) ? availableShifts : [];
+  const safeUserBookedShifts = Array.isArray(userBookedShifts) ? userBookedShifts : [];
+  const safeSelectedShifts = Array.isArray(selectedShifts) ? selectedShifts : [];
+  
+  // Group shifts by date - ensure we're working with a valid array
+  const shiftsByDate = safeAvailableShifts.reduce((acc, shift) => {
+    if (!shift || !shift.date) return acc;
+    
+    const date = shift.date;
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(shift);
+    return acc;
+  }, {} as Record<string, ShiftWithBookings[]>);
 
   return (
     <div className="max-w-md mx-auto">
@@ -46,7 +51,7 @@ export const UserBookingView = ({
         <WeeklyBookingsSummary />
       </Suspense>
       
-      {Array.isArray(userBookedShifts) && userBookedShifts.length > 0 && (
+      {safeUserBookedShifts.length > 0 && (
         <div className="mt-8 mb-6">
           <div className="flex items-center gap-2 mb-3">
             <Clock className="h-5 w-5 text-primary" />
@@ -54,7 +59,7 @@ export const UserBookingView = ({
           </div>
           
           <div className="space-y-3">
-            {userBookedShifts.map(shift => (
+            {safeUserBookedShifts.map(shift => (
               <ShiftCard 
                 key={shift.id} 
                 shift={shift} 
@@ -74,11 +79,11 @@ export const UserBookingView = ({
           </div>
         </div>
         
-        {Array.isArray(selectedShifts) && selectedShifts.length > 0 && (
+        {safeSelectedShifts.length > 0 && (
           <div className="mb-4 p-3.5 bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm rounded-lg border border-[#33333A] shadow-md">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                {selectedShifts.length + (Array.isArray(userBookedShifts) ? userBookedShifts.length : 0) < 2 ? (
+                {safeSelectedShifts.length + safeUserBookedShifts.length < 2 ? (
                   <div className="flex items-center gap-2">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-600/30 text-amber-400">
                       <AlertTriangle className="h-3.5 w-3.5" />
@@ -93,18 +98,18 @@ export const UserBookingView = ({
                       <Check className="h-3.5 w-3.5" />
                     </div>
                     <div className="font-medium text-white">
-                      {selectedShifts.length} pass valda
+                      {safeSelectedShifts.length} pass valda
                     </div>
                   </div>
                 )}
               </div>
               <Button 
                 size="sm" 
-                className={`${!Array.isArray(selectedShifts) || selectedShifts.length === 0 
+                className={`${safeSelectedShifts.length === 0 
                   ? 'bg-gray-600/50 text-gray-300 cursor-not-allowed hover:bg-gray-600/50 border border-gray-600/30' 
                   : 'bg-primary hover:bg-primary/90 shadow-sm'} transition-all duration-200`} 
                 onClick={onOpenBookingDialog} 
-                disabled={!Array.isArray(selectedShifts) || selectedShifts.length === 0}
+                disabled={safeSelectedShifts.length === 0}
               >
                 Boka valda pass
               </Button>
@@ -119,7 +124,7 @@ export const UserBookingView = ({
                 <div key={i} className="bg-card/50 h-24 rounded-xl animate-pulse border border-[#33333A]"></div>
               ))}
             </div>
-          ) : Array.isArray(availableShifts) && availableShifts.length > 0 ? (
+          ) : safeAvailableShifts.length > 0 ? (
             Object.entries(shiftsByDate).map(([date, dateShifts]) => (
               <div key={date} className="space-y-3">
                 {dateShifts.map(shift => (
@@ -129,7 +134,7 @@ export const UserBookingView = ({
                     isUserAdmin={false} 
                     onViewDetails={onViewShiftDetails} 
                     isSelectable={true} 
-                    isSelected={Array.isArray(selectedShifts) && selectedShifts.includes(shift.id)} 
+                    isSelected={safeSelectedShifts.includes(shift.id)} 
                     onSelectShift={onSelectShift} 
                   />
                 ))}
