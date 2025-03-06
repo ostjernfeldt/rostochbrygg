@@ -22,50 +22,52 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
       console.log(`Fetching ${type} challenge leaders from total_purchases...`);
       
       try {
-        // First, get the list of visible staff members in a single query
-        const { data: visibleStaff, error: staffError } = await supabase
-          .from("staff_roles")
-          .select("user_display_name, historical_points:staff_historical_points(points)")
-          .eq("hidden", false)
-          .order("user_display_name");
-
-        if (staffError) {
-          console.error("Error fetching staff roles:", staffError);
-          throw staffError;
-        }
-
-        const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
-        console.log(`Found ${visibleStaffNames.size} visible staff members`);
-        
         // Calculate date ranges based on the selected date and type
         let startDate: Date;
         let endDate: Date;
         let useLatestDate = false;
         
-        // Parse the selectedDate once
-        const parsedSelectedDate = parseISO(selectedDate);
-
-        switch (type) {
-          case 'daily':
-            startDate = new Date(parsedSelectedDate);
-            startDate.setHours(0, 0, 0, 0);
-            endDate = new Date(startDate);
-            endDate.setHours(23, 59, 59, 999);
-            break;
-          case 'weekly':
-            startDate = startOfWeek(parsedSelectedDate, { weekStartsOn: 1 }); // Use weekStartsOn to avoid invalid date
-            endDate = endOfWeek(parsedSelectedDate, { weekStartsOn: 1 }); // Use weekStartsOn to avoid invalid date
-            break;
-          case 'monthly':
-            const [year, month] = selectedDate.split('-').map(Number);
-            startDate = startOfMonth(new Date(year, month - 1));
-            endDate = endOfMonth(startDate);
-            break;
+        // Validate selectedDate before parsing
+        if (!selectedDate || selectedDate.trim() === '') {
+          console.log("Invalid selectedDate, using current date");
+          startDate = new Date();
+          endDate = new Date();
+        } else {
+          // Parse the selectedDate once
+          try {
+            const parsedSelectedDate = parseISO(selectedDate);
+            
+            switch (type) {
+              case 'daily':
+                startDate = new Date(parsedSelectedDate);
+                startDate.setHours(0, 0, 0, 0);
+                endDate = new Date(startDate);
+                endDate.setHours(23, 59, 59, 999);
+                break;
+              case 'weekly':
+                startDate = startOfWeek(parsedSelectedDate, { weekStartsOn: 1 });
+                endDate = endOfWeek(parsedSelectedDate, { weekStartsOn: 1 });
+                break;
+              case 'monthly':
+                const [year, month] = selectedDate.split('-').map(Number);
+                startDate = startOfMonth(new Date(year, month - 1));
+                endDate = endOfMonth(startDate);
+                break;
+              default:
+                startDate = new Date();
+                endDate = new Date();
+            }
+          } catch (e) {
+            console.error("Error parsing date:", e);
+            startDate = new Date();
+            endDate = new Date();
+          }
         }
 
         console.log(`Date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
 
-        // Get all relevant sales in a single query
+        // Get all relevant sales in a single query - not filtering by staff visibility
+        // This allows regular users to see all leaderboard data
         const { data: sales, error: salesError } = await supabase
           .from("total_purchases")
           .select("*")
@@ -165,7 +167,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           }
           
           // Calculate leaders with the latest sales
-          const leaders = calculateLeaders(latestSales, visibleStaffNames);
+          const leaders = calculateLeaders(latestSales);
           
           const result: Record<string, any> = { latestDate: startDate.toISOString() };
           
@@ -177,7 +179,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         }
 
         // Calculate leaders with the originally requested date range
-        const leaders = calculateLeaders(sales, visibleStaffNames);
+        const leaders = calculateLeaders(sales);
         
         // Create result object based on the requested type
         const result: Record<string, any> = { 
@@ -198,7 +200,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
 };
 
 // Simplified leader calculation with better performance
-const calculateLeaders = (sales: TotalPurchase[] | null, visibleStaffNames: Set<string>): UserSales[] => {
+const calculateLeaders = (sales: TotalPurchase[] | null): UserSales[] => {
   if (!sales || sales.length === 0) {
     return [];
   }
@@ -212,7 +214,7 @@ const calculateLeaders = (sales: TotalPurchase[] | null, visibleStaffNames: Set<
   // Group sales by user
   processedSales.forEach(sale => {
     const name = sale.user_display_name;
-    if (!name || !visibleStaffNames.has(name)) return;
+    if (!name) return;
     
     if (!userTotals[name]) {
       userTotals[name] = {

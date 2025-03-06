@@ -21,10 +21,18 @@ const Leaderboard = () => {
     // If there are dates, set the selected week to the latest date
     if (dates.length > 0 && !selectedWeek) {
       console.log("Latest sale date:", dates[0]);
-      const latestDate = parseISO(dates[0]);
-      const latestWeekStart = format(startOfWeek(latestDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-      setSelectedWeek(latestWeekStart);
-      console.log("Setting latest week start to:", latestWeekStart);
+      try {
+        const latestDate = parseISO(dates[0]);
+        const latestWeekStart = format(startOfWeek(latestDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        setSelectedWeek(latestWeekStart);
+        console.log("Setting latest week start to:", latestWeekStart);
+      } catch (e) {
+        console.error("Error parsing date:", e);
+        // If there's an error, fall back to current week
+        const currentWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        setSelectedWeek(currentWeekStart);
+        console.log("Error parsing date, using current week:", currentWeekStart);
+      }
     } else if (dates.length === 0 && !selectedWeek) {
       // If no dates exist, use current week
       const currentDate = new Date();
