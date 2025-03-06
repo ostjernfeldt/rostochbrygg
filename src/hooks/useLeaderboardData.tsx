@@ -15,6 +15,14 @@ interface UserSales {
 // Defining a union type for the supported time periods
 type TimePeriod = 'daily' | 'weekly' | 'monthly';
 
+// Define return type for the query
+interface LeaderboardData {
+  dailyLeaders?: UserSales[];
+  weeklyLeaders?: UserSales[];
+  monthlyLeaders?: UserSales[];
+  latestDate?: string | null;
+}
+
 export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
   return useQuery({
     queryKey: ["challengeLeaders", type, selectedDate],
@@ -28,7 +36,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           parsedDate = parseISO(selectedDate);
         } catch (error) {
           console.error("Invalid date format:", selectedDate, error);
-          return { [type + 'Leaders']: [] };
+          return { [type + 'Leaders']: [] as UserSales[] };
         }
 
         // Calculate date ranges based on the selected date and type
@@ -70,7 +78,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         
         if (allStaffNames.size === 0) {
           console.log("No staff members found in staff_roles table");
-          return { [type + 'Leaders']: [] };
+          return { [type + 'Leaders']: [] as UserSales[] };
         }
 
         // Get all relevant sales within the date range
@@ -99,7 +107,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           if (count === 0) {
             // No sales at all - return empty array
             console.log("No sales found at all, returning empty array");
-            return { [type + 'Leaders']: [], latestDate: null };
+            return { [type + 'Leaders']: [] as UserSales[], latestDate: null };
           }
           
           // If there are sales but none for selected date, find the latest date with sales
@@ -108,17 +116,20 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             .select("timestamp")
             .not("user_display_name", "is", null)
             .order("timestamp", { ascending: false })
-            .limit(1)
-            .single();
+            .limit(1);
 
           if (latestError) {
             console.log("Error getting latest sale, using current date", latestError);
             // Use current date as fallback
-            return { [type + 'Leaders']: [], latestDate: null };
+            return { [type + 'Leaders']: [] as UserSales[], latestDate: null };
+          }
+          
+          if (!latestSale || latestSale.length === 0) {
+            return { [type + 'Leaders']: [] as UserSales[], latestDate: null };
           }
           
           // Update date range to use latest date
-          startDate = new Date(latestSale.timestamp);
+          startDate = new Date(latestSale[0].timestamp);
           startDate.setHours(0, 0, 0, 0);
           endDate = new Date(startDate);
           endDate.setHours(23, 59, 59, 999);
@@ -137,7 +148,10 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           
           if (!latestSales || latestSales.length === 0) {
             // Still no valid sales - return empty array
-            return { [type + 'Leaders']: [], latestDate: startDate.toISOString() };
+            return { 
+              [type + 'Leaders']: [] as UserSales[], 
+              latestDate: startDate.toISOString() 
+            };
           }
           
           // Calculate leaders with the latest sales
@@ -156,7 +170,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         return { 
           [type + 'Leaders']: leaders,
           latestDate: useLatestDate ? startDate.toISOString() : null 
-        };
+        } as LeaderboardData;
       } catch (error) {
         console.error(`Error in ${type} challenge leaders query:`, error);
         throw error;

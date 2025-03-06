@@ -34,7 +34,6 @@ const Home = () => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedSeller, setSelectedSeller] = useState("all");
 
-  // Get all staff members without the hidden filter
   const { data: allStaff } = useQuery({
     queryKey: ['allStaff'],
     queryFn: async () => {
@@ -47,11 +46,9 @@ const Home = () => {
     }
   });
 
-  // Then fetch latest date with sales
   const { data: latestDate } = useQuery({
     queryKey: ['latestTransactionDate', allStaff],
     queryFn: async () => {
-      // Get latest sale
       const { data, error } = await supabase
         .from('total_purchases')
         .select('timestamp, user_display_name')
@@ -60,7 +57,6 @@ const Home = () => {
 
       if (error) throw error;
 
-      // Find first sale with a seller
       const latestSale = data[0];
       
       if (!latestSale) return new Date();
@@ -221,7 +217,7 @@ const Home = () => {
         <div className="mt-8">
           <LeaderboardSection
             title={`Topplista ${format(displayDate, 'd MMMM', { locale: sv })}`}
-            data={leaderboardData?.dailyLeaders}
+            data={leaderboardData?.dailyLeaders || []}
             isLoading={isLeaderboardLoading}
             onUserClick={(userName) => navigate(`/staff/${encodeURIComponent(userName)}`)}
           />

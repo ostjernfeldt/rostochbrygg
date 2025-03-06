@@ -101,7 +101,7 @@ const Leaderboard = () => {
       <div className="space-y-8">
         <LeaderboardSection
           title="Veckans topplista"
-          data={weeklyLeaderboard?.weeklyLeaders}
+          data={weeklyLeaderboard?.weeklyLeaders || []}
           isLoading={isWeeklyLoading}
           filter={{
             options: weekOptions,
@@ -114,7 +114,7 @@ const Leaderboard = () => {
 
         <LeaderboardSection
           title="Månadens topplista"
-          data={monthlyLeaderboard?.monthlyLeaders}
+          data={monthlyLeaderboard?.monthlyLeaders || []}
           isLoading={isMonthlyLoading}
           filter={{
             options: monthOptions,
