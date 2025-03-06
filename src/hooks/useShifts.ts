@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -52,27 +53,34 @@ export const useShifts = (startDate: Date, endDate: Date, isAdmin = false, enabl
         return [];
       }
       
-      const { data: bookings, error: bookingsError } = await supabase
-        .from('shift_bookings')
-        .select('*')
-        .in('shift_id', shiftIds);
+      let bookingsData = [];
       
-      if (bookingsError) {
-        console.error('Error fetching shift bookings:', bookingsError);
-        throw bookingsError;
+      try {
+        const { data: bookings, error: bookingsError } = await supabase
+          .from('shift_bookings')
+          .select('*')
+          .in('shift_id', shiftIds);
+        
+        if (bookingsError) {
+          console.error('Error fetching shift bookings:', bookingsError);
+          throw bookingsError;
+        }
+        
+        if (bookings && Array.isArray(bookings)) {
+          bookingsData = bookings;
+        }
+        
+        console.log('Retrieved bookings:', bookingsData.length);
+      } catch (error) {
+        console.error('Error in bookings fetch:', error);
+        // Continue with empty bookings rather than fail the whole query
+        bookingsData = [];
       }
-      
-      if (!bookings || !Array.isArray(bookings)) {
-        console.log('No bookings data returned or invalid format');
-        bookings = [];
-      }
-      
-      console.log('Retrieved bookings:', bookings.length);
       
       // Transform shifts to ShiftWithBookings
       const shiftsWithBookings: ShiftWithBookings[] = data.map(shift => {
-        const shiftBookings = bookings
-          ? bookings.filter(booking => booking.shift_id === shift.id)
+        const shiftBookings = bookingsData
+          ? bookingsData.filter(booking => booking.shift_id === shift.id)
               .map(booking => {
                 // Ensure status is correctly typed as "confirmed" | "cancelled"
                 const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
