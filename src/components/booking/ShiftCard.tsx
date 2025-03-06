@@ -29,8 +29,11 @@ export function ShiftCard({
   const day = format(new Date(shift.date), 'EEEE', { locale: sv });
   const dateNumber = format(new Date(shift.date), 'd MMMM', { locale: sv });
 
+  // Filter to only display confirmed bookings
+  const confirmedBookings = shift.bookings.filter(booking => booking.status === 'confirmed');
+  
   const isBooked = shift.is_booked_by_current_user;
-  const isFull = shift.available_slots_remaining === 0;
+  const isFull = shift.available_slots - confirmedBookings.length === 0;
 
   const handleCardClick = () => {
     if (isSelectable && onSelectShift && !isBooked && !isFull) {
@@ -71,7 +74,7 @@ export function ShiftCard({
       <div className="flex justify-between items-center mt-3">
         <div className="flex items-center space-x-1 text-xs text-muted-foreground">
           <Users className="h-3.5 w-3.5 text-primary" />
-          <span>{shift.bookings.length} / {shift.available_slots}</span>
+          <span>{confirmedBookings.length} / {shift.available_slots}</span>
         </div>
         
         {isSelected && (
@@ -80,7 +83,7 @@ export function ShiftCard({
           </Badge>
         )}
         
-        {!isSelectable && !isUserAdmin && !shift.is_booked_by_current_user && shift.available_slots_remaining > 0 && (
+        {!isSelectable && !isUserAdmin && !shift.is_booked_by_current_user && (shift.available_slots - confirmedBookings.length) > 0 && (
           <Button 
             onClick={(e) => {
               e.stopPropagation();
@@ -99,10 +102,10 @@ export function ShiftCard({
         
         {isUserAdmin && (
           <Badge 
-            variant={shift.available_slots_remaining > 0 ? "outline" : "destructive"} 
-            className={`text-xs shadow-sm ${shift.available_slots_remaining > 0 ? 'bg-card/50' : ''}`}
+            variant={shift.available_slots - confirmedBookings.length > 0 ? "outline" : "destructive"} 
+            className={`text-xs shadow-sm ${shift.available_slots - confirmedBookings.length > 0 ? 'bg-card/50' : ''}`}
           >
-            {shift.available_slots_remaining} platser kvar
+            {shift.available_slots - confirmedBookings.length} platser kvar
           </Badge>
         )}
       </div>
