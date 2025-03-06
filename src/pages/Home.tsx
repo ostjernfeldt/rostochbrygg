@@ -40,7 +40,8 @@ const Home = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('staff_roles')
-        .select('user_display_name');
+        .select('user_display_name')
+        .eq('hidden', false); // Only fetch visible staff members
       
       if (error) throw error;
       return new Set((data || []).map(s => s.user_display_name));
@@ -50,6 +51,9 @@ const Home = () => {
   const { data: latestDate } = useQuery({
     queryKey: ['latestTransactionDate', allStaff],
     queryFn: async () => {
+      // Get the set of visible staff names
+      const visibleStaffSet = allStaff;
+      
       const { data, error } = await supabase
         .from('total_purchases')
         .select('timestamp, user_display_name')
@@ -58,7 +62,12 @@ const Home = () => {
 
       if (error) throw error;
 
-      const latestSale = data[0];
+      // Filter for transactions only from visible staff
+      const visibleStaffTransactions = data.filter(
+        trans => trans.user_display_name && visibleStaffSet.has(trans.user_display_name)
+      );
+      
+      const latestSale = visibleStaffTransactions[0];
       
       if (!latestSale) return new Date();
       
@@ -75,7 +84,7 @@ const Home = () => {
   const { data: leaderboardData, isLoading: isLeaderboardLoading } = useLeaderboardData('daily', formattedDate);
 
   const { data: transactions = [], isLoading: isTransactionsLoading } = useQuery({
-    queryKey: ['transactions', formattedDate],
+    queryKey: ['transactions', formattedDate, allStaff],
     queryFn: async () => {
       console.log('Fetching transactions for date:', formattedDate);
       const start = new Date(formattedDate);
@@ -96,9 +105,16 @@ const Home = () => {
         throw error;
       }
 
-      console.log('Fetched transactions:', data);
-      return data as TotalPurchase[];
-    }
+      // Filter transactions to only include those from visible staff members
+      const visibleStaffSet = allStaff;
+      const filteredTransactions = data.filter(
+        trans => trans.user_display_name && visibleStaffSet.has(trans.user_display_name)
+      );
+
+      console.log('Fetched visible staff transactions:', filteredTransactions.length);
+      return filteredTransactions as TotalPurchase[];
+    },
+    enabled: !!allStaff
   });
 
   const activeSellers = Array.from(

@@ -10,7 +10,6 @@ interface UserSales {
   "User Display Name": string;
   points: number;
   salesCount: number;
-  hidden?: boolean;
 }
 
 type TimePeriod = 'daily' | 'weekly' | 'monthly';
@@ -67,46 +66,27 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             return { [type + 'Leaders']: [] };
         }
 
-        // Fetch all staff first to ensure we have entries for everyone
+        // Fetch only non-hidden staff
         const { data: allStaff, error: staffError } = await supabase
           .from("staff_roles")
-          .select("*");
+          .select("*")
+          .eq("hidden", false); // Explicitly filter out hidden staff
 
         if (staffError) {
           console.error("Error fetching staff:", staffError);
           throw staffError;
         }
 
-        console.log(`Fetched ${allStaff?.length || 0} staff members`);
+        console.log(`Fetched ${allStaff?.length || 0} visible staff members`);
         
-        // Filter out hidden staff members
-        const visibleStaff = allStaff.filter(staff => !staff.hidden);
-        console.log(`${visibleStaff.length} non-hidden staff members`);
-        
-        // Create a map of staff members and their hidden status
-        const staffMap = new Map<string, boolean>();
-        visibleStaff.forEach(staff => {
-          staffMap.set(staff.user_display_name, false);
-        });
-
-        // Create a set of all visible staff display names for easier lookup
-        const allStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
-        
-        if (allStaffNames.size === 0) {
-          console.log("No active staff members found - creating dummy data");
-          
-          // If no real staff exists, return dummy data
-          const dummyLeaders = [
-            { "User Display Name": "Säljare 1", points: 450, salesCount: 30, hidden: false },
-            { "User Display Name": "Säljare 2", points: 375, salesCount: 25, hidden: false },
-            { "User Display Name": "Säljare 3", points: 300, salesCount: 20, hidden: false },
-            { "User Display Name": "Säljare 4", points: 225, salesCount: 15, hidden: false },
-            { "User Display Name": "Säljare 5", points: 150, salesCount: 10, hidden: false }
-          ];
-          
-          return { [type + 'Leaders']: dummyLeaders };
+        if (allStaff.length === 0) {
+          console.log("No active staff members found");
+          return { [type + 'Leaders']: [] };
         }
 
+        // Create a set of all visible staff display names for easier lookup
+        const allStaffNames = new Set(allStaff.map(s => s.user_display_name));
+        
         // Fetch non-refunded sales within the date range
         const { data: sales, error: salesError } = await supabase
           .from("total_purchases")
@@ -131,10 +111,19 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         const processedSales = processTransactions(sales);
         console.log(`After processing: ${processedSales.length} sales`);
         
-        // Initialize userTotals with all staff members, even those without sales
-        const userTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[], hidden: boolean }> = {};
+        // Initialize userTotals with all visible staff members, even those without sales
+        const userTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[] }> = {};
         
-        // Process all sales, including those from non-staff members
+        // Initialize entries for all visible staff
+        allStaff.forEach(staff => {
+          userTotals[staff.user_display_name] = {
+            points: 0,
+            salesCount: 0,
+            sales: []
+          };
+        });
+        
+        // Process all sales, but only include those from visible staff members
         processedSales.forEach(sale => {
           const name = sale.user_display_name;
           
@@ -143,14 +132,10 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             return;
           }
           
-          // Create an entry for this user if they don't exist yet
-          if (!userTotals[name]) {
-            userTotals[name] = {
-              points: 0,
-              salesCount: 0,
-              sales: [],
-              hidden: !allStaffNames.has(name) ? false : staffMap.get(name) || false
-            };
+          // Skip if the staff member is not in our visible list
+          if (!allStaffNames.has(name)) {
+            console.log(`Skipping sale from hidden or non-staff member: ${name}`);
+            return;
           }
           
           userTotals[name].sales.push(sale);
@@ -164,17 +149,14 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             return {
               "User Display Name": name,
               points,
-              salesCount,
-              hidden: data.hidden
+              salesCount
             };
           })
           // Filter out sellers with zero sales
           .filter(leader => leader.salesCount > 0)
-          // Ensure we exclude hidden sellers
-          .filter(leader => !leader.hidden)
           .sort((a, b) => b.points - a.points);
         
-        console.log(`Generated ${leaders.length} leaders after filtering zero sales and hidden staff`);
+        console.log(`Generated ${leaders.length} leaders after filtering zero sales`);
         
         return { 
           [type + 'Leaders']: leaders,

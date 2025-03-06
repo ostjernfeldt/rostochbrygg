@@ -20,18 +20,18 @@ const Staff = () => {
       console.log("Fetching staff members data...");
       
       try {
-        // Fetch all visible staff roles (not hidden)
+        // Fetch only visible staff roles (not hidden)
         const rolesResponse = await supabase
           .from("staff_roles")
-          .select("*");
+          .select("*")
+          .eq("hidden", false); // Explicitly filter out hidden staff
 
         if (rolesResponse.error) {
           console.error("Error fetching staff roles:", rolesResponse.error);
           throw rolesResponse.error;
         }
         
-        // Filter out hidden staff members
-        const roles = rolesResponse.data?.filter(staff => !staff.hidden) || [];
+        const roles = rolesResponse.data || [];
         console.log(`Fetched ${roles.length} visible staff roles`);
         
         // If there are no staff members, return empty array

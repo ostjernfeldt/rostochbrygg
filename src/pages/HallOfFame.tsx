@@ -46,8 +46,7 @@ const HallOfFame = () => {
       const { data: sales, error } = await supabase
         .from("total_purchases")
         .select("*")
-        .not("refunded", "eq", true)  // Exclude refunded purchases
-        .order("timestamp", { ascending: true });
+        .not("refunded", "eq", true);  // Exclude refunded purchases
 
       if (error) throw error;
       
@@ -106,9 +105,8 @@ const HallOfFame = () => {
 
       // Filter sales to exclude hidden staff members
       const visibleSales = sales.filter(sale => {
-        // Include sales only from non-hidden staff or staff without a record
-        const isHidden = hiddenStaffMap.get(sale.user_display_name);
-        return isHidden !== true; // Include if not explicitly hidden
+        // Include sales only from non-hidden staff
+        return sale.user_display_name && !hiddenStaffMap.get(sale.user_display_name);
       });
 
       // Helper function to get unique top sellers
