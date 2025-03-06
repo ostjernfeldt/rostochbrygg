@@ -200,7 +200,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
     },
     staleTime: 1000 * 60 * 5, // 5 minute stale time to prevent unnecessary refetches
     retry: 3,  // Add retries for network failures
-    // Ensure query is always enabled
+    // Ensure query is always enabled regardless of authentication
     enabled: !!selectedDate
   });
 };

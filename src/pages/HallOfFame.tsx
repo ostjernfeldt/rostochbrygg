@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
@@ -221,6 +220,7 @@ const HallOfFame = () => {
         topDays
       };
     }
+    // The query is already properly configured to be enabled by default
   });
 
   const LeaderboardCard = ({ title, icon: Icon, data, type }: { 
