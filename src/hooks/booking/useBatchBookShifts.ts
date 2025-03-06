@@ -75,7 +75,7 @@ export const useBatchBookShifts = () => {
                 user_display_name: displayName
               })
               .eq('id', existingBookings[0].id)
-              .select();
+              .select('*');
             
             if (error) {
               console.error(`Error updating booking for shift ${shiftId}:`, error);
@@ -97,7 +97,7 @@ export const useBatchBookShifts = () => {
                 user_display_name: displayName,
                 status: 'confirmed'
               }])
-              .select();
+              .select('*');
             
             if (error) {
               console.error(`Error creating booking for shift ${shiftId}:`, error);

@@ -16,11 +16,16 @@ export const useBookShift = () => {
       console.log('Booking shift for user:', user.id, user.email);
 
       // First check if user already has a booking for this shift
-      const { data: existingBookings } = await supabase
+      const { data: existingBookings, error: bookingCheckError } = await supabase
         .from('shift_bookings')
         .select('*')
         .eq('shift_id', shiftId)
         .eq('user_id', user.id);
+
+      if (bookingCheckError) {
+        console.error('Error checking existing bookings:', bookingCheckError);
+        throw bookingCheckError;
+      }
 
       // Get the user's display name from staff_roles table by matching email
       const { data: staffRoleData, error: staffRoleError } = await supabase
@@ -53,7 +58,7 @@ export const useBookShift = () => {
 
         console.log('Updating existing booking:', existingBooking.id);
         
-        // Update the existing booking to confirmed status
+        // Update the existing booking to confirmed status with explicit returning
         const result = await supabase
           .from('shift_bookings')
           .update({ 
@@ -61,7 +66,7 @@ export const useBookShift = () => {
             user_display_name: displayName
           })
           .eq('id', existingBooking.id)
-          .select();
+          .select('*');
         
         data = result.data?.[0]; // Get the first item from the array
         error = result.error;
@@ -80,7 +85,7 @@ export const useBookShift = () => {
             user_display_name: displayName,
             status: 'confirmed'
           }])
-          .select();
+          .select('*');
         
         data = result.data?.[0]; // Get the first item from the array
         error = result.error;
@@ -95,7 +100,7 @@ export const useBookShift = () => {
 
       if (!data) {
         console.error('No data returned from booking operation');
-        throw new Error('Ett oväntat fel uppstod vid bokning av passet');
+        throw new Error('Ingen data returnerades från bokningsoperationen');
       }
 
       return data;
