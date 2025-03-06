@@ -21,31 +21,7 @@ const Staff = () => {
       console.log("Fetching staff members data...");
       
       try {
-        // Get the current user's role to see if they are an admin
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          console.error("No authenticated user found");
-          throw new Error("No authenticated user found");
-        }
-        
-        console.log("Current user ID:", user.id);
-        
-        const roleResponse = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .single();
-        
-        if (roleResponse.error) {
-          console.error("Error fetching user role:", roleResponse.error);
-          throw roleResponse.error;
-        }
-        
-        const userRole = roleResponse.data?.role;
-        console.log("User role from query:", userRole);
-        
-        // Fetch staff roles - for all users, we only show non-hidden staff
+        // Simplified approach: directly fetch staff roles without checking user role first
         const rolesResponse = await supabase
           .from("staff_roles")
           .select("*")
