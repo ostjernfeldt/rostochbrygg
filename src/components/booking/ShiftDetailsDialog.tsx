@@ -34,6 +34,11 @@ export function ShiftDetailsDialog({
   const { mutate: cancelBooking, isPending: isCancelling } = useCancelBooking();
   const { mutate: deleteShift, isPending: isDeleting } = useDeleteShift();
   
+  // Safeguard against undefined shift data
+  if (!shift) {
+    return null;
+  }
+  
   const handleBookShift = () => {
     bookShift(shift.id);
     onOpenChange(false);
@@ -68,18 +73,41 @@ export function ShiftDetailsDialog({
     onOpenChange(false);
   };
   
-  const formattedDate = format(new Date(shift.date), 'EEEE d MMMM', { locale: sv });
-  const startTime = shift.start_time.substring(0, 5);
-  const endTime = shift.end_time.substring(0, 5);
+  // Safely format shift data to avoid runtime errors
+  const formatShiftData = () => {
+    try {
+      return {
+        formattedDate: format(new Date(shift.date), 'EEEE d MMMM', { locale: sv }),
+        startTime: shift.start_time?.substring(0, 5) || '',
+        endTime: shift.end_time?.substring(0, 5) || '',
+      };
+    } catch (error) {
+      console.error('Error formatting shift data:', error, shift);
+      return { 
+        formattedDate: 'Invalid date', 
+        startTime: '', 
+        endTime: '' 
+      };
+    }
+  };
+  
+  const { formattedDate, startTime, endTime } = formatShiftData();
   
   // Filter to only show confirmed bookings
-  const confirmedBookings = shift.bookings.filter(booking => booking.status === 'confirmed');
+  const confirmedBookings = shift.bookings?.filter(booking => booking.status === 'confirmed') || [];
+  
+  // Custom handler to prevent closing while operations are pending
+  const handleOpenChange = (open: boolean) => {
+    if ((isBooking || isCancelling || isDeleting) && !open) {
+      return;
+    }
+    onOpenChange(open);
+  };
   
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent 
         className="sm:max-w-md bg-[#1A1F2C] border-[#33333A] shadow-xl"
-        onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader className="pb-2">
           <DialogTitle className="capitalize text-lg flex items-center gap-2">

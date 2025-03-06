@@ -1,3 +1,4 @@
+
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { Calendar, Clock, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
@@ -30,15 +31,35 @@ export function BatchBookingConfirmDialog({
   onConfirm,
   isPending
 }: BatchBookingConfirmDialogProps) {
-  if (shifts.length === 0) return null;
+  // Don't render at all if there are no shifts to show
+  if (!shifts || shifts.length === 0) return null;
 
   const notEnoughShifts = shifts.length < 2;
 
   const handleOpenChange = (open: boolean) => {
+    // Prevent closing dialog while booking is in progress
     if (isPending && !open) {
       return;
     }
     onOpenChange(open);
+  };
+
+  // Safely format shift data to avoid runtime errors
+  const formatShiftData = (shift: ShiftWithBookings) => {
+    try {
+      const formattedDate = format(new Date(shift.date), 'EEEE d MMMM', { locale: sv });
+      const startTime = shift.start_time?.substring(0, 5) || '';
+      const endTime = shift.end_time?.substring(0, 5) || '';
+      
+      return { formattedDate, startTime, endTime };
+    } catch (error) {
+      console.error('Error formatting shift data:', error, shift);
+      return { 
+        formattedDate: 'Invalid date', 
+        startTime: '', 
+        endTime: '' 
+      };
+    }
   };
 
   return (
@@ -57,9 +78,7 @@ export function BatchBookingConfirmDialog({
         <ScrollArea className="max-h-60 mt-2">
           <div className="space-y-2 pr-4">
             {shifts.map((shift) => {
-              const formattedDate = format(new Date(shift.date), 'EEEE d MMMM', { locale: sv });
-              const startTime = shift.start_time.substring(0, 5);
-              const endTime = shift.end_time.substring(0, 5);
+              const { formattedDate, startTime, endTime } = formatShiftData(shift);
               
               return (
                 <div 
