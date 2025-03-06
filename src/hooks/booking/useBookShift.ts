@@ -33,6 +33,19 @@ export const useBookShift = () => {
         throw new Error('Du har redan bokat detta pass');
       }
 
+      // Check if there's a cancelled booking for this shift
+      const { data: existingCancelledBookings, error: cancelledCheckError } = await supabase
+        .from('shift_bookings')
+        .select('*')
+        .eq('shift_id', shiftId)
+        .eq('user_id', user.id)
+        .eq('status', 'cancelled');
+        
+      if (cancelledCheckError) {
+        console.error('Error checking cancelled bookings:', cancelledCheckError);
+        throw cancelledCheckError;
+      }
+      
       // Get the user's display name from staff_roles table by matching email
       const { data: staffRoleData, error: staffRoleError } = await supabase
         .from('staff_roles')
@@ -52,39 +65,60 @@ export const useBookShift = () => {
       const displayName = staffRoleData.user_display_name;
       console.log('Using display name from staff_roles:', displayName);
 
-      let data;
-      let error;
-
-      // Always create a new booking entry, even if there was a cancelled one before
-      console.log('Creating new booking for shift:', shiftId);
-      
-      const result = await supabase
-        .from('shift_bookings')
-        .insert([{ 
-          shift_id: shiftId, 
-          user_id: user.id,
-          user_email: user.email,
-          user_display_name: displayName,
-          status: 'confirmed'
-        }])
-        .select();
-      
-      data = result.data && result.data.length > 0 ? result.data[0] : null;
-      error = result.error;
-      
-      console.log('Create booking result:', { data, error });
-
-      if (error) {
-        console.error('Error booking shift:', error);
-        throw error;
+      // If there's a cancelled booking, we need to update it rather than creating a new one
+      // to avoid the unique constraint violation
+      if (existingCancelledBookings && existingCancelledBookings.length > 0) {
+        console.log('Found cancelled booking, updating status to confirmed');
+        const cancelledBooking = existingCancelledBookings[0];
+        
+        const { data, error } = await supabase
+          .from('shift_bookings')
+          .update({ 
+            status: 'confirmed',
+            user_display_name: displayName, // Update display name in case it changed
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', cancelledBooking.id)
+          .select();
+          
+        if (error) {
+          console.error('Error updating cancelled booking:', error);
+          throw error;
+        }
+        
+        if (!data || data.length === 0) {
+          console.error('No data returned from booking update');
+          throw new Error('Ingen data returnerades från bokningsoperationen');
+        }
+        
+        return data[0];
+      } else {
+        // No existing bookings (confirmed or cancelled), create a new one
+        console.log('Creating new booking for shift:', shiftId);
+        
+        const { data, error } = await supabase
+          .from('shift_bookings')
+          .insert([{ 
+            shift_id: shiftId, 
+            user_id: user.id,
+            user_email: user.email,
+            user_display_name: displayName,
+            status: 'confirmed'
+          }])
+          .select();
+        
+        if (error) {
+          console.error('Error booking shift:', error);
+          throw error;
+        }
+        
+        if (!data || data.length === 0) {
+          console.error('No data returned from booking operation');
+          throw new Error('Ingen data returnerades från bokningsoperationen');
+        }
+        
+        return data[0];
       }
-
-      if (!data) {
-        console.error('No data returned from booking operation');
-        throw new Error('Ingen data returnerades från bokningsoperationen');
-      }
-
-      return data;
     },
     onSuccess: (data) => {
       console.log('Booking successful:', data);

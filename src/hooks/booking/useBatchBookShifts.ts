@@ -34,7 +34,7 @@ export const useBatchBookShifts = () => {
       const displayName = staffRoleData.user_display_name;
       console.log('Using display name from staff_roles:', displayName);
 
-      // For each shift, check if user already has a CONFIRMED booking
+      // For each shift, check if user already has a booking
       const results = [];
       const errors = [];
       
@@ -64,31 +64,71 @@ export const useBatchBookShifts = () => {
             continue;
           }
           
-          // Always create a new booking entry (regardless of whether there was a cancelled one before)
-          console.log(`Creating new booking for shift ${shiftId}`);
-          const { data, error } = await supabase
+          // Check if there's a cancelled booking that we can update
+          const { data: existingCancelledBookings, error: cancelledCheckError } = await supabase
             .from('shift_bookings')
-            .insert([{
-              shift_id: shiftId,
-              user_id: user.id,
-              user_email: user.email,
-              user_display_name: displayName,
-              status: 'confirmed'
-            }])
-            .select();
+            .select('*')
+            .eq('shift_id', shiftId)
+            .eq('user_id', user.id)
+            .eq('status', 'cancelled');
+            
+          if (cancelledCheckError) {
+            console.error(`Error checking cancelled bookings for shift ${shiftId}:`, cancelledCheckError);
+            errors.push({ shiftId, error: cancelledCheckError });
+            continue;
+          }
+          
+          let data;
+          let error;
+          
+          // If there's a cancelled booking, update it instead of creating a new one
+          if (existingCancelledBookings && existingCancelledBookings.length > 0) {
+            console.log(`Found cancelled booking for shift ${shiftId}, updating to confirmed`);
+            const cancelledBooking = existingCancelledBookings[0];
+            
+            const result = await supabase
+              .from('shift_bookings')
+              .update({ 
+                status: 'confirmed',
+                user_display_name: displayName, // Update in case it changed
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', cancelledBooking.id)
+              .select();
+              
+            data = result.data && result.data.length > 0 ? result.data[0] : null;
+            error = result.error;
+          } else {
+            // No existing bookings, create a new one
+            console.log(`Creating new booking for shift ${shiftId}`);
+            
+            const result = await supabase
+              .from('shift_bookings')
+              .insert([{ 
+                shift_id: shiftId, 
+                user_id: user.id,
+                user_email: user.email,
+                user_display_name: displayName,
+                status: 'confirmed'
+              }])
+              .select();
+              
+            data = result.data && result.data.length > 0 ? result.data[0] : null;
+            error = result.error;
+          }
+          
+          console.log(`Booking result for shift ${shiftId}:`, { data, error });
           
           if (error) {
-            console.error(`Error creating booking for shift ${shiftId}:`, error);
+            console.error(`Error booking shift ${shiftId}:`, error);
             errors.push({ shiftId, error });
             continue;
           }
           
-          if (data && data.length > 0) {
-            const bookingResult = data[0];
-            console.log(`Created booking result for shift ${shiftId}:`, bookingResult);
-            results.push(bookingResult);
+          if (data) {
+            results.push(data);
           } else {
-            console.error(`No data returned for new booking of shift ${shiftId}`);
+            console.error(`No data returned for booking of shift ${shiftId}`);
             errors.push({ 
               shiftId, 
               error: new Error('Ingen data returnerades från bokningsoperationen') 
