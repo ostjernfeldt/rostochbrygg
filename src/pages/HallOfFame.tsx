@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
@@ -6,7 +7,7 @@ import { sv } from "date-fns/locale";
 import { calculateTotalPoints } from "@/utils/pointsCalculation";
 import { Trophy, Calendar, Sun, List, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useState } from "react";
 import { TotalPurchase } from "@/types/purchase";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -29,183 +30,190 @@ const HallOfFame = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["hallOfFame"],
     queryFn: async () => {
-      // Fetch visible staff members first
-      const { data: visibleStaff, error: staffError } = await supabase
-        .from("staff_roles")
-        .select("user_display_name")
-        .eq("hidden", false);
+      try {
+        // Fetch visible staff members first
+        const { data: visibleStaff, error: staffError } = await supabase
+          .from("staff_roles")
+          .select("user_display_name")
+          .eq("hidden", false);
 
-      if (staffError) throw staffError;
+        if (staffError) throw staffError;
 
-      const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
+        const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
 
-      // Fetch all sales
-      const { data: sales, error } = await supabase
-        .from("total_purchases")
-        .select("*")
-        .not("refunded", "eq", true)  // Exkludera återbetalade köp
-        .order("timestamp", { ascending: true });
+        // Fetch all sales
+        const { data: sales, error } = await supabase
+          .from("total_purchases")
+          .select("*")
+          .not("refunded", "eq", true)  // Exclude refunded purchases
+          .order("timestamp", { ascending: true });
 
-      if (error) throw error;
-      
-      // Fetch manual Hall of Fame entries
-      const { data: manualEntries, error: manualError } = await supabase
-        .from("hall_of_fame_manual")
-        .select("*");
+        if (error) throw error;
         
-      if (manualError) throw manualError;
-      
-      // Process manual entries
-      const manualTopSales: TopSeller[] = (manualEntries || [])
-        .filter((entry: ManualHallOfFameEntry) => entry.category === 'sale')
-        .map((entry: ManualHallOfFameEntry) => ({
-          name: entry.user_display_name,
-          points: Number(entry.points),
-          date: entry.date ? format(new Date(entry.date), 'd MMMM yyyy', { locale: sv }) : undefined,
-          isManual: true,
-          description: entry.description
-        }));
+        // Fetch manual Hall of Fame entries
+        const { data: manualEntries, error: manualError } = await supabase
+          .from("hall_of_fame_manual")
+          .select("*");
+          
+        if (manualError) throw manualError;
         
-      const manualTopDays: TopSeller[] = (manualEntries || [])
-        .filter((entry: ManualHallOfFameEntry) => entry.category === 'day')
-        .map((entry: ManualHallOfFameEntry) => ({
-          name: entry.user_display_name,
-          points: Number(entry.points),
-          date: entry.date ? format(new Date(entry.date), 'd MMMM yyyy', { locale: sv }) : undefined,
-          isManual: true,
-          description: entry.description
-        }));
-        
-      const manualTopMonths: TopSeller[] = (manualEntries || [])
-        .filter((entry: ManualHallOfFameEntry) => entry.category === 'month')
-        .map((entry: ManualHallOfFameEntry) => ({
-          name: entry.user_display_name,
-          points: Number(entry.points),
-          month: entry.month,
-          isManual: true,
-          description: entry.description
-        }));
+        // Process manual entries
+        const manualTopSales: TopSeller[] = (manualEntries || [])
+          .filter((entry: ManualHallOfFameEntry) => entry.category === 'sale')
+          .map((entry: ManualHallOfFameEntry) => ({
+            name: entry.user_display_name,
+            points: Number(entry.points),
+            date: entry.date ? format(new Date(entry.date), 'd MMMM yyyy', { locale: sv }) : undefined,
+            isManual: true,
+            description: entry.description
+          }));
+          
+        const manualTopDays: TopSeller[] = (manualEntries || [])
+          .filter((entry: ManualHallOfFameEntry) => entry.category === 'day')
+          .map((entry: ManualHallOfFameEntry) => ({
+            name: entry.user_display_name,
+            points: Number(entry.points),
+            date: entry.date ? format(new Date(entry.date), 'd MMMM yyyy', { locale: sv }) : undefined,
+            isManual: true,
+            description: entry.description
+          }));
+          
+        const manualTopMonths: TopSeller[] = (manualEntries || [])
+          .filter((entry: ManualHallOfFameEntry) => entry.category === 'month')
+          .map((entry: ManualHallOfFameEntry) => ({
+            name: entry.user_display_name,
+            points: Number(entry.points),
+            month: entry.month,
+            isManual: true,
+            description: entry.description
+          }));
 
-      if (!sales) return { 
-        topSales: manualTopSales,
-        topDays: manualTopDays,
-        topMonths: manualTopMonths
-      };
+        if (!sales) return { 
+          topSales: manualTopSales,
+          topDays: manualTopDays,
+          topMonths: manualTopMonths
+        };
 
-      // Filter for visible staff members
-      const visibleSales = sales.filter(sale => 
-        sale.user_display_name && 
-        visibleStaffNames.has(sale.user_display_name)
-      );
+        // Filter for visible staff members
+        const visibleSales = sales.filter(sale => 
+          sale.user_display_name && 
+          visibleStaffNames.has(sale.user_display_name)
+        );
 
-      // Helper function to get unique top sellers
-      const getUniqueTopSellers = (sellers: TopSeller[]): TopSeller[] => {
-        const uniqueSellers: TopSeller[] = [];
-        const seenNames = new Set<string>();
-        
-        for (const seller of sellers) {
-          if (!seenNames.has(seller.name) && uniqueSellers.length < 3) {
-            uniqueSellers.push(seller);
-            seenNames.add(seller.name);
-          }
-        }
-        
-        return uniqueSellers;
-      };
-
-      // Helper function to merge automatic and manual entries, favoring higher points
-      const mergeEntries = (automatic: TopSeller[], manual: TopSeller[]): TopSeller[] => {
-        const allEntries = [...automatic, ...manual];
-        return allEntries.sort((a, b) => b.points - a.points);
-      };
-
-      // 1. Highest single sales
-      const allSalesByPoints = visibleSales
-        .filter(sale => sale.amount > 0)
-        .map(sale => ({
-          name: sale.user_display_name || 'Okänd',
-          points: calculateTotalPoints([sale]),
-          date: format(new Date(sale.timestamp), 'd MMMM yyyy', { locale: sv }),
-          transaction: sale,
-          isManual: false
-        }))
-        .sort((a, b) => b.points - a.points);
-
-      const topSales = getUniqueTopSellers(mergeEntries(allSalesByPoints, manualTopSales));
-
-      // 2. Best months
-      const monthlyTotals = visibleSales
-        .filter(sale => sale.amount > 0)
-        .reduce((acc, sale) => {
-          const monthKey = format(new Date(sale.timestamp), 'yyyy-MM');
-          if (!acc[monthKey]) {
-            acc[monthKey] = {
-              sellers: {},
-              totalPoints: 0
-            };
+        // Helper function to get unique top sellers
+        const getUniqueTopSellers = (sellers: TopSeller[]): TopSeller[] => {
+          const uniqueSellers: TopSeller[] = [];
+          const seenNames = new Set<string>();
+          
+          for (const seller of sellers) {
+            if (!seenNames.has(seller.name) && uniqueSellers.length < 3) {
+              uniqueSellers.push(seller);
+              seenNames.add(seller.name);
+            }
           }
           
-          const sellerName = sale.user_display_name || 'Okänd';
-          if (!acc[monthKey].sellers[sellerName]) {
-            acc[monthKey].sellers[sellerName] = [];
-          }
-          acc[monthKey].sellers[sellerName].push(sale);
-          
-          return acc;
-        }, {} as Record<string, { sellers: Record<string, TotalPurchase[]>, totalPoints: number }>);
+          return uniqueSellers;
+        };
 
-      const allMonthlyTopSellers = Object.entries(monthlyTotals)
-        .flatMap(([monthKey, data]) => 
-          Object.entries(data.sellers).map(([name, sales]) => ({
-            name,
-            points: calculateTotalPoints(sales),
-            month: format(parseISO(monthKey), 'MMMM yyyy', { locale: sv }),
+        // Helper function to merge automatic and manual entries, favoring higher points
+        const mergeEntries = (automatic: TopSeller[], manual: TopSeller[]): TopSeller[] => {
+          const allEntries = [...automatic, ...manual];
+          return allEntries.sort((a, b) => b.points - a.points);
+        };
+
+        // 1. Highest single sales
+        const allSalesByPoints = visibleSales
+          .filter(sale => sale.amount > 0)
+          .map(sale => ({
+            name: sale.user_display_name || 'Okänd',
+            points: calculateTotalPoints([sale]),
+            date: format(new Date(sale.timestamp), 'd MMMM yyyy', { locale: sv }),
+            transaction: sale,
             isManual: false
           }))
-        )
-        .sort((a, b) => b.points - a.points);
+          .sort((a, b) => b.points - a.points);
 
-      const topMonths = getUniqueTopSellers(mergeEntries(allMonthlyTopSellers, manualTopMonths));
+        const topSales = getUniqueTopSellers(mergeEntries(allSalesByPoints, manualTopSales));
 
-      // 3. Best days
-      const dailyTotals = visibleSales
-        .filter(sale => sale.amount > 0)
-        .reduce((acc, sale) => {
-          const dateKey = format(new Date(sale.timestamp), 'yyyy-MM-dd');
-          if (!acc[dateKey]) {
-            acc[dateKey] = {
-              sellers: {},
-              totalPoints: 0
-            };
-          }
-          
-          const sellerName = sale.user_display_name || 'Okänd';
-          if (!acc[dateKey].sellers[sellerName]) {
-            acc[dateKey].sellers[sellerName] = [];
-          }
-          acc[dateKey].sellers[sellerName].push(sale);
-          
-          return acc;
-        }, {} as Record<string, { sellers: Record<string, TotalPurchase[]>, totalPoints: number }>);
+        // 2. Best months
+        const monthlyTotals = visibleSales
+          .filter(sale => sale.amount > 0)
+          .reduce((acc, sale) => {
+            const monthKey = format(new Date(sale.timestamp), 'yyyy-MM');
+            if (!acc[monthKey]) {
+              acc[monthKey] = {
+                sellers: {},
+                totalPoints: 0
+              };
+            }
+            
+            const sellerName = sale.user_display_name || 'Okänd';
+            if (!acc[monthKey].sellers[sellerName]) {
+              acc[monthKey].sellers[sellerName] = [];
+            }
+            acc[monthKey].sellers[sellerName].push(sale);
+            
+            return acc;
+          }, {} as Record<string, { sellers: Record<string, TotalPurchase[]>, totalPoints: number }>);
 
-      const allDailyTopSellers = Object.entries(dailyTotals)
-        .flatMap(([dateKey, data]) => 
-          Object.entries(data.sellers).map(([name, sales]) => ({
-            name,
-            points: calculateTotalPoints(sales),
-            date: format(parseISO(dateKey), 'd MMMM yyyy', { locale: sv }),
-            isManual: false
-          }))
-        )
-        .sort((a, b) => b.points - a.points);
+        const allMonthlyTopSellers = Object.entries(monthlyTotals)
+          .flatMap(([monthKey, data]) => 
+            Object.entries(data.sellers).map(([name, sales]) => ({
+              name,
+              points: calculateTotalPoints(sales),
+              month: format(parseISO(monthKey), 'MMMM yyyy', { locale: sv }),
+              isManual: false
+            }))
+          )
+          .sort((a, b) => b.points - a.points);
 
-      const topDays = getUniqueTopSellers(mergeEntries(allDailyTopSellers, manualTopDays));
+        const topMonths = getUniqueTopSellers(mergeEntries(allMonthlyTopSellers, manualTopMonths));
 
-      return {
-        topSales,
-        topMonths,
-        topDays
-      };
+        // 3. Best days
+        const dailyTotals = visibleSales
+          .filter(sale => sale.amount > 0)
+          .reduce((acc, sale) => {
+            const dateKey = format(new Date(sale.timestamp), 'yyyy-MM-dd');
+            if (!acc[dateKey]) {
+              acc[dateKey] = {
+                sellers: {},
+                totalPoints: 0
+              };
+            }
+            
+            const sellerName = sale.user_display_name || 'Okänd';
+            if (!acc[dateKey].sellers[sellerName]) {
+              acc[dateKey].sellers[sellerName] = [];
+            }
+            acc[dateKey].sellers[sellerName].push(sale);
+            
+            return acc;
+          }, {} as Record<string, { sellers: Record<string, TotalPurchase[]>, totalPoints: number }>);
+
+        const allDailyTopSellers = Object.entries(dailyTotals)
+          .flatMap(([dateKey, data]) => 
+            Object.entries(data.sellers).map(([name, sales]) => ({
+              name,
+              points: calculateTotalPoints(sales),
+              date: format(parseISO(dateKey), 'd MMMM yyyy', { locale: sv }),
+              isManual: false
+            }))
+          )
+          .sort((a, b) => b.points - a.points);
+
+        const topDays = getUniqueTopSellers(mergeEntries(allDailyTopSellers, manualTopDays));
+
+        console.log("Hall of Fame data compiled successfully");
+        
+        return {
+          topSales,
+          topMonths,
+          topDays
+        };
+      } catch (error) {
+        console.error("Error fetching Hall of Fame data:", error);
+        throw error;
+      }
     }
   });
 

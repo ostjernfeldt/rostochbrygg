@@ -40,14 +40,6 @@ interface RoleLevel {
   updated_at?: string;
 }
 
-interface HistoricalPoints {
-  id: string;
-  user_display_name: string;
-  points: number;
-  updated_at?: string;
-  updated_by?: string;
-}
-
 export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
   // Adjust statistics to exclude refunded purchases
   const cleanStats = {
@@ -60,7 +52,7 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
     bestDay: stats.bestDay || { date: new Date().toISOString(), points: 0 }
   };
 
-  // Fetch historical points - no longer needed as we pass them from parent
+  // Fetch historical points (if needed)
   const { data: historicalPoints } = useQuery({
     queryKey: ["historicalPoints", userDisplayName],
     queryFn: async () => {
@@ -70,7 +62,7 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
     enabled: false // Disable the query since we already have the data
   });
 
-  // Fetch role levels
+  // Fetch role levels - all users should see these
   const { data: roleLevels, isLoading: isLoadingRoleLevels } = useQuery({
     queryKey: ["roleLevels"],
     queryFn: async () => {

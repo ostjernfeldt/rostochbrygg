@@ -34,12 +34,25 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
           return [];
         }
         
-        // Get all sales - we won't filter by staff visibility here
-        // This change allows regular users to see all sales dates
+        // Fetch visible staff first (to ensure consistency with other components)
+        const { data: visibleStaff, error: staffError } = await supabase
+          .from("staff_roles")
+          .select("user_display_name")
+          .eq("hidden", false);
+
+        if (staffError) {
+          console.error("Error fetching visible staff:", staffError);
+          throw staffError;
+        }
+
+        const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
+        
+        // Get all non-refunded sales for visible staff members
         const { data, error } = await supabase
           .from("total_purchases")
-          .select("timestamp")
+          .select("timestamp, user_display_name")
           .eq('refunded', false)
+          .not("user_display_name", "is", null)
           .order("timestamp", { ascending: false });
 
         if (error) {
@@ -47,11 +60,17 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
           throw error;
         }
 
-        console.log(`Found ${data.length} total non-refunded sales`);
+        // Filter for visible staff members
+        const visibleSales = data.filter(sale => 
+          sale.user_display_name && 
+          visibleStaffNames.has(sale.user_display_name)
+        );
 
-        // Extract unique dates from sales
+        console.log(`Found ${data.length} total non-refunded sales, ${visibleSales.length} from visible staff`);
+
+        // Extract unique dates from visible sales
         const uniqueDates = [...new Set(
-          data.map(sale => format(new Date(sale.timestamp), 'yyyy-MM-dd'))
+          visibleSales.map(sale => format(new Date(sale.timestamp), 'yyyy-MM-dd'))
         )].sort().reverse();
 
         console.log("Found valid sales dates:", uniqueDates);

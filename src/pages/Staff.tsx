@@ -21,7 +21,7 @@ const Staff = () => {
       console.log("Fetching staff members data...");
       
       try {
-        // Simplified approach: directly fetch staff roles without checking user role first
+        // Fetch all non-hidden staff members
         const rolesResponse = await supabase
           .from("staff_roles")
           .select("*")
@@ -40,7 +40,7 @@ const Staff = () => {
           return [];
         }
         
-        // Now fetch sales data (if any exists)
+        // Now fetch sales data for all staff members
         const salesResponse = await supabase
           .from("total_purchases")
           .select("*")
@@ -119,6 +119,8 @@ const Staff = () => {
             }
           });
         }
+        
+        console.log("Staff data compiled successfully");
         
         // Convert to array and return
         return Object.values(staffStats);

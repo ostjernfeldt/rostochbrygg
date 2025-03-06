@@ -66,8 +66,17 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
 
         console.log(`Date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
 
-        // Get all relevant sales in a single query - not filtering by staff visibility
-        // This allows regular users to see all leaderboard data
+        // Get visible staff members first - this ensures we match the admin view
+        const { data: visibleStaff, error: staffError } = await supabase
+          .from("staff_roles")
+          .select("user_display_name")
+          .eq("hidden", false);
+
+        if (staffError) throw staffError;
+
+        const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
+
+        // Get all sales within the date range for visible staff members
         const { data: sales, error: salesError } = await supabase
           .from("total_purchases")
           .select("*")
@@ -81,10 +90,16 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           throw salesError;
         }
 
-        console.log(`Found ${sales?.length || 0} sales in the date range`);
+        // Filter for visible staff members
+        const visibleSales = sales?.filter(sale => 
+          sale.user_display_name && 
+          visibleStaffNames.has(sale.user_display_name)
+        ) || [];
+
+        console.log(`Found ${sales?.length || 0} total sales, ${visibleSales.length} visible sales in the date range`);
 
         // If no sales are found for the selected date range and we need the latest date
-        if ((!sales || sales.length === 0) && type === 'daily') {
+        if (visibleSales.length === 0 && type === 'daily') {
           // Check if there are any sales at all with a lightweight count query
           const { count, error: countError } = await supabase
             .from("total_purchases")
@@ -152,9 +167,15 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             throw latestSalesError;
           }
           
-          console.log(`Found ${latestSales?.length || 0} sales on latest date`);
+          // Filter for visible staff members
+          const visibleLatestSales = latestSales?.filter(sale => 
+            sale.user_display_name && 
+            visibleStaffNames.has(sale.user_display_name)
+          ) || [];
           
-          if (!latestSales || latestSales.length === 0) {
+          console.log(`Found ${visibleLatestSales.length} visible sales on latest date`);
+          
+          if (visibleLatestSales.length === 0) {
             // Still no valid sales - return empty array
             const emptyLeaders: UserSales[] = [];
             const emptyResult: Record<string, any> = { latestDate: startDate.toISOString() };
@@ -167,7 +188,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           }
           
           // Calculate leaders with the latest sales
-          const leaders = calculateLeaders(latestSales);
+          const leaders = calculateLeaders(visibleLatestSales);
           
           const result: Record<string, any> = { latestDate: startDate.toISOString() };
           
@@ -179,7 +200,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         }
 
         // Calculate leaders with the originally requested date range
-        const leaders = calculateLeaders(sales);
+        const leaders = calculateLeaders(visibleSales);
         
         // Create result object based on the requested type
         const result: Record<string, any> = { 
