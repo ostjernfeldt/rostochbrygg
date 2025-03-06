@@ -1,7 +1,7 @@
-
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { WeeklyBookingSummary } from '@/types/booking';
 
 export const useBookShift = () => {
   const queryClient = useQueryClient();
@@ -198,5 +198,58 @@ export const useCancelUserBooking = () => {
         description: error.message || 'Ett fel uppstod vid avbokningen av passet.',
       });
     },
+  });
+};
+
+export const useWeeklyBookingSummary = (userId?: string, startDate?: Date) => {
+  const currentDate = startDate || new Date();
+  const weekStart = new Date(currentDate);
+  weekStart.setHours(0, 0, 0, 0);
+  
+  // Ensure the date is set to Monday of the current week
+  const day = weekStart.getDay();
+  const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1);
+  weekStart.setDate(diff);
+  
+  // Calculate week end (Sunday)
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+
+  return useQuery({
+    queryKey: ['weekly-booking-summary', userId, weekStart.toISOString()],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const targetUserId = userId || user?.id;
+
+      if (!targetUserId) {
+        throw new Error('No user ID provided and no user is logged in');
+      }
+
+      // Get confirmed bookings for the user within the date range
+      const { data: bookings, error } = await supabase
+        .from('shift_bookings')
+        .select('*')
+        .eq('user_id', targetUserId)
+        .eq('status', 'confirmed')
+        .gte('created_at', weekStart.toISOString())
+        .lte('created_at', weekEnd.toISOString());
+
+      if (error) {
+        console.error('Error fetching weekly booking summary:', error);
+        throw error;
+      }
+
+      // Create the summary
+      const summary: WeeklyBookingSummary = {
+        week_start: weekStart.toISOString(),
+        week_end: weekEnd.toISOString(),
+        total_bookings: bookings.length,
+        meets_minimum_requirement: bookings.length >= 2
+      };
+
+      return summary;
+    },
+    enabled: true, // Always fetch when component mounts
   });
 };

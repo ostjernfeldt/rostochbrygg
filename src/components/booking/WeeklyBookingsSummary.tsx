@@ -14,7 +14,7 @@ export function WeeklyBookingsSummary() {
   startOfWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
   startOfWeek.setHours(0, 0, 0, 0);
   
-  const { summary, isLoading } = useWeeklyBookingSummary(undefined, startOfWeek);
+  const { data: summary, isLoading } = useWeeklyBookingSummary(undefined, startOfWeek);
   
   if (isLoading) {
     return <div className="w-full bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 backdrop-blur-sm rounded-xl p-4 border border-[#33333A] animate-pulse shadow-lg">
