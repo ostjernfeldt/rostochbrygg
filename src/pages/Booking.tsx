@@ -10,7 +10,8 @@ import { ShiftCard } from '@/components/booking/ShiftCard';
 import { ShiftDetailsDialog } from '@/components/booking/ShiftDetailsDialog';
 import { CreateShiftForm } from '@/components/booking/CreateShiftForm';
 import { WeeklyBookingsSummary } from '@/components/booking/WeeklyBookingsSummary';
-import { useShifts, useShiftDetails } from '@/hooks/useShifts';
+import { useShifts } from '@/hooks/useShifts';
+import { useShiftDetails } from '@/hooks/useShiftDetails';
 import { useBatchBookShifts } from '@/hooks/booking';
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Clock, InfoIcon, Settings, User, X, Check, AlertTriangle, Loader2 } from 'lucide-react';
@@ -103,7 +104,7 @@ export default function Booking() {
   const {
     shift: selectedShift,
     isLoading: shiftDetailsLoading
-  } = useShiftDetails(selectedShiftId || '', !!selectedShiftId);
+  } = useShiftDetails(selectedShiftId || '');
   
   const {
     mutate: batchBookShifts,
