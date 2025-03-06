@@ -24,9 +24,13 @@ const Staff = () => {
         .select("*")
         .eq("hidden", false); // Only fetch non-hidden staff members
 
-      if (rolesResponse.error) throw rolesResponse.error;
+      if (rolesResponse.error) {
+        console.error("Error fetching staff roles:", rolesResponse.error);
+        throw rolesResponse.error;
+      }
       
       const roles = rolesResponse.data || [];
+      console.log(`Found ${roles.length} non-hidden staff members`);
       
       if (roles.length === 0) {
         console.log("No staff members found in staff_roles table");
