@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
@@ -43,7 +44,9 @@ export const useShifts = (startDate: Date, endDate: Date) => {
             
             return {
               ...booking,
-              status: typedStatus
+              status: typedStatus,
+              // Use user_display_name if available, otherwise use user_email or fallback to "Okänd säljare"
+              user_display_name: booking.user_display_name || booking.user_email || 'Okänd säljare'
             } as ShiftBooking;
           });
           
