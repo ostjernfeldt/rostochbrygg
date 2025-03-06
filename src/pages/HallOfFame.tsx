@@ -109,25 +109,36 @@ const HallOfFame = () => {
         return sale.user_display_name && !hiddenStaffMap.get(sale.user_display_name);
       });
 
-      // Helper function to get unique top sellers
-      const getUniqueTopSellers = (sellers: TopSeller[]): TopSeller[] => {
-        const uniqueSellers: TopSeller[] = [];
-        const seenNames = new Set<string>();
+      // Updated helper function to get unique top sellers by name
+      const getUniqueTopSellers = (sellers: TopSeller[], limit: number = 3): TopSeller[] => {
+        // First sort by points (highest first)
+        const sortedSellers = [...sellers].sort((a, b) => b.points - a.points);
         
-        for (const seller of sellers) {
-          if (!seenNames.has(seller.name) && uniqueSellers.length < 3) {
-            uniqueSellers.push(seller);
-            seenNames.add(seller.name);
+        // Create a map to store the highest-scoring entry for each seller
+        const bestSellerMap = new Map<string, TopSeller>();
+        
+        // For each seller, only keep their highest-scoring entry
+        for (const seller of sortedSellers) {
+          const existingSeller = bestSellerMap.get(seller.name);
+          
+          // Only add or replace if the current entry has more points
+          if (!existingSeller || seller.points > existingSeller.points) {
+            bestSellerMap.set(seller.name, seller);
           }
         }
         
-        return uniqueSellers;
+        // Convert back to array and return top entries up to the limit
+        return Array.from(bestSellerMap.values())
+          .sort((a, b) => b.points - a.points)
+          .slice(0, limit);
       };
 
-      // Helper function to merge automatic and manual entries, favoring higher points
+      // Helper function to merge automatic and manual entries, now using the updated getUniqueTopSellers
       const mergeEntries = (automatic: TopSeller[], manual: TopSeller[]): TopSeller[] => {
+        // First combine both arrays
         const allEntries = [...automatic, ...manual];
-        return allEntries.sort((a, b) => b.points - a.points);
+        // Then use the updated getUniqueTopSellers function to get unique entries by name
+        return getUniqueTopSellers(allEntries);
       };
 
       // 1. Highest single sales - only visible staff
