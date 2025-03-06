@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { PageLayout } from "@/components/PageLayout";
 import { StaffMemberStats } from "@/types/purchase";
 import { calculatePoints } from "@/utils/pointsCalculation";
+import { processTransactions, getValidTransactions, getValidSalesCount } from "@/components/transactions/TransactionProcessor";
 import { useState, useEffect } from "react";
 
 const Staff = () => {
@@ -22,56 +23,28 @@ const Staff = () => {
         // Fetch all visible staff roles (not hidden)
         const rolesResponse = await supabase
           .from("staff_roles")
-          .select("*")
-          .eq("hidden", false);
+          .select("*");
 
         if (rolesResponse.error) {
           console.error("Error fetching staff roles:", rolesResponse.error);
           throw rolesResponse.error;
         }
         
-        const roles = rolesResponse.data || [];
+        // Filter out hidden staff members
+        const roles = rolesResponse.data?.filter(staff => !staff.hidden) || [];
         console.log(`Fetched ${roles.length} visible staff roles`);
         
-        // Om det inte finns några säljare, skapa dummy data
+        // If there are no staff members, return empty array
         if (roles.length === 0) {
-          console.log("No staff members found - creating dummy data");
-          
-          // Create dummy staff data for demonstration
-          const dummyRoles = [
-            { id: "1", user_display_name: "Säljare 1", role: "Sales Manager", hidden: false },
-            { id: "2", user_display_name: "Säljare 2", role: "Sales Representative", hidden: false },
-            { id: "3", user_display_name: "Säljare 3", role: "Sales Representative", hidden: false },
-            { id: "4", user_display_name: "Säljare 4", role: "Sales Intern", hidden: false },
-            { id: "5", user_display_name: "Säljare 5", role: "Sales Intern", hidden: false }
-          ];
-          
-          // Convert dummy roles to staff stats format
-          const dummyStats = dummyRoles.map((role, index) => {
-            const basePoints = 450 - (index * 75);
-            return {
-              displayName: role.user_display_name,
-              role: role.role,
-              firstSale: new Date(2023, 0, 1),
-              totalPoints: basePoints,
-              averagePoints: basePoints / 20,
-              totalAmount: basePoints * 10,
-              averageAmount: basePoints / 2,
-              daysActive: 20 - (index * 2),
-              salesCount: 20 - (index * 2),
-              sales: []
-            };
-          });
-          
-          return dummyStats;
+          console.log("No staff members found - returning empty array");
+          return [];
         }
         
         // Now fetch sales data (if any exists)
         const salesResponse = await supabase
           .from("total_purchases")
           .select("*")
-          .not("user_display_name", "is", null)
-          .order("timestamp", { ascending: true });
+          .not("user_display_name", "is", null);
         
         if (salesResponse.error) {
           console.error("Error fetching sales data:", salesResponse.error);
@@ -80,6 +53,10 @@ const Staff = () => {
         
         const sales = salesResponse.data || [];
         console.log(`Fetched ${sales.length} sales records`);
+        
+        // Process transactions - do this once
+        const processedSales = processTransactions(sales);
+        console.log(`After processing: ${processedSales.length} sales`);
         
         // Initialize staff stats from roles data
         const staffStats: { [key: string]: StaffMemberStats } = {};
@@ -101,72 +78,45 @@ const Staff = () => {
           };
         });
         
-        // Om det inte finns några sälj, skapa dummy-sälj för varje säljare
-        if (sales.length === 0) {
-          console.log("No sales data found - creating dummy sales");
-          
-          // Create some dummy sales for each staff member
-          Object.keys(staffStats).forEach((displayName, index) => {
-            const basePoints = 450 - (index * 75);
-            const salesCount = 20 - (index * 2);
-            
-            staffStats[displayName].totalPoints = basePoints;
-            staffStats[displayName].averagePoints = basePoints / salesCount;
-            staffStats[displayName].totalAmount = basePoints * 10;
-            staffStats[displayName].averageAmount = basePoints / 2;
-            staffStats[displayName].daysActive = salesCount;
-            staffStats[displayName].salesCount = salesCount;
-            staffStats[displayName].firstSale = new Date(2023, 0, 1);
-          });
-          
-          // Convert to array for display
-          return Object.values(staffStats);
-        }
+        // Get valid transactions once
+        const validTransactions = getValidTransactions(processedSales);
         
         // Add sales data for all staff members who have sales
-        if (sales.length > 0) {
-          sales.forEach(sale => {
-            const displayName = sale.user_display_name as string;
-            
-            // Skip if the staff member is not in our visible list
-            if (!staffStats[displayName]) return;
-            
-            const points = calculatePoints(sale.quantity);
-            
-            // Update first sale date if not set or if this sale is earlier
-            if (!staffStats[displayName].firstSale || 
-                new Date(sale.timestamp) < new Date(staffStats[displayName].firstSale!)) {
-              staffStats[displayName].firstSale = new Date(sale.timestamp);
-            }
-            
-            if (!sale.refunded) {
-              staffStats[displayName].totalPoints += points;
-            }
-            
-            staffStats[displayName].sales.push(sale);
-          });
+        validTransactions.forEach(sale => {
+          const displayName = sale.user_display_name as string;
           
-          // Calculate statistics for staff members with sales
-          Object.values(staffStats).forEach(member => {
-            if (member.sales.length > 0) {
-              // Calculate days active
-              const uniqueDays = new Set(member.sales.map(sale => 
-                new Date(sale.timestamp).toDateString()));
-              member.daysActive = uniqueDays.size;
-              
-              // Count valid sales (non-refunded)
-              const validSales = member.sales.filter(sale => !sale.refunded);
-              member.salesCount = validSales.length;
-              
-              // Calculate financial stats if there are valid sales
-              if (validSales.length > 0) {
-                member.totalAmount = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
-                member.averageAmount = member.totalAmount / validSales.length;
-                member.averagePoints = member.totalPoints / validSales.length;
-              }
-            }
-          });
-        }
+          // Skip if the staff member is not in our visible list
+          if (!staffStats[displayName]) return;
+          
+          const points = calculatePoints(sale.quantity);
+          
+          // Update first sale date if not set or if this sale is earlier
+          if (!staffStats[displayName].firstSale || 
+              new Date(sale.timestamp) < new Date(staffStats[displayName].firstSale!)) {
+            staffStats[displayName].firstSale = new Date(sale.timestamp);
+          }
+          
+          staffStats[displayName].totalPoints += points;
+          staffStats[displayName].totalAmount += Number(sale.amount);
+          staffStats[displayName].sales.push(sale);
+        });
+        
+        // Calculate statistics for all staff members
+        Object.values(staffStats).forEach(member => {
+          // Calculate days active
+          const uniqueDays = new Set(member.sales.map(sale => 
+            new Date(sale.timestamp).toDateString()));
+          member.daysActive = uniqueDays.size;
+          
+          // Count valid sales
+          member.salesCount = getValidSalesCount(member.sales);
+          
+          // Calculate financial stats
+          if (member.salesCount > 0) {
+            member.averageAmount = member.totalAmount / member.salesCount;
+            member.averagePoints = member.totalPoints / member.salesCount;
+          }
+        });
         
         // Convert to array for display
         return Object.values(staffStats);
@@ -177,7 +127,6 @@ const Staff = () => {
     },
     staleTime: 1000 * 60 * 5,
     retry: 3,
-    // Always enable the query since we don't need authentication
     enabled: true
   });
 
