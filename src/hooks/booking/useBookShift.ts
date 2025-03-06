@@ -13,36 +13,30 @@ export const useBookShift = () => {
         throw new Error('Du måste vara inloggad för att boka pass');
       }
 
-      // First, check if user already has a booking for this shift
+      // First check if user already has a booking for this shift
       const { data: existingBookings } = await supabase
         .from('shift_bookings')
         .select('*')
         .eq('shift_id', shiftId)
         .eq('user_id', user.id);
 
-      // Get the user's display name from staff_roles table
+      // Get the user's display name from staff_roles table by matching email
       const { data: staffRoleData, error: staffRoleError } = await supabase
         .from('staff_roles')
         .select('user_display_name')
-        .eq('id', user.id)
+        .eq('email', user.email)
         .maybeSingle();
 
-      let displayName = user.email;
-
-      // If not found in staff_roles, try to get from invitations as fallback
-      if (staffRoleError || !staffRoleData) {
-        const { data: invitationData } = await supabase
-          .from('invitations')
-          .select('email, display_name')
-          .eq('email', user.email)
-          .maybeSingle();
-          
-        if (invitationData && invitationData.display_name) {
-          displayName = invitationData.display_name;
-        }
-      } else {
-        displayName = staffRoleData.user_display_name;
+      if (staffRoleError) {
+        console.error('Error fetching staff role:', staffRoleError);
+        throw new Error('Du måste vara registrerad som säljare för att boka pass');
       }
+
+      if (!staffRoleData) {
+        throw new Error('Du måste vara registrerad som säljare för att boka pass');
+      }
+
+      const displayName = staffRoleData.user_display_name;
 
       let data;
       let error;
@@ -59,7 +53,7 @@ export const useBookShift = () => {
           .from('shift_bookings')
           .update({ 
             status: 'confirmed',
-            user_display_name: displayName  // Ensure display name is updated
+            user_display_name: displayName
           })
           .eq('id', existingBooking.id)
           .select()
