@@ -1,44 +1,38 @@
-
 import { useState, useEffect } from "react";
 import { format, startOfWeek, endOfWeek, parseISO, subMonths } from "date-fns";
-import { sv } from "date-fns/locale";  // Importera svenska lokaliseringen
+import { sv } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { PageLayout } from "@/components/PageLayout";
 import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection";
 import { useLeaderboardDates } from "@/hooks/useLeaderboardDates";
 import { useLeaderboardData } from "@/hooks/useLeaderboardData";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 
 const Leaderboard = () => {
   const navigate = useNavigate();
   const [selectedWeek, setSelectedWeek] = useState(() => {
-    // Initialize with current week's start date
     return format(startOfWeek(new Date()), 'yyyy-MM-dd');
   });
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [previousMonthsWithData, setPreviousMonthsWithData] = useState<string[]>([]);
 
-  // Handle dates loaded from the server
   const handleDatesLoaded = (dates: string[]) => {
     console.log("Dates loaded:", dates);
     
-    // If there are dates, set previous months with data
     if (dates.length > 0) {
-      // Generate a list of months with sales data
       const monthsWithData = new Set<string>();
       dates.forEach(date => {
-        const month = date.substring(0, 7); // Get YYYY-MM format
+        const month = date.substring(0, 7);
         monthsWithData.add(month);
       });
-      setPreviousMonthsWithData(Array.from(monthsWithData).sort().reverse()); // Sort descending
+      setPreviousMonthsWithData(Array.from(monthsWithData).sort().reverse());
     }
   };
 
-  // Fetch dates with sales activity
   const { data: salesDates } = useLeaderboardDates(handleDatesLoaded);
 
-  // Generate weeks based on sales dates or current date
   const weekOptions = Array.from({ length: 5 }, (_, i) => {
-    // Always use current date as reference for week options
     const date = startOfWeek(new Date());
     date.setDate(date.getDate() - (i * 7));
     return {
@@ -47,7 +41,6 @@ const Leaderboard = () => {
     };
   });
 
-  // Generate last 12 months for the dropdown, with Swedish month names
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
     const date = subMonths(new Date(), i);
     return {
@@ -56,25 +49,27 @@ const Leaderboard = () => {
     };
   });
 
-  // Fetch leaderboard data for each time period
-  const { data: weeklyLeaderboard, isLoading: isWeeklyLoading } = useLeaderboardData('weekly', selectedWeek);
+  const { 
+    data: weeklyLeaderboard, 
+    isLoading: isWeeklyLoading,
+    error: weeklyError
+  } = useLeaderboardData('weekly', selectedWeek);
+
   const { 
     data: monthlyLeaderboard, 
-    isLoading: isMonthlyLoading 
+    isLoading: isMonthlyLoading,
+    error: monthlyError
   } = useLeaderboardData('monthly', selectedMonth);
 
-  // Effect to check if current month has data and fall back to previous month if needed
   useEffect(() => {
     if (!isMonthlyLoading && monthlyLeaderboard && previousMonthsWithData.length > 0) {
       const currentMonthHasData = 
         monthlyLeaderboard.monthlyLeaders && 
         monthlyLeaderboard.monthlyLeaders.length > 0;
       
-      // If current month has no data and it's not in our list of months with data
       if (!currentMonthHasData && !previousMonthsWithData.includes(selectedMonth)) {
         console.log("Current month has no data, finding previous month with data");
         
-        // Find the most recent month with data
         const mostRecentMonthWithData = previousMonthsWithData[0];
         
         if (mostRecentMonthWithData && mostRecentMonthWithData !== selectedMonth) {
@@ -85,15 +80,25 @@ const Leaderboard = () => {
     }
   }, [monthlyLeaderboard, isMonthlyLoading, previousMonthsWithData, selectedMonth]);
 
-  // Debug logs to track data loading
   useEffect(() => {
     console.log("Weekly leaderboard data:", weeklyLeaderboard);
     console.log("Monthly leaderboard data:", monthlyLeaderboard);
   }, [weeklyLeaderboard, monthlyLeaderboard]);
 
+  const ErrorAlert = ({ error }: { error: Error }) => (
+    <Alert variant="destructive" className="mb-4">
+      <ExclamationTriangleIcon className="h-4 w-4" />
+      <AlertTitle>Error</AlertTitle>
+      <AlertDescription>
+        {error.message}
+      </AlertDescription>
+    </Alert>
+  );
+
   return (
     <PageLayout>
       <div className="space-y-8">
+        {weeklyError && <ErrorAlert error={weeklyError as Error} />}
         <LeaderboardSection
           title="Veckans topplista"
           data={weeklyLeaderboard?.weeklyLeaders || []}
@@ -107,6 +112,7 @@ const Leaderboard = () => {
           onUserClick={(userName) => navigate(`/staff/${encodeURIComponent(userName)}`)}
         />
 
+        {monthlyError && <ErrorAlert error={monthlyError as Error} />}
         <LeaderboardSection
           title="Månadens topplista"
           data={monthlyLeaderboard?.monthlyLeaders || []}
