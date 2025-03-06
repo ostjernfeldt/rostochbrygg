@@ -447,9 +447,7 @@ export default function Booking() {
                             <Check className="h-3.5 w-3.5" />
                           </div>
                           <div className="font-medium text-white">
-                            {selectedShifts.length} pass valda {Array.isArray(userBookedShifts) && userBookedShifts.length > 0 
-                              ? `(totalt ${selectedShifts.length + userBookedShifts.length} med dina bokade pass)` 
-                              : ''}
+                            {selectedShifts.length} pass valda
                           </div>
                         </div>
                       )}
