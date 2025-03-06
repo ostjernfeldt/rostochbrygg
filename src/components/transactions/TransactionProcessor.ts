@@ -2,8 +2,9 @@
 import { TotalPurchase, Product } from "@/types/purchase";
 
 export const processTransactions = (rawTransactions: TotalPurchase[]): TotalPurchase[] => {
-  console.log("Processing transactions...");
-  return rawTransactions;
+  console.log(`Processing ${rawTransactions.length} transactions...`);
+  // Ensure we're not filtering out valid transactions
+  return rawTransactions.filter(t => t.user_display_name !== null);
 };
 
 export const getValidTransactions = (transactions: TotalPurchase[]): TotalPurchase[] => {

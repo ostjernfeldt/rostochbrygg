@@ -70,13 +70,16 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         // Fetch all staff first to ensure we have entries for everyone
         const { data: allStaff, error: staffError } = await supabase
           .from("staff_roles")
-          .select("*");
+          .select("*")
+          .eq("hidden", false); // Only fetch non-hidden staff
 
         if (staffError) {
           console.error("Error fetching staff:", staffError);
           throw staffError;
         }
 
+        console.log(`Fetched ${allStaff?.length || 0} non-hidden staff members`);
+        
         // Create a map of staff members and their hidden status
         const staffMap = new Map<string, boolean>();
         allStaff.forEach(staff => {
@@ -87,7 +90,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         const allStaffNames = new Set(allStaff.map(s => s.user_display_name));
         
         if (allStaffNames.size === 0) {
-          console.log("No staff members found - creating dummy data");
+          console.log("No active staff members found - creating dummy data");
           
           // If no real staff exists, return dummy data
           const dummyLeaders = [
@@ -116,35 +119,81 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
 
         console.log(`Fetched ${sales?.length || 0} sales for date range`);
         
-        // If no sales data exists, create dummy data
+        // If no sales data exists but we have staff, create empty entries for all staff
         if (!sales || sales.length === 0) {
-          console.log("No sales data found - creating dummy data");
+          console.log("No sales data found for period - creating zero entries for all staff");
           
-          // Create structured dummy data based on real staff
-          const dummyLeaders = Array.from(allStaffNames).map((name, index) => {
-            // Calculate some varied but deterministic points based on index
-            const basePoints = 450 - (index * 75);
-            const points = Math.max(75, basePoints);
-            const salesCount = Math.max(5, Math.ceil(points / 15));
+          const emptyLeaders = Array.from(allStaffNames).map(name => {
+            return {
+              "User Display Name": name,
+              points: 0,
+              salesCount: 0,
+              hidden: staffMap.get(name) || false
+            };
+          });
+          
+          return { [type + 'Leaders']: emptyLeaders };
+        }
+
+        // Process transactions and calculate leaders
+        const processedSales = processTransactions(sales);
+        console.log(`After processing: ${processedSales.length} sales`);
+        
+        // Initialize userTotals with all staff members, even those without sales
+        const userTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[], hidden: boolean }> = {};
+        
+        // First initialize all staff with zero values
+        allStaffNames.forEach(name => {
+          userTotals[name] = {
+            points: 0,
+            salesCount: 0,
+            sales: [],
+            hidden: staffMap.get(name) || false
+          };
+        });
+        
+        // Then process all sales, including those from non-staff members
+        processedSales.forEach(sale => {
+          const name = sale.user_display_name;
+          
+          if (!name) {
+            console.log("Skipping sale with no user_display_name:", sale.id);
+            return;
+          }
+          
+          // Create an entry for this user if they don't exist yet
+          // (this handles sales from users not in staff_roles)
+          if (!userTotals[name]) {
+            userTotals[name] = {
+              points: 0,
+              salesCount: 0,
+              sales: [],
+              hidden: false // Non-staff sales are visible by default
+            };
+          }
+          
+          userTotals[name].sales.push(sale);
+        });
+        
+        const leaders = Object.entries(userTotals)
+          .map(([name, data]) => {
+            const points = calculateTotalPoints(data.sales);
+            const salesCount = getValidSalesCount(data.sales);
             
             return {
               "User Display Name": name,
               points,
               salesCount,
-              hidden: staffMap.get(name) || false
+              hidden: data.hidden
             };
-          });
-          
-          // Sort by points
-          dummyLeaders.sort((a, b) => b.points - a.points);
-          
-          return { [type + 'Leaders']: dummyLeaders };
-        }
-
-        const leaders = calculateLeaders(sales, allStaffNames, staffMap);
-        const visibleLeaders = leaders.filter(leader => !leader.hidden);
+          })
+          .sort((a, b) => b.points - a.points);
         
-        console.log(`Calculated ${visibleLeaders.length} visible leaders for ${type}`);
+        console.log(`Generated ${leaders.length} leaders (including zero entries)`);
+        
+        // Filter out hidden staff
+        const visibleLeaders = leaders.filter(leader => !leader.hidden);
+        console.log(`Showing ${visibleLeaders.length} visible leaders for ${type}`);
         
         return { 
           [type + 'Leaders']: visibleLeaders,
@@ -161,59 +210,4 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
     enabled: !!selectedDate,
     refetchOnMount: true
   });
-};
-
-const calculateLeaders = (
-  sales: TotalPurchase[] | null, 
-  staffNames: Set<string>,
-  staffHiddenMap: Map<string, boolean>
-): UserSales[] => {
-  if (!sales || sales.length === 0) {
-    return [];
-  }
-  
-  const userTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[], hidden: boolean }> = {};
-  
-  // Debug to see if processTransactions is filtering out sales
-  console.log(`Processing ${sales.length} sales for leaders calculation`);
-  const processedSales = processTransactions(sales);
-  console.log(`After processing: ${processedSales.length} sales`);
-  
-  // Process all sales, not just those from staff members
-  processedSales.forEach(sale => {
-    const name = sale.user_display_name;
-    
-    if (!name) {
-      console.log("Skipping sale with no user_display_name:", sale.id);
-      return;
-    }
-    
-    if (!userTotals[name]) {
-      userTotals[name] = {
-        points: 0,
-        salesCount: 0,
-        sales: [],
-        hidden: staffHiddenMap.get(name) || false
-      };
-    }
-    
-    userTotals[name].sales.push(sale);
-  });
-  
-  const leaders = Object.entries(userTotals)
-    .map(([name, data]) => {
-      const points = calculateTotalPoints(data.sales);
-      const salesCount = getValidSalesCount(data.sales);
-      
-      return {
-        "User Display Name": name,
-        points,
-        salesCount,
-        hidden: data.hidden
-      };
-    })
-    .sort((a, b) => b.points - a.points);
-  
-  console.log(`Generated ${leaders.length} leaders (before filtering hidden)`);
-  return leaders;
 };
