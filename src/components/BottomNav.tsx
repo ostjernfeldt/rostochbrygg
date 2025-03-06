@@ -51,27 +51,21 @@ export const BottomNav = () => {
     getUserInfo();
   }, []);
 
-  const getMenuItems = () => {
-    const baseItems = [
-      { path: "/leaderboard", label: "Topplista" },
-      { path: "/hall-of-fame", label: "Hall of Fame" },
-      { path: "/staff", label: "Personal" },
-      { path: "/booking", label: "Bokningar" },
-    ];
-
-    // Only show "Idag" and "Bjud in" for admin users
-    if (userRole === 'admin') {
-      return [
-        { path: "/", label: "Idag" },
-        ...baseItems,
-        { path: "/invite", label: "Bjud in" },
-      ];
-    }
-
-    return baseItems;
-  };
-
-  const menuItems = getMenuItems();
+  // Define menu items based on user role
+  const menuItems = [
+    { path: "/leaderboard", label: "Topplista", showFor: ["admin", "user"] },
+    { path: "/hall-of-fame", label: "Hall of Fame", showFor: ["admin", "user"] },
+    { path: "/staff", label: "Personal", showFor: ["admin", "user"] },
+    { path: "/booking", label: "Bokningar", showFor: ["admin", "user"] },
+  ];
+  
+  // Only admins can see "Idag" and "Bjud in" pages
+  if (userRole === 'admin') {
+    // Add "Idag" as the first item for admins
+    menuItems.unshift({ path: "/", label: "Idag", showFor: ["admin"] });
+    // Add "Bjud in" as the last item for admins
+    menuItems.push({ path: "/invite", label: "Bjud in", showFor: ["admin"] });
+  }
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -91,6 +85,11 @@ export const BottomNav = () => {
       navigate("/login");
     }
   };
+
+  // Filter menu items based on user role
+  const filteredMenuItems = menuItems.filter(item => 
+    item.showFor.includes(userRole || 'user')
+  );
 
   return (
     <div className="fixed top-4 left-4 z-50">
@@ -120,7 +119,7 @@ export const BottomNav = () => {
           )}
           
           <nav className="flex flex-col gap-2 mt-8">
-            {menuItems.map((item) => (
+            {filteredMenuItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => {

@@ -74,16 +74,12 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const { data: userRole, isLoading: isRoleLoading, refetch } = useUserRole();
 
-  console.log("PrivateRoute - userRole:", userRole, "requireAdmin:", requireAdmin);
-
   useEffect(() => {
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        console.log("Initial session check:", session ? "Session exists" : "No session");
         
         if (!session) {
-          console.log("No session found, redirecting to login");
           setIsAuthenticated(false);
           navigate('/login');
           return;
@@ -101,8 +97,6 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state change:", event, session ? "Session exists" : "No session");
-      
       if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         navigate('/login');
@@ -118,22 +112,18 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
   }, [navigate, refetch]);
 
   if (isAuthenticated === null || (isAuthenticated && isRoleLoading)) {
-    console.log("Loading auth state or role...");
     return null;
   }
 
   if (!isAuthenticated) {
-    console.log("Not authenticated, redirecting to login");
     return <Navigate to="/login" replace />;
   }
 
-  // Only restrict access for invite page which is admin-only
-  if (requireAdmin && userRole !== 'admin' && window.location.hash.includes('/invite')) {
-    console.log("User is not admin, redirecting to leaderboard");
+  // Only restrict access for admin-only pages
+  if (requireAdmin && userRole !== 'admin') {
     return <Navigate to="/leaderboard" replace />;
   }
 
-  console.log("Rendering protected content");
   return <>{children}</>;
 };
 
@@ -144,13 +134,15 @@ const AppContent = () => {
   return (
     <div className="min-h-screen bg-background">
       <Routes>
+        {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/create-account" element={<CreateAccount />} />
         
+        {/* Admin-only routes */}
         <Route path="/" element={
-          <PrivateRoute>
+          <PrivateRoute requireAdmin={true}>
             <Home />
           </PrivateRoute>
         } />
@@ -159,6 +151,8 @@ const AppContent = () => {
             <Invite />
           </PrivateRoute>
         } />
+        
+        {/* Routes for all authenticated users */}
         <Route path="/leaderboard" element={
           <PrivateRoute>
             <Leaderboard />
@@ -189,6 +183,8 @@ const AppContent = () => {
             <Booking />
           </PrivateRoute>
         } />
+        
+        {/* Fallback route */}
         <Route path="*" element={
           <Navigate to={userRole === 'admin' ? "/" : "/leaderboard"} replace />
         } />

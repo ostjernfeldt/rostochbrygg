@@ -29,7 +29,7 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
           return [];
         }
         
-        // Get all sales
+        // Get all sales - no filtering by role
         const { data, error } = await supabase
           .from("total_purchases")
           .select("timestamp, user_display_name")
@@ -42,6 +42,7 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
         }
 
         if (!data || data.length === 0) {
+          console.log("No valid sales data found");
           if (onDatesLoaded) {
             onDatesLoaded([]);
           }
@@ -79,6 +80,8 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
         }
         return [];
       }
-    }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2
   });
 };

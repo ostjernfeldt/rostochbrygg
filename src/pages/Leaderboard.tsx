@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { format, startOfWeek, endOfWeek, parseISO, subMonths, isAfter } from "date-fns";
+import { format, startOfWeek, endOfWeek, parseISO, subMonths } from "date-fns";
 import { sv } from "date-fns/locale";  // Importera svenska lokaliseringen
 import { useNavigate } from "react-router-dom";
 import { PageLayout } from "@/components/PageLayout";
@@ -14,7 +14,7 @@ const Leaderboard = () => {
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [previousMonthsWithData, setPreviousMonthsWithData] = useState<string[]>([]);
 
-  // Handle dates loaded from the server
+  // Handle dates loaded from the server - identical for both user types
   const handleDatesLoaded = (dates: string[]) => {
     // If there are dates, set the selected week to the latest date
     if (dates.length > 0 && !selectedWeek) {
@@ -67,7 +67,7 @@ const Leaderboard = () => {
     };
   });
 
-  // Fetch leaderboard data for each time period
+  // Fetch leaderboard data for each time period - identical for both user types
   const { data: weeklyLeaderboard, isLoading: isWeeklyLoading } = useLeaderboardData('weekly', selectedWeek);
   const { 
     data: monthlyLeaderboard, 
