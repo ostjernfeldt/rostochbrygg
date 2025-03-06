@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { WeeklyBookingSummary } from '@/types/booking';
 
 export const useBookShift = () => {
@@ -126,6 +126,8 @@ export const useCancelBooking = () => {
 
   return useMutation({
     mutationFn: async (bookingId: string) => {
+      console.log('Cancelling booking with ID:', bookingId);
+      
       const { data, error } = await supabase
         .from('shift_bookings')
         .update({ status: 'cancelled' })
@@ -143,17 +145,9 @@ export const useCancelBooking = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
       queryClient.invalidateQueries({ queryKey: ['shift'] });
-      toast({
-        title: 'Bokning avbokad',
-        description: 'Du har avbokat passet framgångsrikt.',
-      });
     },
     onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Fel vid avbokning',
-        description: error.message || 'Ett fel uppstod vid avbokningen av passet.',
-      });
+      console.error('Error in cancel booking mutation:', error);
     },
   });
 };
@@ -186,10 +180,6 @@ export const useCancelUserBooking = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
       queryClient.invalidateQueries({ queryKey: ['shift'] });
-      toast({
-        title: 'Bokning avbokad',
-        description: 'Du har avbokat passet framgångsrikt.',
-      });
     },
     onError: (error) => {
       toast({

@@ -1,3 +1,4 @@
+
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { Calendar, Clock, Users } from "lucide-react";
@@ -14,7 +15,7 @@ import { ShiftWithBookings } from '@/types/booking';
 import { useCancelBooking, useBookShift } from '@/hooks/useShiftBookings';
 import { Separator } from '@/components/ui/separator';
 import { useDeleteShift } from '@/hooks/useShifts';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 interface ShiftDetailsDialogProps {
   shift: ShiftWithBookings;
@@ -39,15 +40,20 @@ export function ShiftDetailsDialog({
   };
   
   const handleCancelBooking = (bookingId: string) => {
+    console.log("Cancelling booking:", bookingId);
+    
     cancelBooking(bookingId, {
       onSuccess: () => {
+        console.log("Booking successfully cancelled");
         toast({
           title: "Bokning avbokad",
           description: "Säljaren har avbokats från passet",
         });
-        // Keep the dialog open so admin can see the updated list
+        // Close the dialog to force a refresh of the data
+        onOpenChange(false);
       },
       onError: (error) => {
+        console.error("Error cancelling booking:", error);
         toast({
           variant: "destructive",
           title: "Fel vid avbokning",
