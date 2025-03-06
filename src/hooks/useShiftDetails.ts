@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ShiftWithBookings, ShiftBooking } from '@/types/booking';
 
-export const useShiftDetails = (shiftId: string, enabled = true) => {
+export const useShiftDetails = (shiftId: string) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['shift', shiftId],
     queryFn: async () => {
@@ -76,7 +76,7 @@ export const useShiftDetails = (shiftId: string, enabled = true) => {
         is_booked_by_current_user: isBookedByCurrentUser
       } as ShiftWithBookings;
     },
-    enabled: enabled && !!shiftId, // Only run query when enabled and shiftId exists
+    enabled: !!shiftId, // Only run query when shiftId exists
     retry: 1,
   });
   

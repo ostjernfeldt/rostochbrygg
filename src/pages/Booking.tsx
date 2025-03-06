@@ -89,12 +89,12 @@ function BookingContent({
     shifts = [],
     isLoading: shiftsLoading,
     error: shiftsError
-  } = useShifts(currentWeekStart, weekEnd, isAdmin, !!user);
+  } = useShifts(currentWeekStart, weekEnd, isAdmin);
   
   const {
     shift: selectedShift,
     isLoading: shiftDetailsLoading
-  } = useShiftDetails(selectedShiftId || '', !!selectedShiftId);
+  } = useShiftDetails(selectedShiftId || '');
   
   // Process shifts data with null checks
   const processedShifts: ShiftWithBookings[] = Array.isArray(shifts) ? shifts.map(shift => {

@@ -1,10 +1,9 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Shift, ShiftWithBookings, ShiftBooking } from '@/types/booking';
 
-export const useShifts = (startDate: Date, endDate: Date, isAdmin = false, enabled = true) => {
+export const useShifts = (startDate: Date, endDate: Date, isAdmin = false) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['shifts', startDate.toISOString(), endDate.toISOString(), isAdmin],
     queryFn: async () => {
@@ -112,8 +111,8 @@ export const useShifts = (startDate: Date, endDate: Date, isAdmin = false, enabl
       
       return shiftsWithBookings;
     },
-    // Only run this query when startDate and endDate are valid AND user is authenticated
-    enabled: !!startDate && !!endDate && enabled,
+    // Only run this query when startDate and endDate are valid
+    enabled: !!startDate && !!endDate,
     staleTime: 1000 * 60, // Refresh cache every minute
     retry: 1, // Only retry once to avoid excessive retries on auth issues
   });
