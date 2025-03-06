@@ -59,6 +59,7 @@ export const BottomNav = () => {
       { path: "/leaderboard", label: "Topplista" },
       { path: "/hall-of-fame", label: "Hall of Fame" },
       { path: "/staff", label: "Personal" },
+      { path: "/transactions", label: "Transaktioner" }
     ];
     
     // Only add booking if system is enabled or user is admin

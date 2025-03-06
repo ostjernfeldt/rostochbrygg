@@ -49,8 +49,8 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             endDate.setHours(23, 59, 59, 999);
             break;
           case 'weekly':
-            startDate = startOfWeek(parsedSelectedDate, { weekStartsOn: 1 }); // Fix: Use weekStartsOn to avoid invalid date
-            endDate = endOfWeek(parsedSelectedDate, { weekStartsOn: 1 }); // Fix: Use weekStartsOn to avoid invalid date
+            startDate = startOfWeek(parsedSelectedDate, { weekStartsOn: 1 }); // Use weekStartsOn to avoid invalid date
+            endDate = endOfWeek(parsedSelectedDate, { weekStartsOn: 1 }); // Use weekStartsOn to avoid invalid date
             break;
           case 'monthly':
             const [year, month] = selectedDate.split('-').map(Number);
