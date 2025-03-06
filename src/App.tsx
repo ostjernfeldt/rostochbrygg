@@ -205,7 +205,7 @@ const AppContent = () => {
           </BookingRoute>
         } />
         <Route path="*" element={
-          <Navigate to={userRole === 'admin' ? "/" : "/leaderboard"} replace />
+          <Navigate to="/leaderboard" replace />
         } />
       </Routes>
       {location.pathname !== '/login' && 
