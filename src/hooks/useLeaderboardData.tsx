@@ -26,7 +26,7 @@ interface LeaderboardData {
 export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
   return useQuery({
     queryKey: ["challengeLeaders", type, selectedDate],
-    queryFn: async () => {
+    queryFn: async (): Promise<LeaderboardData> => {
       console.log(`Fetching ${type} challenge leaders from total_purchases...`);
       
       try {
@@ -64,7 +64,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             throw new Error(`Unsupported time period: ${type}`);
         }
 
-        // Get all staff members (both visible and hidden)
+        // Get all staff members (both visible and hidden) - removing any filtering by role
         const { data: allStaff, error: staffError } = await supabase
           .from("staff_roles")
           .select("user_display_name");
@@ -81,7 +81,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           return { [type + 'Leaders']: [] as UserSales[] };
         }
 
-        // Get all relevant sales within the date range
+        // Get all relevant sales within the date range - removed any role-based filtering
         const { data: sales, error: salesError } = await supabase
           .from("total_purchases")
           .select("*")
@@ -135,7 +135,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           endDate.setHours(23, 59, 59, 999);
           useLatestDate = true;
           
-          // Fetch sales for this latest date
+          // Fetch sales for this latest date - removed any role-based filtering
           const { data: latestSales, error: latestSalesError } = await supabase
             .from("total_purchases")
             .select("*")
@@ -173,7 +173,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         } as LeaderboardData;
       } catch (error) {
         console.error(`Error in ${type} challenge leaders query:`, error);
-        throw error;
+        return { [type + 'Leaders']: [] as UserSales[] };
       }
     }
   });

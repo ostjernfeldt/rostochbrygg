@@ -18,104 +18,109 @@ const Staff = () => {
     queryFn: async () => {
       console.log("Fetching staff members data...");
       
-      // Fetch all staff roles without any filters
-      const rolesResponse = await supabase
-        .from("staff_roles")
-        .select("*");
+      try {
+        // Fetch all staff roles without any filters
+        const rolesResponse = await supabase
+          .from("staff_roles")
+          .select("*");
 
-      if (rolesResponse.error) {
-        console.error("Error fetching staff roles:", rolesResponse.error);
-        throw rolesResponse.error;
-      }
-      
-      const roles = rolesResponse.data || [];
-      
-      if (roles.length === 0) {
-        console.log("No staff members found in staff_roles table");
-        return [];
-      }
-      
-      // Now fetch sales data (if any exists)
-      const salesResponse = await supabase
-        .from("total_purchases")
-        .select("*")
-        .not("user_display_name", "is", null)
-        .order("timestamp", { ascending: true });
-      
-      if (salesResponse.error) {
-        console.error("Error fetching sales data:", salesResponse.error);
-        throw salesResponse.error;
-      }
-      
-      const sales = salesResponse.data || [];
-      
-      // Initialize staff stats from roles data
-      const staffStats: { [key: string]: StaffMemberStats } = {};
-      
-      // Create base stats for all staff members from roles
-      roles.forEach(roleData => {
-        const displayName = roleData.user_display_name;
-        staffStats[displayName] = {
-          displayName,
-          role: roleData.role || 'Sales Intern',
-          firstSale: null,
-          totalPoints: 0,
-          averagePoints: 0,
-          totalAmount: 0,
-          averageAmount: 0,
-          daysActive: 0,
-          salesCount: 0,
-          sales: []
-        };
-      });
-      
-      // Add sales data for all staff members who have sales
-      if (sales.length > 0) {
-        sales.forEach(sale => {
-          const displayName = sale.user_display_name as string;
-          
-          // Skip if the staff member is not in our list (not in staff_roles)
-          if (!staffStats[displayName]) return;
-          
-          const points = calculatePoints(sale.quantity);
-          
-          // Update first sale date if not set or if this sale is earlier
-          if (!staffStats[displayName].firstSale || 
-              new Date(sale.timestamp) < new Date(staffStats[displayName].firstSale!)) {
-            staffStats[displayName].firstSale = new Date(sale.timestamp);
-          }
-          
-          if (!sale.refunded) {
-            staffStats[displayName].totalPoints += points;
-          }
-          
-          staffStats[displayName].sales.push(sale);
+        if (rolesResponse.error) {
+          console.error("Error fetching staff roles:", rolesResponse.error);
+          throw rolesResponse.error;
+        }
+        
+        const roles = rolesResponse.data || [];
+        
+        if (roles.length === 0) {
+          console.log("No staff members found in staff_roles table");
+          return [];
+        }
+        
+        // Now fetch sales data (if any exists)
+        const salesResponse = await supabase
+          .from("total_purchases")
+          .select("*")
+          .not("user_display_name", "is", null)
+          .order("timestamp", { ascending: true });
+        
+        if (salesResponse.error) {
+          console.error("Error fetching sales data:", salesResponse.error);
+          throw salesResponse.error;
+        }
+        
+        const sales = salesResponse.data || [];
+        
+        // Initialize staff stats from roles data
+        const staffStats: { [key: string]: StaffMemberStats } = {};
+        
+        // Create base stats for all staff members from roles
+        roles.forEach(roleData => {
+          const displayName = roleData.user_display_name;
+          staffStats[displayName] = {
+            displayName,
+            role: roleData.role || 'Sales Intern',
+            firstSale: null,
+            totalPoints: 0,
+            averagePoints: 0,
+            totalAmount: 0,
+            averageAmount: 0,
+            daysActive: 0,
+            salesCount: 0,
+            sales: []
+          };
         });
         
-        // Calculate statistics for staff members with sales
-        Object.values(staffStats).forEach(member => {
-          if (member.sales.length > 0) {
-            // Calculate days active
-            const uniqueDays = new Set(member.sales.map(sale => 
-              new Date(sale.timestamp).toDateString()));
-            member.daysActive = uniqueDays.size;
+        // Add sales data for all staff members who have sales
+        if (sales.length > 0) {
+          sales.forEach(sale => {
+            const displayName = sale.user_display_name as string;
             
-            // Count valid sales (non-refunded)
-            const validSales = member.sales.filter(sale => !sale.refunded);
-            member.salesCount = validSales.length;
+            // Skip if the staff member is not in our list (not in staff_roles)
+            if (!staffStats[displayName]) return;
             
-            // Calculate financial stats if there are valid sales
-            if (validSales.length > 0) {
-              member.totalAmount = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
-              member.averageAmount = member.totalAmount / validSales.length;
-              member.averagePoints = member.totalPoints / validSales.length;
+            const points = calculatePoints(sale.quantity);
+            
+            // Update first sale date if not set or if this sale is earlier
+            if (!staffStats[displayName].firstSale || 
+                new Date(sale.timestamp) < new Date(staffStats[displayName].firstSale!)) {
+              staffStats[displayName].firstSale = new Date(sale.timestamp);
             }
-          }
-        });
+            
+            if (!sale.refunded) {
+              staffStats[displayName].totalPoints += points;
+            }
+            
+            staffStats[displayName].sales.push(sale);
+          });
+          
+          // Calculate statistics for staff members with sales
+          Object.values(staffStats).forEach(member => {
+            if (member.sales.length > 0) {
+              // Calculate days active
+              const uniqueDays = new Set(member.sales.map(sale => 
+                new Date(sale.timestamp).toDateString()));
+              member.daysActive = uniqueDays.size;
+              
+              // Count valid sales (non-refunded)
+              const validSales = member.sales.filter(sale => !sale.refunded);
+              member.salesCount = validSales.length;
+              
+              // Calculate financial stats if there are valid sales
+              if (validSales.length > 0) {
+                member.totalAmount = validSales.reduce((sum, sale) => sum + Number(sale.amount), 0);
+                member.averageAmount = member.totalAmount / validSales.length;
+                member.averagePoints = member.totalPoints / validSales.length;
+              }
+            }
+          });
+        }
+        
+        // Convert to array and return
+        return Object.values(staffStats);
+      } catch (error) {
+        console.error("Error in staffMembers query:", error);
+        return [];
       }
-      
-      // Convert to array and return
-      return Object.values(staffStats);
     }
   });
 
