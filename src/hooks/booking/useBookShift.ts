@@ -13,6 +13,8 @@ export const useBookShift = () => {
         throw new Error('Du måste vara inloggad för att boka pass');
       }
 
+      console.log('Booking shift for user:', user.id, user.email);
+
       // First check if user already has a booking for this shift
       const { data: existingBookings } = await supabase
         .from('shift_bookings')
@@ -37,6 +39,7 @@ export const useBookShift = () => {
       }
 
       const displayName = staffRoleData.user_display_name;
+      console.log('Using display name from staff_roles:', displayName);
 
       let data;
       let error;
@@ -48,6 +51,8 @@ export const useBookShift = () => {
           throw new Error('Du har redan bokat detta pass');
         }
 
+        console.log('Updating existing booking:', existingBooking.id);
+        
         // Update the existing booking to confirmed status
         const result = await supabase
           .from('shift_bookings')
@@ -56,13 +61,16 @@ export const useBookShift = () => {
             user_display_name: displayName
           })
           .eq('id', existingBooking.id)
-          .select()
-          .single();
+          .select();
         
-        data = result.data;
+        data = result.data?.[0]; // Get the first item from the array
         error = result.error;
+        
+        console.log('Update booking result:', { data, error });
       } else {
         // Create a new booking if none exists
+        console.log('Creating new booking for shift:', shiftId);
+        
         const result = await supabase
           .from('shift_bookings')
           .insert([{ 
@@ -72,11 +80,12 @@ export const useBookShift = () => {
             user_display_name: displayName,
             status: 'confirmed'
           }])
-          .select()
-          .single();
+          .select();
         
-        data = result.data;
+        data = result.data?.[0]; // Get the first item from the array
         error = result.error;
+        
+        console.log('Create booking result:', { data, error });
       }
 
       if (error) {
@@ -84,9 +93,15 @@ export const useBookShift = () => {
         throw error;
       }
 
+      if (!data) {
+        console.error('No data returned from booking operation');
+        throw new Error('Ett oväntat fel uppstod vid bokning av passet');
+      }
+
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Booking successful:', data);
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
       queryClient.invalidateQueries({ queryKey: ['shift'] });
       queryClient.invalidateQueries({ queryKey: ['weekly-booking-summary'] });

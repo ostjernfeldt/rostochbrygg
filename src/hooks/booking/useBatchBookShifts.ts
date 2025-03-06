@@ -55,14 +55,19 @@ export const useBatchBookShifts = () => {
             continue;
           }
           
+          let bookingResult;
+          
           if (existingBookings && existingBookings.length > 0) {
             // If there's an existing booking that's already confirmed, skip it
             if (existingBookings[0].status === 'confirmed') {
               console.log(`Shift ${shiftId} already booked, skipping`);
+              // Include it in results so we know it was processed
+              results.push({...existingBookings[0], already_booked: true});
               continue;
             }
             
             // If it's cancelled, update it to confirmed
+            console.log(`Updating booking for shift ${shiftId} to confirmed status`);
             const { data, error } = await supabase
               .from('shift_bookings')
               .update({ 
@@ -78,10 +83,8 @@ export const useBatchBookShifts = () => {
               continue;
             }
             
-            if (data) {
-              console.log(`Successfully updated booking for shift ${shiftId}`);
-              results.push(data[0]);
-            }
+            bookingResult = data?.[0]; // Get the first item from the array
+            console.log(`Updated booking result for shift ${shiftId}:`, bookingResult);
           } else {
             // Create a new booking if none exists
             console.log(`Creating new booking for shift ${shiftId}`);
@@ -102,10 +105,18 @@ export const useBatchBookShifts = () => {
               continue;
             }
             
-            if (data) {
-              console.log(`Successfully created booking for shift ${shiftId}`);
-              results.push(data[0]);
-            }
+            bookingResult = data?.[0]; // Get the first item from the array
+            console.log(`Created booking result for shift ${shiftId}:`, bookingResult);
+          }
+          
+          if (bookingResult) {
+            results.push(bookingResult);
+          } else {
+            console.error(`No result data for shift ${shiftId}`);
+            errors.push({ 
+              shiftId, 
+              error: new Error('Ingen data returnerades från bokningsoperationen') 
+            });
           }
         } catch (error) {
           console.error(`Unexpected error processing shift ${shiftId}:`, error);
@@ -113,17 +124,20 @@ export const useBatchBookShifts = () => {
         }
       }
 
-      if (errors.length > 0) {
-        console.error('Batch booking encountered errors:', errors);
-        if (results.length === 0) {
-          throw new Error('Inga pass kunde bokas. Vänligen försök igen.');
-        }
+      console.log('Batch booking completed with results:', results.length, 'and errors:', errors.length);
+      
+      if (errors.length > 0 && results.length === 0) {
+        const firstError = errors[0].error;
+        console.error('All booking attempts failed:', errors);
+        throw firstError instanceof Error 
+          ? firstError 
+          : new Error('Inga pass kunde bokas. Vänligen försök igen.');
       }
 
       return { results, errors };
     },
     onSuccess: (data) => {
-      console.log('Batch booking success, invalidating queries');
+      console.log('Batch booking success data:', data);
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
       queryClient.invalidateQueries({ queryKey: ['weekly-booking-summary'] });
       
