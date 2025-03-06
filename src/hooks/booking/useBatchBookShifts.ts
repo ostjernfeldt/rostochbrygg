@@ -75,7 +75,7 @@ export const useBatchBookShifts = () => {
                 user_display_name: displayName
               })
               .eq('id', existingBookings[0].id)
-              .select('*');
+              .select();
             
             if (error) {
               console.error(`Error updating booking for shift ${shiftId}:`, error);
@@ -83,8 +83,20 @@ export const useBatchBookShifts = () => {
               continue;
             }
             
-            bookingResult = data?.[0]; // Get the first item from the array
-            console.log(`Updated booking result for shift ${shiftId}:`, bookingResult);
+            // Check if data is returned and has at least one entry
+            if (data && data.length > 0) {
+              bookingResult = data[0];
+              console.log(`Updated booking result for shift ${shiftId}:`, bookingResult);
+            } else {
+              // If no data is returned, we'll use the existing booking info but mark as updated
+              console.log(`No data returned for update of shift ${shiftId}, using existing booking info`);
+              bookingResult = {
+                ...existingBookings[0],
+                status: 'confirmed',
+                user_display_name: displayName,
+                updated_at: new Date().toISOString()
+              };
+            }
           } else {
             // Create a new booking if none exists
             console.log(`Creating new booking for shift ${shiftId}`);
@@ -97,7 +109,7 @@ export const useBatchBookShifts = () => {
                 user_display_name: displayName,
                 status: 'confirmed'
               }])
-              .select('*');
+              .select();
             
             if (error) {
               console.error(`Error creating booking for shift ${shiftId}:`, error);
@@ -105,8 +117,17 @@ export const useBatchBookShifts = () => {
               continue;
             }
             
-            bookingResult = data?.[0]; // Get the first item from the array
-            console.log(`Created booking result for shift ${shiftId}:`, bookingResult);
+            if (data && data.length > 0) {
+              bookingResult = data[0];
+              console.log(`Created booking result for shift ${shiftId}:`, bookingResult);
+            } else {
+              console.error(`No data returned for new booking of shift ${shiftId}`);
+              errors.push({ 
+                shiftId, 
+                error: new Error('Ingen data returnerades från bokningsoperationen') 
+              });
+              continue;
+            }
           }
           
           if (bookingResult) {

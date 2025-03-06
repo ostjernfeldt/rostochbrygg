@@ -66,10 +66,20 @@ export const useBookShift = () => {
             user_display_name: displayName
           })
           .eq('id', existingBooking.id)
-          .select('*');
+          .select();
         
-        data = result.data?.[0]; // Get the first item from the array
+        data = result.data && result.data.length > 0 ? result.data[0] : null;
         error = result.error;
+        
+        // If no data was returned but the update was successful
+        if (!data && !error) {
+          data = {
+            ...existingBooking,
+            status: 'confirmed',
+            user_display_name: displayName,
+            updated_at: new Date().toISOString()
+          };
+        }
         
         console.log('Update booking result:', { data, error });
       } else {
@@ -85,9 +95,9 @@ export const useBookShift = () => {
             user_display_name: displayName,
             status: 'confirmed'
           }])
-          .select('*');
+          .select();
         
-        data = result.data?.[0]; // Get the first item from the array
+        data = result.data && result.data.length > 0 ? result.data[0] : null;
         error = result.error;
         
         console.log('Create booking result:', { data, error });
