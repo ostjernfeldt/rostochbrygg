@@ -158,6 +158,13 @@ export const useBookShift = () => {
         throw new Error('Detta säljpass är fullbokat');
       }
       
+      // Get user's display name from invitations
+      const { data: invitationData } = await supabase
+        .from('invitations')
+        .select('display_name, email')
+        .eq('email', user.email)
+        .maybeSingle();
+      
       // Create the booking
       const { data, error } = await supabase
         .from('shift_bookings')
@@ -165,6 +172,8 @@ export const useBookShift = () => {
           {
             shift_id: shiftId,
             user_id: user.id,
+            user_email: user.email,
+            user_display_name: invitationData?.display_name || user.email,
             status: 'confirmed'
           }
         ])
@@ -210,6 +219,13 @@ export const useBatchBookShifts = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Du måste vara inloggad för att boka säljpass');
       
+      // Get user's display name from invitations
+      const { data: invitationData } = await supabase
+        .from('invitations')
+        .select('display_name, email')
+        .eq('email', user.email)
+        .maybeSingle();
+      
       // Validate and book all shifts
       const bookings = [];
       const errors = [];
@@ -252,6 +268,8 @@ export const useBatchBookShifts = () => {
           bookings.push({
             shift_id: shiftId,
             user_id: user.id,
+            user_email: user.email,
+            user_display_name: invitationData?.display_name || user.email,
             status: 'confirmed'
           });
           
