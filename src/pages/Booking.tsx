@@ -9,10 +9,8 @@ import { ShiftWithBookings } from '@/types/booking';
 import { ShiftCard } from '@/components/booking/ShiftCard';
 import { ShiftDetailsDialog } from '@/components/booking/ShiftDetailsDialog';
 import { CreateShiftForm } from '@/components/booking/CreateShiftForm';
-import { AdminToggleFeature } from '@/components/booking/AdminToggleFeature';
 import { WeeklyBookingsSummary } from '@/components/booking/WeeklyBookingsSummary';
 import { useShifts, useShiftDetails } from '@/hooks/useShifts';
-import { useBookingSystemEnabled } from '@/hooks/useAppSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Clock, InfoIcon, Settings, User, X, Check, AlertTriangle } from 'lucide-react';
 import { PageLayout } from '@/components/PageLayout';
@@ -41,9 +39,7 @@ export default function Booking() {
   })} - ${format(weekEnd, 'd MMM yyyy', {
     locale: sv
   })}`;
-  const {
-    isEnabled: bookingSystemEnabled
-  } = useBookingSystemEnabled();
+  
   const {
     shifts,
     isLoading: shiftsLoading
@@ -171,8 +167,6 @@ export default function Booking() {
                 <CreateShiftForm />
               </CardContent>
             </Card>
-            
-            <AdminToggleFeature />
           </div>
           
           <Card className="bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm border-[#33333A] shadow-lg">
@@ -199,26 +193,6 @@ export default function Booking() {
           </Card>
         </div>;
     } else {
-      if (!bookingSystemEnabled) {
-        return <div className="max-w-md mx-auto">
-            <div className="flex items-center gap-2 mb-4">
-              <User className="h-5 w-5 text-primary" />
-              <h1 className="text-xl font-semibold">Välkommen {userName || ''}</h1>
-            </div>
-            
-            <Card className="w-full bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm border-[#33333A] shadow-lg mb-6">
-              <CardContent className="pt-6">
-                <div className="flex flex-col items-center text-center p-4">
-                  <Clock className="h-16 w-16 text-muted-foreground mb-4 opacity-20" />
-                  <h3 className="text-lg font-medium mb-2">Bokningssystemet är stängt</h3>
-                  <p className="text-muted-foreground">
-                    Bokningssystemet är för närvarande inte tillgängligt. Återkom senare eller kontakta din säljledare.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>;
-      }
       return <div className="max-w-md mx-auto">
           <div className="flex items-center gap-2 mb-6">
           </div>

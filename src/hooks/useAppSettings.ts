@@ -69,27 +69,3 @@ export const useAppSettings = (key: string) => {
     isUpdating: updateMutation.isPending,
   };
 };
-
-export const useBookingSystemEnabled = () => {
-  const { value, setValue, isLoading, error, isUpdating } = useAppSettings('booking_system_enabled');
-  const [isEnabled, setIsEnabled] = useState(false);
-  
-  useEffect(() => {
-    if (value !== undefined) {
-      // Handle the value being a string "true"/"false" or a boolean
-      setIsEnabled(value === true || value === 'true');
-    }
-  }, [value]);
-  
-  const setEnabled = (enabled: boolean) => {
-    setValue(enabled);
-  };
-  
-  return {
-    isEnabled,
-    setEnabled,
-    isLoading,
-    error,
-    isUpdating,
-  };
-};
