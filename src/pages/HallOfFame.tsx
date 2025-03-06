@@ -109,7 +109,7 @@ const HallOfFame = () => {
         return sale.user_display_name && !hiddenStaffMap.get(sale.user_display_name);
       });
 
-      // Updated helper function to get unique top sellers by name
+      // Enhanced function to get unique top sellers by name
       const getUniqueTopSellers = (sellers: TopSeller[], limit: number = 3): TopSeller[] => {
         // First sort by points (highest first)
         const sortedSellers = [...sellers].sort((a, b) => b.points - a.points);
@@ -119,10 +119,25 @@ const HallOfFame = () => {
         
         // For each seller, only keep their highest-scoring entry
         for (const seller of sortedSellers) {
-          const existingSeller = bestSellerMap.get(seller.name);
+          // Normalize names for comparison to ensure case insensitive matching
+          const normalizedName = seller.name.toLowerCase().trim();
+          const existingSeller = Array.from(bestSellerMap.values()).find(
+            s => s.name.toLowerCase().trim() === normalizedName
+          );
+          
+          // Get the existing key if there is one
+          const existingKey = existingSeller ? 
+            Array.from(bestSellerMap.keys()).find(
+              key => bestSellerMap.get(key)?.name.toLowerCase().trim() === normalizedName
+            ) : null;
           
           // Only add or replace if the current entry has more points
           if (!existingSeller || seller.points > existingSeller.points) {
+            // If we're replacing, remove the old entry first
+            if (existingKey) {
+              bestSellerMap.delete(existingKey);
+            }
+            // Use the original name as the key to preserve casing
             bestSellerMap.set(seller.name, seller);
           }
         }
@@ -133,7 +148,7 @@ const HallOfFame = () => {
           .slice(0, limit);
       };
 
-      // Helper function to merge automatic and manual entries, now using the updated getUniqueTopSellers
+      // Helper function to merge automatic and manual entries
       const mergeEntries = (automatic: TopSeller[], manual: TopSeller[]): TopSeller[] => {
         // First combine both arrays
         const allEntries = [...automatic, ...manual];
@@ -229,7 +244,6 @@ const HallOfFame = () => {
         topDays
       };
     }
-    // The query is already properly configured to be enabled by default
   });
 
   const LeaderboardCard = ({ title, icon: Icon, data, type }: { 
@@ -413,3 +427,4 @@ const HallOfFame = () => {
 };
 
 export default HallOfFame;
+
