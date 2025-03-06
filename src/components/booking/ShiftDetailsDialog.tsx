@@ -72,6 +72,9 @@ export function ShiftDetailsDialog({
   const startTime = shift.start_time.substring(0, 5);
   const endTime = shift.end_time.substring(0, 5);
   
+  // Filter to only show confirmed bookings
+  const confirmedBookings = shift.bookings.filter(booking => booking.status === 'confirmed');
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
@@ -103,8 +106,8 @@ export function ShiftDetailsDialog({
           <div className="flex items-center gap-2 bg-[#151A25] p-3.5 rounded-lg border border-[#33333A]/30">
             <Users className="h-5 w-5 text-primary/80" />
             <span className="text-sm">
-              {shift.bookings.length} av {shift.available_slots} platser bokade
-              ({shift.available_slots_remaining} lediga)
+              {confirmedBookings.length} av {shift.available_slots} platser bokade
+              ({shift.available_slots - confirmedBookings.length} lediga)
             </span>
           </div>
           
@@ -115,9 +118,9 @@ export function ShiftDetailsDialog({
               <Users className="h-4 w-4 text-primary/80" />
               Bokade säljare
             </h3>
-            {shift.bookings.length > 0 ? (
+            {confirmedBookings.length > 0 ? (
               <ul className="space-y-2">
-                {shift.bookings.map((booking) => (
+                {confirmedBookings.map((booking) => (
                   <li key={booking.id} className="flex justify-between text-sm items-center bg-[#151A25] p-3 rounded-lg border border-[#33333A]/30">
                     <span>{booking.user_display_name || 'Okänd säljare'}</span>
                     
@@ -144,7 +147,7 @@ export function ShiftDetailsDialog({
         </div>
         
         <DialogFooter className="gap-2 sm:gap-0 mt-4">
-          {!isUserAdmin && !shift.is_booked_by_current_user && shift.available_slots_remaining > 0 && (
+          {!isUserAdmin && !shift.is_booked_by_current_user && (shift.available_slots - confirmedBookings.length) > 0 && (
             <Button 
               onClick={handleBookShift} 
               disabled={isBooking}

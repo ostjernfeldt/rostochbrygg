@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { Shift, ShiftWithBookings, ShiftBooking } from '@/types/booking';
 
 export const useShifts = (startDate: Date, endDate: Date) => {
@@ -50,12 +50,15 @@ export const useShifts = (startDate: Date, endDate: Date) => {
             } as ShiftBooking;
           });
           
-        const isBooked = user ? shiftBookings.some(booking => booking.user_id === user.id) : false;
+        // Get only confirmed bookings for availability calculation
+        const confirmedBookings = shiftBookings.filter(booking => booking.status === 'confirmed');
+        
+        const isBooked = user ? confirmedBookings.some(booking => booking.user_id === user.id) : false;
         
         return {
           ...shift,
           bookings: shiftBookings,
-          available_slots_remaining: shift.available_slots - shiftBookings.length,
+          available_slots_remaining: shift.available_slots - confirmedBookings.length,
           is_booked_by_current_user: isBooked
         };
       });
@@ -109,11 +112,14 @@ export const useShiftDetails = (shiftId: string) => {
         } as ShiftBooking;
       });
       
-      // Check if current user has booked this shift
-      const isBookedByCurrentUser = user ? bookings.some(b => b.user_id === user.id) : false;
+      // Filter to get only confirmed bookings for availability calculation
+      const confirmedBookings = processedBookings.filter(booking => booking.status === 'confirmed');
       
-      // Calculate remaining slots
-      const availableSlotsRemaining = shift.available_slots - bookings.length;
+      // Check if current user has booked this shift
+      const isBookedByCurrentUser = user ? confirmedBookings.some(b => b.user_id === user.id) : false;
+      
+      // Calculate remaining slots based on confirmed bookings only
+      const availableSlotsRemaining = shift.available_slots - confirmedBookings.length;
       
       return {
         ...shift,
