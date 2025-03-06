@@ -273,13 +273,36 @@ export const useWeeklyBookingSummary = (userId?: string, startDate?: Date) => {
       }
 
       // Get confirmed bookings for the user within the date range
+      const { data: shifts, error: shiftsError } = await supabase
+        .from('shifts')
+        .select('id, date')
+        .gte('date', weekStart.toISOString().split('T')[0])
+        .lte('date', weekEnd.toISOString().split('T')[0]);
+      
+      if (shiftsError) {
+        console.error('Error fetching shifts for weekly summary:', shiftsError);
+        throw shiftsError;
+      }
+      
+      const shiftIds = shifts.map(shift => shift.id);
+      
+      // If no shifts exist for this week, return zero bookings
+      if (shiftIds.length === 0) {
+        return {
+          week_start: weekStart.toISOString(),
+          week_end: weekEnd.toISOString(),
+          total_bookings: 0,
+          meets_minimum_requirement: false
+        };
+      }
+      
+      // Get confirmed bookings for the user for these specific shifts
       const { data: bookings, error } = await supabase
         .from('shift_bookings')
         .select('*')
         .eq('user_id', targetUserId)
         .eq('status', 'confirmed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
+        .in('shift_id', shiftIds);
 
       if (error) {
         console.error('Error fetching weekly booking summary:', error);

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
@@ -113,6 +112,14 @@ export default function Booking() {
       onSuccess: () => {
         setConfirmDialogOpen(false);
         setSelectedShifts([]);
+        queryClient.invalidateQueries({ queryKey: ['shifts'] });
+        queryClient.invalidateQueries({ queryKey: ['weekly-booking-summary'] });
+        setTimeout(() => {
+          toast({
+            title: "Bokningar genomförda",
+            description: "Dina pass har bokats framgångsrikt",
+          });
+        }, 300);
       }
     });
   };
@@ -140,7 +147,6 @@ export default function Booking() {
 
   const selectedShiftsData: ShiftWithBookings[] = processedShifts.filter(shift => selectedShifts.includes(shift.id));
 
-  // Filter out shifts that are already booked by the current user for the "Available shifts" section
   const availableShifts = processedShifts.filter(shift => !shift.is_booked_by_current_user);
 
   const shiftsByDate = availableShifts.reduce((acc, shift) => {

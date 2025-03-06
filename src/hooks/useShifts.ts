@@ -25,6 +25,12 @@ export const useShifts = (startDate: Date, endDate: Date) => {
       
       // Get all bookings for retrieved shifts
       const shiftIds = data.map(shift => shift.id);
+      
+      // If no shifts, return empty array
+      if (shiftIds.length === 0) {
+        return [];
+      }
+      
       const { data: bookings, error: bookingsError } = await supabase
         .from('shift_bookings')
         .select('*')
@@ -53,6 +59,7 @@ export const useShifts = (startDate: Date, endDate: Date) => {
         // Get only confirmed bookings for availability calculation
         const confirmedBookings = shiftBookings.filter(booking => booking.status === 'confirmed');
         
+        // Check if user has a confirmed booking for this shift
         const isBooked = user ? confirmedBookings.some(booking => booking.user_id === user.id) : false;
         
         return {
