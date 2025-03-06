@@ -19,10 +19,10 @@ const Staff = () => {
       console.log("Fetching staff members data...");
       
       // Fetch staff roles first, as this is the primary source of staff members
+      // Remove the hidden filter to show all staff members
       const rolesResponse = await supabase
         .from("staff_roles")
-        .select("*")
-        .eq("hidden", false); // Only fetch non-hidden staff members
+        .select("*");
 
       if (rolesResponse.error) throw rolesResponse.error;
       
@@ -46,7 +46,7 @@ const Staff = () => {
       // Initialize staff stats from roles data
       const staffStats: { [key: string]: StaffMemberStats } = {};
       
-      // Create base stats for all staff members from roles
+      // Create base stats for all staff members from roles, including hidden ones
       roles.forEach(roleData => {
         const displayName = roleData.user_display_name;
         staffStats[displayName] = {
@@ -63,12 +63,12 @@ const Staff = () => {
         };
       });
       
-      // Add sales data for staff members who have sales
+      // Add sales data for all staff members who have sales
       if (sales.length > 0) {
         sales.forEach(sale => {
           const displayName = sale.user_display_name as string;
           
-          // Skip if the staff member is not in our list (should be hidden)
+          // Skip if the staff member is not in our list (not in staff_roles)
           if (!staffStats[displayName]) return;
           
           const points = calculatePoints(sale.quantity);

@@ -1,4 +1,3 @@
-
 import { UserRound, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -35,25 +34,24 @@ const Home = () => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedSeller, setSelectedSeller] = useState("all");
 
-  // First get visible staff members
-  const { data: visibleStaff } = useQuery({
-    queryKey: ['visibleStaff'],
+  // Get all staff members without the hidden filter
+  const { data: allStaff } = useQuery({
+    queryKey: ['allStaff'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('staff_roles')
-        .select('user_display_name')
-        .eq('hidden', false);
+        .select('user_display_name');
       
       if (error) throw error;
       return new Set((data || []).map(s => s.user_display_name));
     }
   });
 
-  // Then fetch latest date with sales from visible staff
+  // Then fetch latest date with sales
   const { data: latestDate } = useQuery({
-    queryKey: ['latestTransactionDate', visibleStaff],
+    queryKey: ['latestTransactionDate', allStaff],
     queryFn: async () => {
-      // Get latest sale that has a visible seller
+      // Get latest sale
       const { data, error } = await supabase
         .from('total_purchases')
         .select('timestamp, user_display_name')
@@ -62,27 +60,25 @@ const Home = () => {
 
       if (error) throw error;
 
-      // Find first sale with a visible seller
-      const latestValidSale = data.find(sale => 
-        sale.user_display_name && visibleStaff?.has(sale.user_display_name)
-      );
-
-      if (!latestValidSale) return new Date();
+      // Find first sale with a seller
+      const latestSale = data[0];
       
-      const date = new Date(latestValidSale.timestamp);
+      if (!latestSale) return new Date();
+      
+      const date = new Date(latestSale.timestamp);
       if (!selectedDate) {
         setSelectedDate(date);
       }
       return date;
     },
-    enabled: !!visibleStaff
+    enabled: !!allStaff
   });
   
   const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(latestDate || new Date(), 'yyyy-MM-dd');
   const { data: leaderboardData, isLoading: isLeaderboardLoading } = useLeaderboardData('daily', formattedDate);
 
   const { data: transactions = [], isLoading: isTransactionsLoading } = useQuery({
-    queryKey: ['transactions', formattedDate, visibleStaff],
+    queryKey: ['transactions', formattedDate],
     queryFn: async () => {
       console.log('Fetching transactions for date:', formattedDate);
       const start = new Date(formattedDate);
@@ -103,23 +99,16 @@ const Home = () => {
         throw error;
       }
 
-      // Filter out transactions from hidden staff members
-      const filteredData = (data || []).filter(transaction => 
-        !transaction.user_display_name || 
-        (visibleStaff && visibleStaff.has(transaction.user_display_name))
-      );
-
-      console.log('Fetched transactions:', filteredData);
-      return filteredData as TotalPurchase[];
-    },
-    enabled: !!visibleStaff
+      console.log('Fetched transactions:', data);
+      return data as TotalPurchase[];
+    }
   });
 
   const activeSellers = Array.from(
     new Set(
       transactions
         .map(t => t.user_display_name)
-        .filter(name => name && visibleStaff?.has(name))
+        .filter(Boolean)
     )
   ) as string[];
 

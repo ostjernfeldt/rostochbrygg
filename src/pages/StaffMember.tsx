@@ -20,21 +20,15 @@ const StaffMember = () => {
       
       if (!name) throw new Error("No name provided");
       
-      // Fetch role data and check if hidden
+      // Fetch role data - without checking if hidden
       const { data: roleData, error: roleError } = await supabase
         .from("staff_roles")
-        .select("role, hidden")
+        .select("role")
         .eq("user_display_name", decodeURIComponent(name))
         .single();
 
       if (roleError) {
         console.error("Error fetching role:", roleError);
-      }
-
-      // If staff member is hidden, redirect to staff list
-      if (roleData?.hidden) {
-        navigate('/staff');
-        return null;
       }
 
       // Fetch historical points data

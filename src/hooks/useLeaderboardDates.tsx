@@ -25,16 +25,6 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
         return [];
       }
       
-      // First get visible staff members
-      const { data: visibleStaff, error: staffError } = await supabase
-        .from("staff_roles")
-        .select("user_display_name")
-        .eq("hidden", false);
-
-      if (staffError) throw staffError;
-
-      const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
-
       // Get all sales
       const { data, error } = await supabase
         .from("total_purchases")
@@ -44,7 +34,7 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
 
       if (error) throw error;
 
-      // Group sales by date and filter days where all sellers are hidden
+      // Group sales by date
       const salesByDate = data.reduce((acc: { [key: string]: Set<string> }, sale) => {
         const date = format(new Date(sale.timestamp), 'yyyy-MM-dd');
         if (!acc[date]) {
@@ -56,13 +46,8 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
         return acc;
       }, {});
 
-      // Only keep dates that have at least one visible seller
-      const validDates = Object.entries(salesByDate)
-        .filter(([_, sellers]) => {
-          // Check if at least one seller from this day is visible
-          return Array.from(sellers).some(seller => visibleStaffNames.has(seller));
-        })
-        .map(([date]) => date);
+      // Get all dates with sales
+      const validDates = Object.keys(salesByDate).sort().reverse();
 
       console.log("Found valid sales dates:", validDates);
       

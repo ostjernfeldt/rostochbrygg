@@ -29,15 +29,14 @@ const HallOfFame = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["hallOfFame"],
     queryFn: async () => {
-      // Fetch visible staff members first
-      const { data: visibleStaff, error: staffError } = await supabase
+      // Fetch all staff members without the hidden filter
+      const { data: allStaff, error: staffError } = await supabase
         .from("staff_roles")
-        .select("user_display_name")
-        .eq("hidden", false);
+        .select("user_display_name");
 
       if (staffError) throw staffError;
 
-      const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
+      const allStaffNames = new Set(allStaff.map(s => s.user_display_name));
 
       // Fetch all sales
       const { data: sales, error } = await supabase
@@ -92,11 +91,8 @@ const HallOfFame = () => {
         topMonths: manualTopMonths
       };
 
-      // Filter for visible staff members
-      const visibleSales = sales.filter(sale => 
-        sale.user_display_name && 
-        visibleStaffNames.has(sale.user_display_name)
-      );
+      // Include all sales regardless of visibility
+      const allSales = sales;
 
       // Helper function to get unique top sellers
       const getUniqueTopSellers = (sellers: TopSeller[]): TopSeller[] => {
@@ -120,7 +116,7 @@ const HallOfFame = () => {
       };
 
       // 1. Highest single sales
-      const allSalesByPoints = visibleSales
+      const allSalesByPoints = allSales
         .filter(sale => sale.amount > 0)
         .map(sale => ({
           name: sale.user_display_name || 'Okänd',
@@ -134,7 +130,7 @@ const HallOfFame = () => {
       const topSales = getUniqueTopSellers(mergeEntries(allSalesByPoints, manualTopSales));
 
       // 2. Best months
-      const monthlyTotals = visibleSales
+      const monthlyTotals = allSales
         .filter(sale => sale.amount > 0)
         .reduce((acc, sale) => {
           const monthKey = format(new Date(sale.timestamp), 'yyyy-MM');
@@ -168,7 +164,7 @@ const HallOfFame = () => {
       const topMonths = getUniqueTopSellers(mergeEntries(allMonthlyTopSellers, manualTopMonths));
 
       // 3. Best days
-      const dailyTotals = visibleSales
+      const dailyTotals = allSales
         .filter(sale => sale.amount > 0)
         .reduce((acc, sale) => {
           const dateKey = format(new Date(sale.timestamp), 'yyyy-MM-dd');
