@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO, isValid } from "date-fns";
@@ -66,6 +67,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             return { [type + 'Leaders']: [] };
         }
 
+        // Fetch all staff first, regardless of hidden status
         const { data: allStaff, error: staffError } = await supabase
           .from("staff_roles")
           .select("*");
@@ -75,11 +77,13 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           throw staffError;
         }
 
+        // Create a map of staff members and their hidden status
         const staffMap = new Map<string, boolean>();
         allStaff.forEach(staff => {
           staffMap.set(staff.user_display_name, !!staff.hidden);
         });
 
+        // Create a set of all staff display names for easier lookup
         const allStaffNames = new Set(allStaff.map(s => s.user_display_name));
         
         if (allStaffNames.size === 0) {
@@ -87,13 +91,14 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           return { [type + 'Leaders']: [] };
         }
 
+        // Fetch non-refunded sales within the date range
+        // Important: Do not filter by user_display_name at the database level
         const { data: sales, error: salesError } = await supabase
           .from("total_purchases")
           .select("*")
           .gte("timestamp", startDate.toISOString())
           .lte("timestamp", endDate.toISOString())
-          .not("refunded", "eq", true)
-          .not("user_display_name", "is", null);
+          .not("refunded", "eq", true);
 
         if (salesError) {
           console.error("Error fetching sales:", salesError);
@@ -101,7 +106,14 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         }
 
         console.log(`Fetched ${sales?.length || 0} sales for date range`);
+        
+        // Debug the fetched sales to see what user_display_name values they have
+        if (sales && sales.length > 0) {
+          const userNames = new Set(sales.map(s => s.user_display_name).filter(Boolean));
+          console.log("User display names in sales:", Array.from(userNames));
+        }
 
+        // Special case for daily view with no data - use latest date with data
         if ((!sales || sales.length === 0) && type === 'daily') {
           const { count, error: countError } = await supabase
             .from("total_purchases")
@@ -144,8 +156,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             .select("*")
             .gte("timestamp", startDate.toISOString())
             .lte("timestamp", endDate.toISOString())
-            .not("refunded", "eq", true)
-            .not("user_display_name", "is", null);
+            .not("refunded", "eq", true);
             
           if (latestSalesError) {
             console.error("Error fetching latest sales:", latestSalesError);
@@ -161,6 +172,8 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           
           const leaders = calculateLeaders(latestSales, allStaffNames, staffMap);
           const visibleLeaders = leaders.filter(leader => !leader.hidden);
+          
+          console.log(`Calculated ${visibleLeaders.length} visible leaders for latest date`);
           
           return { 
             [type + 'Leaders']: visibleLeaders,
@@ -182,10 +195,14 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         throw error;
       }
     },
+    // Reduce staleTime to make sure data refresh happens regularly
     staleTime: 1000 * 30,
+    // Increase retries for network reliability
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-    enabled: !!selectedDate
+    enabled: !!selectedDate,
+    // Always refetch on component mount to ensure latest data
+    refetchOnMount: true
   });
 };
 
@@ -200,12 +217,19 @@ const calculateLeaders = (
   
   const userTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[], hidden: boolean }> = {};
   
+  // Debug to see if processTransactions is filtering out sales
+  console.log(`Processing ${sales.length} sales for leaders calculation`);
   const processedSales = processTransactions(sales);
+  console.log(`After processing: ${processedSales.length} sales`);
   
+  // Process all sales, not just those from staff members
   processedSales.forEach(sale => {
     const name = sale.user_display_name;
     
-    if (!name) return;
+    if (!name) {
+      console.log("Skipping sale with no user_display_name:", sale.id);
+      return;
+    }
     
     if (!userTotals[name]) {
       userTotals[name] = {
@@ -221,14 +245,18 @@ const calculateLeaders = (
   
   const leaders = Object.entries(userTotals)
     .map(([name, data]) => {
+      const points = calculateTotalPoints(data.sales);
+      const salesCount = getValidSalesCount(data.sales);
+      
       return {
         "User Display Name": name,
-        points: calculateTotalPoints(data.sales),
-        salesCount: getValidSalesCount(data.sales),
+        points,
+        salesCount,
         hidden: data.hidden
       };
     })
     .sort((a, b) => b.points - a.points);
   
+  console.log(`Generated ${leaders.length} leaders (before filtering hidden)`);
   return leaders;
 };

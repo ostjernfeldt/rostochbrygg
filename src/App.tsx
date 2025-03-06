@@ -183,10 +183,26 @@ const AppContent = () => {
         } />
         
         {/* Routes for all users - completely public with no authentication required */}
-        <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/hall-of-fame" element={<HallOfFame />} />
-        <Route path="/staff" element={<Staff />} />
-        <Route path="/staff/:name" element={<StaffMember />} />
+        <Route path="/leaderboard" element={
+          <PrivateRoute bypassAuth={true}>
+            <Leaderboard />
+          </PrivateRoute>
+        } />
+        <Route path="/hall-of-fame" element={
+          <PrivateRoute bypassAuth={true}>
+            <HallOfFame />
+          </PrivateRoute>
+        } />
+        <Route path="/staff" element={
+          <PrivateRoute bypassAuth={true}>
+            <Staff />
+          </PrivateRoute>
+        } />
+        <Route path="/staff/:name" element={
+          <PrivateRoute bypassAuth={true}>
+            <StaffMember />
+          </PrivateRoute>
+        } />
         
         {/* Routes that require authentication */}
         <Route path="/booking" element={
