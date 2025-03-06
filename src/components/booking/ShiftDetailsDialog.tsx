@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ShiftWithBookings } from '@/types/booking';
-import { useCancelBooking, useBookShift } from '@/hooks/useShiftBookings';
+import { useCancelBooking, useBookShift } from '@/hooks/booking';
 import { Separator } from '@/components/ui/separator';
 import { useDeleteShift } from '@/hooks/useShifts';
 import { toast } from '@/hooks/use-toast';

@@ -12,11 +12,11 @@ import { ShiftDetailsDialog } from '@/components/booking/ShiftDetailsDialog';
 import { CreateShiftForm } from '@/components/booking/CreateShiftForm';
 import { WeeklyBookingsSummary } from '@/components/booking/WeeklyBookingsSummary';
 import { useShifts, useShiftDetails } from '@/hooks/useShifts';
+import { useBatchBookShifts } from '@/hooks/booking';
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Clock, InfoIcon, Settings, User, X, Check, AlertTriangle } from 'lucide-react';
 import { PageLayout } from '@/components/PageLayout';
 import { BatchBookingConfirmDialog } from '@/components/booking/BatchBookingConfirmDialog';
-import { useBatchBookShifts } from '@/hooks/useShiftBookings';
 import { toast } from "@/hooks/use-toast";
 
 export default function Booking() {

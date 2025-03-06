@@ -2,7 +2,7 @@
 import { format, addDays } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { AlertCircle, Calendar, CheckCircle, InfoIcon, Clock, ListChecks, CalendarCheck } from "lucide-react";
-import { useWeeklyBookingSummary } from '@/hooks/useShiftBookings';
+import { useWeeklyBookingSummary } from '@/hooks/booking';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export function WeeklyBookingsSummary() {
