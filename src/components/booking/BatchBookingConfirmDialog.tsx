@@ -22,6 +22,7 @@ interface BatchBookingConfirmDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   isPending: boolean;
+  existingBookingsCount?: number;
 }
 
 export function BatchBookingConfirmDialog({ 
@@ -29,12 +30,14 @@ export function BatchBookingConfirmDialog({
   isOpen, 
   onOpenChange,
   onConfirm,
-  isPending
+  isPending,
+  existingBookingsCount = 0
 }: BatchBookingConfirmDialogProps) {
   // Don't render at all if there are no shifts to show
   if (!shifts || shifts.length === 0) return null;
 
-  const notEnoughShifts = shifts.length < 2;
+  const totalShifts = shifts.length + existingBookingsCount;
+  const notEnoughShifts = totalShifts < 2;
 
   const handleOpenChange = (open: boolean) => {
     // Prevent closing dialog while booking is in progress
@@ -99,14 +102,26 @@ export function BatchBookingConfirmDialog({
           </div>
         </ScrollArea>
         
+        {existingBookingsCount > 0 && (
+          <div className="mt-4 p-3.5 bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/30 rounded-lg shadow-inner flex items-center gap-3">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/20 text-primary flex-shrink-0">
+              <CheckCircle className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-primary-foreground">Du har redan {existingBookingsCount} pass bokat</p>
+              <p className="text-xs text-primary-foreground/70">Totalt antal pass efter bokning: {totalShifts}</p>
+            </div>
+          </div>
+        )}
+        
         {notEnoughShifts && (
           <div className="mt-4 p-3.5 bg-gradient-to-r from-amber-950/30 to-amber-900/20 border border-amber-700/30 rounded-lg shadow-inner flex items-center gap-3">
             <div className="flex items-center justify-center w-7 h-7 rounded-full bg-amber-600/30 text-amber-400 flex-shrink-0">
               <AlertTriangle className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-sm font-medium text-amber-300">Minst 2 pass krävs</p>
-              <p className="text-xs text-amber-300/70">Du behöver välja minst 2 pass för att kunna boka</p>
+              <p className="text-sm font-medium text-amber-300">Minst 2 pass krävs totalt</p>
+              <p className="text-xs text-amber-300/70">Du behöver välja fler pass för att nå minimikravet på 2 pass</p>
             </div>
           </div>
         )}

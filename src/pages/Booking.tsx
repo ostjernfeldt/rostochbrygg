@@ -319,6 +319,13 @@ export default function Booking() {
       
       {selectedShift && <ShiftDetailsDialog shift={selectedShift} isUserAdmin={isAdmin} open={dialogOpen} onOpenChange={setDialogOpen} />}
       
-      <BatchBookingConfirmDialog shifts={selectedShiftsData} isOpen={confirmDialogOpen} onOpenChange={setConfirmDialogOpen} onConfirm={handleConfirmBookings} isPending={isBatchBooking} />
+      <BatchBookingConfirmDialog 
+        shifts={selectedShiftsData} 
+        isOpen={confirmDialogOpen} 
+        onOpenChange={setConfirmDialogOpen} 
+        onConfirm={handleConfirmBookings} 
+        isPending={isBatchBooking}
+        existingBookingsCount={userBookedShifts.length}
+      />
     </PageLayout>;
 }
