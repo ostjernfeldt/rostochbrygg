@@ -10,12 +10,19 @@ export const useShifts = (startDate: Date, endDate: Date) => {
     queryFn: async () => {
       console.log('Fetching shifts for date range:', startDate.toISOString(), 'to', endDate.toISOString());
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('No authenticated user found');
-      } else {
-        console.log('Fetching shifts for user:', user.id);
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('Error fetching user:', authError);
+        throw new Error('Authentication error. Please try logging in again.');
       }
+      
+      if (!user) {
+        console.log('No authenticated user found, returning empty shifts array');
+        return [];
+      }
+      
+      console.log('Fetching shifts for user:', user.id);
       
       const { data, error } = await supabase
         .from('shifts')
@@ -88,7 +95,10 @@ export const useShifts = (startDate: Date, endDate: Date) => {
       
       return shiftsWithBookings;
     },
+    // Only run this query when startDate and endDate are valid
+    enabled: !!startDate && !!endDate,
     staleTime: 1000 * 60, // Refresh cache every minute
+    retry: 1, // Only retry once to avoid excessive retries on auth issues
   });
   
   return {

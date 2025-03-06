@@ -23,14 +23,26 @@ export const useWeeklyBookingSummary = (userId?: string, startDate?: Date) => {
     queryFn: async () => {
       console.log('Fetching weekly booking summary for date range:', weekStart.toISOString(), 'to', weekEnd.toISOString());
       
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('Error fetching current user:', authError);
+        throw new Error('Authentication error');
+      }
+      
       const targetUserId = userId || user?.id;
 
       if (!targetUserId) {
-        throw new Error('No user ID provided and no user is logged in');
+        console.log('No user ID provided and no user is logged in, returning empty summary');
+        return {
+          week_start: weekStart.toISOString(),
+          week_end: weekEnd.toISOString(),
+          total_bookings: 0,
+          meets_minimum_requirement: false
+        };
       }
 
-      // Get confirmed bookings for the user within the date range
+      // Get shifts for the week
       const { data: shifts, error: shiftsError } = await supabase
         .from('shifts')
         .select('id, date')
@@ -81,7 +93,9 @@ export const useWeeklyBookingSummary = (userId?: string, startDate?: Date) => {
 
       return summary;
     },
+    // Only run this query when we have a user (either from auth or passed as prop)
+    enabled: true, // We return a fallback object if no user is found
     staleTime: 1000 * 60, // Refresh cache every minute
-    enabled: true, // Always fetch when component mounts
+    retry: 1, // Limit retries to avoid infinite loops on auth issues
   });
 };

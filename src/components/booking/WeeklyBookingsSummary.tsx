@@ -14,7 +14,7 @@ export function WeeklyBookingsSummary() {
   startOfWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
   startOfWeek.setHours(0, 0, 0, 0);
   
-  const { data: summary, isLoading } = useWeeklyBookingSummary(undefined, startOfWeek);
+  const { data: summary, isLoading, error } = useWeeklyBookingSummary(undefined, startOfWeek);
   
   if (isLoading) {
     return <div className="w-full bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 backdrop-blur-sm rounded-xl p-4 border border-[#33333A] animate-pulse shadow-lg">
@@ -22,10 +22,21 @@ export function WeeklyBookingsSummary() {
       </div>;
   }
   
+  if (error) {
+    return <div className="w-full bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 backdrop-blur-sm rounded-xl p-4 border border-[#33333A] shadow-lg">
+        <div className="flex items-center gap-2 text-amber-400">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-sm">Kunde inte ladda bokningsdata</span>
+        </div>
+      </div>;
+  }
+  
+  // Safely handle summary object if it's not available
+  const totalBookings = summary?.total_bookings || 0;
   const endDate = addDays(startOfWeek, 6);
 
   // Check if requirement is met
-  const requirementMet = (summary?.total_bookings || 0) >= 2;
+  const requirementMet = totalBookings >= 2;
   
   return (
     <Popover>
@@ -49,7 +60,7 @@ export function WeeklyBookingsSummary() {
               <div className="flex items-center gap-2 bg-indigo-950/50 px-2.5 py-1.5 rounded-full border border-indigo-800/30">
                 <ListChecks className="h-3.5 w-3.5 text-amber-400" />
                 <span className="text-sm font-medium text-amber-400">
-                  {summary?.total_bookings || 0}/2 pass
+                  {totalBookings}/2 pass
                 </span>
               </div>
             </div>

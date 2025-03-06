@@ -77,6 +77,7 @@ export default function Booking() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -135,6 +136,7 @@ export default function Booking() {
           return;
         }
         
+        setIsAuthenticated(true);
         setUser(session.user);
         
         try {
@@ -174,6 +176,23 @@ export default function Booking() {
     };
     
     checkUserSession();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setUser(null);
+        navigate('/login');
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setIsAuthenticated(true);
+        if (session) {
+          setUser(session.user);
+        }
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleViewShiftDetails = (shiftId: string) => {
@@ -260,13 +279,13 @@ export default function Booking() {
   const processedShifts: ShiftWithBookings[] = Array.isArray(shifts) ? shifts.map(shift => {
     return {
       ...shift,
-      bookings: shift.bookings || [],
+      bookings: Array.isArray(shift.bookings) ? shift.bookings : [],
       available_slots_remaining: shift.available_slots_remaining !== undefined ? shift.available_slots_remaining : shift.available_slots,
       is_booked_by_current_user: shift.is_booked_by_current_user || false
     };
   }) : [];
 
-  const selectedShiftsData: ShiftWithBookings[] = Array.isArray(processedShifts) && Array.isArray(selectedShifts) 
+  const selectedShiftsData = Array.isArray(processedShifts) && Array.isArray(selectedShifts) 
     ? processedShifts.filter(shift => selectedShifts.includes(shift.id))
     : [];
     
@@ -304,6 +323,21 @@ export default function Booking() {
           <AlertTriangle className="h-12 w-12 text-amber-500 mb-3" />
           <h2 className="text-xl font-semibold mb-2">Åtkomst nekad</h2>
           <p className="text-muted-foreground mb-4">{authError}</p>
+          <Button onClick={() => navigate('/login')} variant="default">
+            Gå till inloggning
+          </Button>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <PageLayout>
+        <div className="flex flex-col items-center justify-center h-[50vh] p-6">
+          <AlertTriangle className="h-12 w-12 text-amber-500 mb-3" />
+          <h2 className="text-xl font-semibold mb-2">Du måste vara inloggad</h2>
+          <p className="text-muted-foreground mb-4">Du behöver logga in för att se bokningssidan</p>
           <Button onClick={() => navigate('/login')} variant="default">
             Gå till inloggning
           </Button>
