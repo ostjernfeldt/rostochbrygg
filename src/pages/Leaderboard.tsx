@@ -14,7 +14,7 @@ const Leaderboard = () => {
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [previousMonthsWithData, setPreviousMonthsWithData] = useState<string[]>([]);
 
-  // Handle dates loaded from the server
+  // Handle dates loaded from the server - identical for both user types
   const handleDatesLoaded = (dates: string[]) => {
     // If there are dates, set the selected week to the latest date
     if (dates.length > 0 && !selectedWeek) {
@@ -40,7 +40,7 @@ const Leaderboard = () => {
     setPreviousMonthsWithData(Array.from(monthsWithData).sort().reverse()); // Sort descending
   };
 
-  // Fetch dates with sales activity - making sure this is enabled for all users
+  // Fetch dates with sales activity
   const { data: salesDates } = useLeaderboardDates(handleDatesLoaded);
 
   // Generate weeks based on sales dates or current date if no sales
@@ -58,7 +58,7 @@ const Leaderboard = () => {
     };
   });
 
-  // Generate last 12 months for the dropdown, with Swedish month names
+  // Generate last 12 months for the dropdown, now with Swedish month names
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
     const date = subMonths(new Date(), i);
     return {
@@ -67,25 +67,12 @@ const Leaderboard = () => {
     };
   });
 
-  // Explicitly enable these queries for all users by passing enabledByDefault: true
-  const { data: weeklyLeaderboard, isLoading: isWeeklyLoading } = useLeaderboardData(
-    'weekly', 
-    selectedWeek
-  );
-  
+  // Fetch leaderboard data for each time period - identical for both user types
+  const { data: weeklyLeaderboard, isLoading: isWeeklyLoading } = useLeaderboardData('weekly', selectedWeek);
   const { 
     data: monthlyLeaderboard, 
     isLoading: isMonthlyLoading 
-  } = useLeaderboardData(
-    'monthly', 
-    selectedMonth
-  );
-
-  // Log data for debugging
-  useEffect(() => {
-    console.log("Weekly leaderboard data:", weeklyLeaderboard);
-    console.log("Selected week:", selectedWeek);
-  }, [weeklyLeaderboard, selectedWeek]);
+  } = useLeaderboardData('monthly', selectedMonth);
 
   // Effect to check if current month has data and fall back to previous month if needed
   useEffect(() => {

@@ -28,14 +28,13 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
   return useQuery({
     queryKey: ["challengeLeaders", type, selectedDate],
     queryFn: async (): Promise<LeaderboardData> => {
-      console.log(`Fetching ${type} challenge leaders for date: ${selectedDate}`);
+      console.log(`Fetching ${type} challenge leaders from total_purchases...`);
       
       try {
         // Parse the selectedDate once to ensure proper date handling
         let parsedDate;
         try {
           parsedDate = parseISO(selectedDate);
-          console.log(`Parsed date for ${type}: `, parsedDate);
         } catch (error) {
           console.error("Invalid date format:", selectedDate, error);
           return { [type + 'Leaders']: [] as UserSales[] };
@@ -65,8 +64,6 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           default:
             throw new Error(`Unsupported time period: ${type}`);
         }
-        
-        console.log(`${type} date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
 
         // Get all staff members including hidden ones - without any filtering
         const { data: allStaff, error: staffError } = await supabase
@@ -77,8 +74,6 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           console.error("Error fetching staff:", staffError);
           throw staffError;
         }
-        
-        console.log(`Found ${allStaff?.length || 0} staff members`);
 
         // Create a map of staff names to their hidden status
         const staffMap = new Map<string, boolean>();
@@ -106,8 +101,6 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           console.error("Error fetching sales:", salesError);
           throw salesError;
         }
-        
-        console.log(`Found ${sales?.length || 0} sales for ${type} period`);
 
         // If no sales are found for the selected date range and we need the latest date
         if ((!sales || sales.length === 0) && type === 'daily') {
@@ -186,8 +179,6 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         // Filter out hidden staff for display purposes
         const visibleLeaders = leaders.filter(leader => !leader.hidden);
         
-        console.log(`Calculated ${visibleLeaders.length} visible leaders for ${type} period`);
-        
         // Create result object based on the requested type
         return { 
           [type + 'Leaders']: visibleLeaders,
@@ -198,10 +189,8 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         return { [type + 'Leaders']: [] as UserSales[] };
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
-    retry: 3,  // Add retries for network failures
-    // Remove any role-based conditions for data fetching
-    enabled: !!selectedDate // Only enable when we have a date
+    staleTime: 1000 * 60 * 5, // Add a staleTime to prevent unnecessary refetches
+    retry: 3  // Add retries for network failures
   });
 };
 
