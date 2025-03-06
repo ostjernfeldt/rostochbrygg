@@ -1,4 +1,3 @@
-
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { Calendar, Clock, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
@@ -35,12 +34,16 @@ export function BatchBookingConfirmDialog({
 
   const notEnoughShifts = shifts.length < 2;
 
+  const handleOpenChange = (open: boolean) => {
+    if (isPending && !open) {
+      return;
+    }
+    onOpenChange(open);
+  };
+
   return (
-    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
-      <AlertDialogContent 
-        className="bg-[#1A1F2C] border-[#33333A] shadow-xl"
-        onInteractOutside={(e) => isPending && e.preventDefault()}
-      >
+    <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
+      <AlertDialogContent className="bg-[#1A1F2C] border-[#33333A] shadow-xl">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
