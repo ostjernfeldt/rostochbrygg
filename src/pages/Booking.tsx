@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { sv } from 'date-fns/locale';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShiftWithBookings } from '@/types/booking';
@@ -26,6 +27,8 @@ export default function Booking() {
   const [selectedShifts, setSelectedShifts] = useState<string[]>([]);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const today = new Date();
   const currentWeekStart = startOfWeek(today, {
     weekStartsOn: 1
@@ -38,7 +41,7 @@ export default function Booking() {
   })} - ${format(weekEnd, 'd MMM yyyy', {
     locale: sv
   })}`;
-  
+
   const {
     shifts,
     isLoading: shiftsLoading
