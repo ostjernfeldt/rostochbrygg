@@ -1,11 +1,13 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1"
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
+
+console.log("Validate invitation email function started");
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -14,76 +16,66 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    )
-
-    const { email } = await req.json()
+    // Get the request body
+    const { email } = await req.json();
 
     if (!email) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'No email provided'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      )
+        JSON.stringify({ success: false, error: "Email is required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
     }
 
-    // Check if there's a valid invitation for this email
-    const { data, error } = await supabaseClient.rpc('validate_invitation_by_email', {
-      email_address: email
-    })
+    // Create a Supabase client with the Admin key (Service Role)
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (error) {
-      console.error('Error validating invitation:', error)
+    console.log("Validating invitation for email:", email);
+
+    // Query the invitations table directly
+    const { data: invitations, error: invitationError } = await supabase
+      .from('invitations')
+      .select('*')
+      .eq('email', email.trim())
+      .is('used_at', null)
+      .gt('expires_at', new Date().toISOString());
+    
+    if (invitationError) {
+      console.error("Error querying invitations:", invitationError);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: error.message
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      )
+        JSON.stringify({ success: false, error: invitationError.message }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
     }
 
-    // Get the invitation to return display_name
-    if (data && data.length > 0 && data[0].is_valid) {
-      // Fetch the invitation to get the display_name
-      const { data: invitationData, error: invitationError } = await supabaseClient
-        .from('invitations')
-        .select('display_name')
-        .eq('id', data[0].invitation_id)
-        .single();
-
-      if (invitationError) {
-        console.error('Error fetching invitation details:', invitationError);
-      } else if (invitationData) {
-        // Add display_name to the response data
-        data[0].display_name = invitationData.display_name;
-      }
+    if (!invitations || invitations.length === 0) {
+      console.log("No valid invitation found for email:", email);
+      return new Response(
+        JSON.stringify({ success: true, data: [{ is_valid: false, email, invitation_id: null }] }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+
+    const invitation = invitations[0];
+    console.log("Valid invitation found:", invitation.id);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        data: data || [] 
+        data: [{ 
+          is_valid: true, 
+          email: invitation.email, 
+          invitation_id: invitation.id 
+        }] 
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-    )
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (error) {
-    console.error('Unhandled error:', error)
+    console.error("Unexpected error:", error.message);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        message: 'Internal server error'
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    )
+      JSON.stringify({ success: false, error: error.message }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+    );
   }
-})
+});

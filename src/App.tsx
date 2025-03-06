@@ -20,7 +20,6 @@ import HallOfFame from "./pages/HallOfFame";
 import CreateAccount from "./pages/CreateAccount";
 import Booking from "./pages/Booking";
 import { useQuery } from "@tanstack/react-query";
-import { useBookingSystemEnabled } from "@/hooks/useAppSettings";
 
 const queryClient = new QueryClient();
 
@@ -61,7 +60,7 @@ const useUserRole = () => {
     },
     staleTime: 1000 * 60 * 5,
     retry: 3,
-    enabled: true
+    enabled: false
   });
 };
 
@@ -137,21 +136,6 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
   return <>{children}</>;
 };
 
-const BookingRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isEnabled, isLoading } = useBookingSystemEnabled();
-  const { data: userRole, isLoading: isRoleLoading } = useUserRole();
-  
-  if (isLoading || isRoleLoading) return null;
-  
-  // If booking system is disabled and user is not admin, redirect to leaderboard
-  if (!isEnabled && userRole !== 'admin') {
-    console.log("Booking system disabled and user is not admin, redirecting to leaderboard");
-    return <Navigate to="/leaderboard" replace />;
-  }
-  
-  return <PrivateRoute>{children}</PrivateRoute>;
-};
-
 const AppContent = () => {
   const location = useLocation();
   const { data: userRole } = useUserRole();
@@ -200,12 +184,12 @@ const AppContent = () => {
           </PrivateRoute>
         } />
         <Route path="/booking" element={
-          <BookingRoute>
+          <PrivateRoute>
             <Booking />
-          </BookingRoute>
+          </PrivateRoute>
         } />
         <Route path="*" element={
-          <Navigate to="/leaderboard" replace />
+          <Navigate to={userRole === 'admin' ? "/" : "/leaderboard"} replace />
         } />
       </Routes>
       {location.pathname !== '/login' && 

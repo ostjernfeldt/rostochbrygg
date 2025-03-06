@@ -40,6 +40,14 @@ interface RoleLevel {
   updated_at?: string;
 }
 
+interface HistoricalPoints {
+  id: string;
+  user_display_name: string;
+  points: number;
+  updated_at?: string;
+  updated_by?: string;
+}
+
 export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
   // Adjust statistics to exclude refunded purchases
   const cleanStats = {
@@ -52,7 +60,7 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
     bestDay: stats.bestDay || { date: new Date().toISOString(), points: 0 }
   };
 
-  // Fetch historical points (if needed)
+  // Fetch historical points - no longer needed as we pass them from parent
   const { data: historicalPoints } = useQuery({
     queryKey: ["historicalPoints", userDisplayName],
     queryFn: async () => {
@@ -62,7 +70,7 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
     enabled: false // Disable the query since we already have the data
   });
 
-  // Fetch role levels - all users should see these
+  // Fetch role levels
   const { data: roleLevels, isLoading: isLoadingRoleLevels } = useQuery({
     queryKey: ["roleLevels"],
     queryFn: async () => {
@@ -78,16 +86,11 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
           return [];
         }
 
-        if (!data || data.length === 0) {
-          console.log("No role levels found");
-          return [{ id: "default", title: "Sales Intern", points_threshold: 0, display_order: 1 }];
-        }
-
         return data as RoleLevel[];
       } catch (e) {
         console.error("Exception fetching role levels:", e);
         toast.error("Kunde inte ladda rollnivåer");
-        return [{ id: "default", title: "Sales Intern", points_threshold: 0, display_order: 1 }];
+        return [];
       }
     }
   });

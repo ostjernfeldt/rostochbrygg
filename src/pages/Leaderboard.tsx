@@ -16,27 +16,17 @@ const Leaderboard = () => {
 
   // Handle dates loaded from the server
   const handleDatesLoaded = (dates: string[]) => {
-    console.log("Dates loaded from server:", dates);
-    
     // If there are dates, set the selected week to the latest date
     if (dates.length > 0 && !selectedWeek) {
       console.log("Latest sale date:", dates[0]);
-      try {
-        const latestDate = parseISO(dates[0]);
-        const latestWeekStart = format(startOfWeek(latestDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-        setSelectedWeek(latestWeekStart);
-        console.log("Setting latest week start to:", latestWeekStart);
-      } catch (e) {
-        console.error("Error parsing date:", e);
-        // If there's an error, fall back to current week
-        const currentWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-        setSelectedWeek(currentWeekStart);
-        console.log("Error parsing date, using current week:", currentWeekStart);
-      }
+      const latestDate = parseISO(dates[0]);
+      const latestWeekStart = format(startOfWeek(latestDate), 'yyyy-MM-dd');
+      setSelectedWeek(latestWeekStart);
+      console.log("Setting latest week start to:", latestWeekStart);
     } else if (dates.length === 0 && !selectedWeek) {
       // If no dates exist, use current week
       const currentDate = new Date();
-      const currentWeekStart = format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      const currentWeekStart = format(startOfWeek(currentDate), 'yyyy-MM-dd');
       setSelectedWeek(currentWeekStart);
       console.log("No sales found, using current week:", currentWeekStart);
     }
@@ -48,11 +38,10 @@ const Leaderboard = () => {
       monthsWithData.add(month);
     });
     setPreviousMonthsWithData(Array.from(monthsWithData).sort().reverse()); // Sort descending
-    console.log("Previous months with data:", Array.from(monthsWithData).sort().reverse());
   };
 
   // Fetch dates with sales activity
-  const { data: salesDates, isLoading: isLoadingDates } = useLeaderboardDates(handleDatesLoaded);
+  const { data: salesDates } = useLeaderboardDates(handleDatesLoaded);
 
   // Generate weeks based on sales dates or current date if no sales
   const weekOptions = Array.from({ length: 5 }, (_, i) => {
@@ -61,11 +50,11 @@ const Leaderboard = () => {
       ? parseISO(salesDates[0]) 
       : new Date();
       
-    const date = startOfWeek(referenceDate, { weekStartsOn: 1 });
+    const date = startOfWeek(referenceDate);
     date.setDate(date.getDate() - (i * 7));
     return {
       value: format(date, 'yyyy-MM-dd'),
-      label: `Vecka ${format(date, 'w')} (${format(date, 'd MMM', { locale: sv })} - ${format(endOfWeek(date, { weekStartsOn: 1 }), 'd MMM', { locale: sv })})`
+      label: `Vecka ${format(date, 'w')} (${format(date, 'd MMM', { locale: sv })} - ${format(endOfWeek(date), 'd MMM', { locale: sv })})`
     };
   });
 
@@ -79,37 +68,11 @@ const Leaderboard = () => {
   });
 
   // Fetch leaderboard data for each time period
-  const { 
-    data: weeklyLeaderboard, 
-    isLoading: isWeeklyLoading,
-    error: weeklyError
-  } = useLeaderboardData('weekly', selectedWeek);
-  
+  const { data: weeklyLeaderboard, isLoading: isWeeklyLoading } = useLeaderboardData('weekly', selectedWeek);
   const { 
     data: monthlyLeaderboard, 
-    isLoading: isMonthlyLoading,
-    error: monthlyError
+    isLoading: isMonthlyLoading 
   } = useLeaderboardData('monthly', selectedMonth);
-
-  // Log any errors for debugging
-  useEffect(() => {
-    if (weeklyError) {
-      console.error("Weekly leaderboard error:", weeklyError);
-    }
-    if (monthlyError) {
-      console.error("Monthly leaderboard error:", monthlyError);
-    }
-  }, [weeklyError, monthlyError]);
-
-  // Log leaderboard data for debugging
-  useEffect(() => {
-    if (weeklyLeaderboard) {
-      console.log("Weekly leaderboard data:", weeklyLeaderboard.weeklyLeaders);
-    }
-    if (monthlyLeaderboard) {
-      console.log("Monthly leaderboard data:", monthlyLeaderboard.monthlyLeaders);
-    }
-  }, [weeklyLeaderboard, monthlyLeaderboard]);
 
   // Effect to check if current month has data and fall back to previous month if needed
   useEffect(() => {
@@ -117,8 +80,6 @@ const Leaderboard = () => {
       const currentMonthHasData = 
         monthlyLeaderboard.monthlyLeaders && 
         monthlyLeaderboard.monthlyLeaders.length > 0;
-      
-      console.log("Current month has data:", currentMonthHasData);
       
       // If current month has no data and it's not in our list of months with data
       if (!currentMonthHasData && !previousMonthsWithData.includes(selectedMonth)) {
@@ -141,7 +102,7 @@ const Leaderboard = () => {
         <LeaderboardSection
           title="Veckans topplista"
           data={weeklyLeaderboard?.weeklyLeaders}
-          isLoading={isWeeklyLoading || isLoadingDates}
+          isLoading={isWeeklyLoading}
           filter={{
             options: weekOptions,
             value: selectedWeek,
@@ -154,7 +115,7 @@ const Leaderboard = () => {
         <LeaderboardSection
           title="Månadens topplista"
           data={monthlyLeaderboard?.monthlyLeaders}
-          isLoading={isMonthlyLoading || isLoadingDates}
+          isLoading={isMonthlyLoading}
           filter={{
             options: monthOptions,
             value: selectedMonth,

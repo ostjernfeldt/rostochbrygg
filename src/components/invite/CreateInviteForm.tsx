@@ -13,7 +13,6 @@ interface CreateInviteFormProps {
 
 export const CreateInviteForm = ({ onInviteCreated }: CreateInviteFormProps) => {
   const [email, setEmail] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
@@ -28,10 +27,6 @@ export const CreateInviteForm = ({ onInviteCreated }: CreateInviteFormProps) => 
         throw new Error("Vänligen ange en giltig e-postadress");
       }
 
-      if (!displayName.trim()) {
-        throw new Error("Vänligen ange ett namn för säljaren");
-      }
-
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
       
@@ -40,7 +35,7 @@ export const CreateInviteForm = ({ onInviteCreated }: CreateInviteFormProps) => 
         throw new Error("Du måste vara inloggad för att skapa inbjudningar");
       }
 
-      console.log("Creating invitation for email:", email, "with display name:", displayName, "by user:", userId);
+      console.log("Creating invitation for email:", email, "by user:", userId);
 
       const { data: existingUsers, error: existingError } = await supabase
         .from('invitations')
@@ -65,7 +60,6 @@ export const CreateInviteForm = ({ onInviteCreated }: CreateInviteFormProps) => 
         .from('invitations')
         .insert({
           email: email.trim(),
-          display_name: displayName.trim(),
           created_by: userId,
           status: 'pending',
           invitation_token: invitationToken
@@ -81,7 +75,6 @@ export const CreateInviteForm = ({ onInviteCreated }: CreateInviteFormProps) => 
 
       onInviteCreated();
       setEmail("");
-      setDisplayName("");
 
       toast({
         title: "Inbjudan skapad!",
@@ -111,15 +104,6 @@ export const CreateInviteForm = ({ onInviteCreated }: CreateInviteFormProps) => 
       
       <form onSubmit={handleInvite} className="space-y-3">
         <div>
-          <Input
-            placeholder="Säljarens namn"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            required
-            disabled={isLoading}
-            className="bg-card/50 mb-3"
-          />
-          
           <Input
             type="email"
             placeholder="Säljarens e-postadress"

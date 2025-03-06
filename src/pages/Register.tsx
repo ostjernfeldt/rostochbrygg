@@ -16,7 +16,6 @@ const Register = () => {
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -67,7 +66,6 @@ const Register = () => {
       }
 
       setInvitationId(data.data[0].invitation_id || null);
-      setDisplayName(data.data[0].display_name || "");
       setIsVerified(true);
       setValidationError(null);
     } catch (error: any) {
@@ -98,11 +96,7 @@ const Register = () => {
         throw new Error("Lösenordet måste vara minst 6 tecken långt.");
       }
       
-      if (!displayName.trim()) {
-        throw new Error("Ett namn för säljaren krävs.");
-      }
-      
-      console.log("Creating account with email:", email, "and display name:", displayName);
+      console.log("Creating account with email:", email);
       
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
@@ -120,18 +114,6 @@ const Register = () => {
       }
 
       console.log("User created successfully:", signUpData.user.id);
-
-      const { error: staffRoleError } = await supabase
-        .from('staff_roles')
-        .insert({
-          id: signUpData.user.id,
-          user_display_name: displayName.trim()
-        });
-
-      if (staffRoleError) {
-        console.error("Error creating staff role:", staffRoleError);
-        throw staffRoleError;
-      }
 
       const { error: markUsedError } = await supabase.functions.invoke('mark-invitation-used', {
         body: { email: email.trim() }
@@ -285,16 +267,6 @@ const Register = () => {
                 disabled
                 className="bg-muted"
               />
-              
-              <Input
-                type="text"
-                placeholder="Ditt namn"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-              
               <Input
                 type="password"
                 placeholder="Välj lösenord"

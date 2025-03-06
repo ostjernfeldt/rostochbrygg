@@ -11,10 +11,10 @@ import { ShiftDetailsDialog } from '@/components/booking/ShiftDetailsDialog';
 import { CreateShiftForm } from '@/components/booking/CreateShiftForm';
 import { AdminToggleFeature } from '@/components/booking/AdminToggleFeature';
 import { WeeklyBookingsSummary } from '@/components/booking/WeeklyBookingsSummary';
-import { useGetShifts, useGetShiftDetails } from '@/hooks/shifts';
+import { useShifts, useShiftDetails } from '@/hooks/useShifts';
 import { useBookingSystemEnabled } from '@/hooks/useAppSettings';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Clock, User, Check, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, InfoIcon, Settings, User, X, Check, AlertTriangle } from 'lucide-react';
 import { PageLayout } from '@/components/PageLayout';
 import { BatchBookingConfirmDialog } from '@/components/booking/BatchBookingConfirmDialog';
 import { useBatchBookShifts } from '@/hooks/useShiftBookings';
@@ -41,29 +41,39 @@ export default function Booking() {
   })} - ${format(weekEnd, 'd MMM yyyy', {
     locale: sv
   })}`;
-  
-  // Get booking system status
-  const { isEnabled: bookingSystemEnabled } = useBookingSystemEnabled();
-  
-  // Get shifts data
-  const { shifts, isLoading: shiftsLoading } = useGetShifts(currentWeekStart, weekEnd);
-  
-  // Get selected shift details
-  const { shift: selectedShift, isLoading: shiftDetailsLoading } = useGetShiftDetails(selectedShiftId || '');
-  
-  // Batch booking mutation
-  const { mutate: batchBookShifts, isPending: isBatchBooking } = useBatchBookShifts();
+  const {
+    isEnabled: bookingSystemEnabled
+  } = useBookingSystemEnabled();
+  const {
+    shifts,
+    isLoading: shiftsLoading
+  } = useShifts(currentWeekStart, weekEnd);
+  const {
+    shift: selectedShift,
+    isLoading: shiftDetailsLoading
+  } = useShiftDetails(selectedShiftId || '');
+  const {
+    mutate: batchBookShifts,
+    isPending: isBatchBooking
+  } = useBatchBookShifts();
 
   useEffect(() => {
     const checkUserSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: {
+          session
+        }
+      } = await supabase.auth.getSession();
       if (!session) {
         navigate('/login');
         return;
       }
       setUser(session.user);
       try {
-        const { data, error } = await supabase.from('staff_roles').select('user_display_name').eq('id', session.user.id).maybeSingle();
+        const {
+          data,
+          error
+        } = await supabase.from('staff_roles').select('user_display_name').eq('id', session.user.id).maybeSingle();
         if (data && !error) {
           setUserName(data.user_display_name);
         }
@@ -71,7 +81,10 @@ export default function Booking() {
         console.error('Error fetching user name:', error);
       }
       try {
-        const { data, error } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).single();
+        const {
+          data,
+          error
+        } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).single();
         if (error) {
           console.error('Error checking user role:', error);
           return;
@@ -144,7 +157,6 @@ export default function Booking() {
 
   const renderContent = () => {
     if (!user) return null;
-    
     if (isAdmin) {
       return <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -187,7 +199,26 @@ export default function Booking() {
           </Card>
         </div>;
     } else {
-      // Regular user view - always showing booking interface now
+      if (!bookingSystemEnabled) {
+        return <div className="max-w-md mx-auto">
+            <div className="flex items-center gap-2 mb-4">
+              <User className="h-5 w-5 text-primary" />
+              <h1 className="text-xl font-semibold">Välkommen {userName || ''}</h1>
+            </div>
+            
+            <Card className="w-full bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm border-[#33333A] shadow-lg mb-6">
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center text-center p-4">
+                  <Clock className="h-16 w-16 text-muted-foreground mb-4 opacity-20" />
+                  <h3 className="text-lg font-medium mb-2">Bokningssystemet är stängt</h3>
+                  <p className="text-muted-foreground">
+                    Bokningssystemet är för närvarande inte tillgängligt. Återkom senare eller kontakta din säljledare.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>;
+      }
       return <div className="max-w-md mx-auto">
           <div className="flex items-center gap-2 mb-6">
           </div>
