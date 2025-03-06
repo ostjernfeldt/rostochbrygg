@@ -78,11 +78,16 @@ export const StaffStats = ({ stats, userDisplayName }: StaffStatsProps) => {
           return [];
         }
 
+        if (!data || data.length === 0) {
+          console.log("No role levels found");
+          return [{ id: "default", title: "Sales Intern", points_threshold: 0, display_order: 1 }];
+        }
+
         return data as RoleLevel[];
       } catch (e) {
         console.error("Exception fetching role levels:", e);
         toast.error("Kunde inte ladda rollnivåer");
-        return [];
+        return [{ id: "default", title: "Sales Intern", points_threshold: 0, display_order: 1 }];
       }
     }
   });

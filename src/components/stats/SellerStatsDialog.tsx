@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { processTransactions, getValidSalesCount } from "@/components/transactions/TransactionProcessor";
+import { toast } from "sonner";
 
 interface SellerStatsDialogProps {
   isOpen: boolean;
@@ -29,7 +30,16 @@ export const SellerStatsDialog = ({ isOpen, onClose, type }: SellerStatsDialogPr
         .select("user_display_name")
         .eq("hidden", false);
 
-      if (staffError) throw staffError;
+      if (staffError) {
+        console.error("Error fetching staff:", staffError);
+        toast.error("Kunde inte hämta säljare");
+        throw staffError;
+      }
+
+      if (!visibleStaff || visibleStaff.length === 0) {
+        console.log("No staff members found");
+        return [];
+      }
 
       const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
 
@@ -162,7 +172,9 @@ export const SellerStatsDialog = ({ isOpen, onClose, type }: SellerStatsDialogPr
             {isLoading ? (
               <div className="text-center">Laddar statistik...</div>
             ) : !stats || stats.length === 0 ? (
-              <div className="text-center">Ingen data tillgänglig</div>
+              <div className="text-center">
+                Inga säljare med försäljningsdata hittades. Lägg till säljare i staff_roles tabellen och registrera försäljningar.
+              </div>
             ) : (
               stats.map((seller, index) => (
                 <div

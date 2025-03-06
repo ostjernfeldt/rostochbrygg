@@ -13,6 +13,28 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
       console.log("Fetching dates with sales activity from total_purchases...");
       
       try {
+        // First check if there are any staff members
+        const { data: staffMembers, error: staffError } = await supabase
+          .from("staff_roles")
+          .select("user_display_name")
+          .eq("hidden", false);
+
+        if (staffError) {
+          console.error("Error fetching staff members:", staffError);
+          throw staffError;
+        }
+
+        if (!staffMembers || staffMembers.length === 0) {
+          console.log("No staff members found in staff_roles table");
+          if (onDatesLoaded) {
+            onDatesLoaded([]);
+          }
+          return [];
+        }
+
+        const visibleStaffNames = new Set(staffMembers.map(s => s.user_display_name));
+        console.log(`Found ${visibleStaffNames.size} visible staff members`);
+        
         // First check if there are any sales
         const { count, error: countError } = await supabase
           .from("total_purchases")
@@ -33,19 +55,6 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
           }
           return [];
         }
-        
-        // Fetch visible staff first (to ensure consistency with other components)
-        const { data: visibleStaff, error: staffError } = await supabase
-          .from("staff_roles")
-          .select("user_display_name")
-          .eq("hidden", false);
-
-        if (staffError) {
-          console.error("Error fetching visible staff:", staffError);
-          throw staffError;
-        }
-
-        const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
         
         // Get all non-refunded sales for visible staff members
         const { data, error } = await supabase

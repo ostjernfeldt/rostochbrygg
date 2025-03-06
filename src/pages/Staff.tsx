@@ -2,13 +2,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { Search, Award } from "lucide-react";
+import { Search, Award, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PageLayout } from "@/components/PageLayout";
 import { StaffMemberStats } from "@/types/purchase";
 import { calculatePoints } from "@/utils/pointsCalculation";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
 
 const Staff = () => {
   const navigate = useNavigate();
@@ -155,6 +156,10 @@ const Staff = () => {
     );
   }
 
+  const handleAddStaff = () => {
+    navigate('/invite');
+  };
+
   return (
     <PageLayout>
       <h1 className="text-2xl font-bold mb-6">Personal</h1>
@@ -191,8 +196,12 @@ const Staff = () => {
             </div>
           ))
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            Inga säljare hittades. Lägg till säljare i staff_roles tabellen.
+          <div className="text-center py-8 text-muted-foreground space-y-4">
+            <p>Inga säljare hittades. Lägg till säljare i staff_roles tabellen.</p>
+            <Button onClick={handleAddStaff} className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4" />
+              <span>Lägg till säljare</span>
+            </Button>
           </div>
         )}
       </div>
