@@ -1,4 +1,3 @@
-
 import React, { useState, Suspense } from 'react';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { sv } from 'date-fns/locale';
@@ -6,8 +5,7 @@ import { ShiftWithBookings } from '@/types/booking';
 import { ShiftDetailsDialog } from '@/components/booking/ShiftDetailsDialog';
 import { BatchBookingConfirmDialog } from '@/components/booking/BatchBookingConfirmDialog';
 import { PageLayout } from '@/components/PageLayout';
-import { useShifts } from '@/hooks/useShifts';
-import { useShiftDetails } from '@/hooks/useShiftDetails';
+import { useShifts, useShiftDetails } from '@/hooks/useShifts';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { LoadingFallback } from '@/components/common/LoadingFallback';
 import { AuthError } from '@/components/common/AuthError';
@@ -30,7 +28,6 @@ export default function Booking() {
     isAuthenticated
   } = useBookingAuth();
   
-  // Don't proceed with data fetching if user is not authenticated
   if (authLoading) {
     return (
       <PageLayout>
@@ -47,7 +44,6 @@ export default function Booking() {
     );
   }
   
-  // Only initialize date variables if we're authenticated
   const today = new Date();
   const currentWeekStart = startOfWeek(today, {
     weekStartsOn: 1
@@ -56,8 +52,6 @@ export default function Booking() {
     weekStartsOn: 1
   });
   
-  // Use a render function to create the main content to ensure
-  // we don't try to use hooks conditionally
   return (
     <PageLayout>
       <BookingContent 
@@ -70,7 +64,6 @@ export default function Booking() {
   );
 }
 
-// Separate component to ensure hooks aren't called conditionally
 function BookingContent({ 
   isAdmin, 
   user,
@@ -96,7 +89,6 @@ function BookingContent({
     isLoading: shiftDetailsLoading
   } = useShiftDetails(selectedShiftId || '');
   
-  // Process shifts data with null checks
   const processedShifts: ShiftWithBookings[] = Array.isArray(shifts) ? shifts.map(shift => {
     return {
       ...shift,
@@ -106,7 +98,6 @@ function BookingContent({
     };
   }) : [];
 
-  // Extract booked and available shifts with null checks
   const userBookedShifts = Array.isArray(processedShifts) 
     ? processedShifts.filter(shift => shift.is_booked_by_current_user)
     : [];
@@ -130,7 +121,6 @@ function BookingContent({
     setDialogOpen(true);
   };
   
-  // Selected shifts data for confirmation dialog with null checks
   const selectedShiftsData = Array.isArray(processedShifts) && Array.isArray(selectedShifts) 
     ? processedShifts.filter(shift => selectedShifts.includes(shift.id))
     : [];
