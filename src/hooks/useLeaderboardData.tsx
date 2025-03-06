@@ -121,18 +121,9 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         
         // If no sales data exists but we have staff, create empty entries for all staff
         if (!sales || sales.length === 0) {
-          console.log("No sales data found for period - creating zero entries for all staff");
-          
-          const emptyLeaders = Array.from(allStaffNames).map(name => {
-            return {
-              "User Display Name": name,
-              points: 0,
-              salesCount: 0,
-              hidden: staffMap.get(name) || false
-            };
-          });
-          
-          return { [type + 'Leaders']: emptyLeaders };
+          console.log("No sales data found for period - returning empty array");
+          // Modified: Return empty array instead of creating zero entries for all staff
+          return { [type + 'Leaders']: [] };
         }
 
         // Process transactions and calculate leaders
@@ -142,17 +133,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
         // Initialize userTotals with all staff members, even those without sales
         const userTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[], hidden: boolean }> = {};
         
-        // First initialize all staff with zero values
-        allStaffNames.forEach(name => {
-          userTotals[name] = {
-            points: 0,
-            salesCount: 0,
-            sales: [],
-            hidden: staffMap.get(name) || false
-          };
-        });
-        
-        // Then process all sales, including those from non-staff members
+        // Process all sales, including those from non-staff members
         processedSales.forEach(sale => {
           const name = sale.user_display_name;
           
@@ -168,7 +149,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
               points: 0,
               salesCount: 0,
               sales: [],
-              hidden: false // Non-staff sales are visible by default
+              hidden: !allStaffNames.has(name) ? false : staffMap.get(name) || false
             };
           }
           
@@ -187,16 +168,16 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
               hidden: data.hidden
             };
           })
+          // Modified: Filter out sellers with zero sales
+          .filter(leader => leader.salesCount > 0)
+          // Modified: Ensure we exclude hidden sellers
+          .filter(leader => !leader.hidden)
           .sort((a, b) => b.points - a.points);
         
-        console.log(`Generated ${leaders.length} leaders (including zero entries)`);
-        
-        // Filter out hidden staff
-        const visibleLeaders = leaders.filter(leader => !leader.hidden);
-        console.log(`Showing ${visibleLeaders.length} visible leaders for ${type}`);
+        console.log(`Generated ${leaders.length} leaders after filtering zero sales and hidden staff`);
         
         return { 
-          [type + 'Leaders']: visibleLeaders,
+          [type + 'Leaders']: leaders,
           latestDate: useLatestDate ? startDate.toISOString() : null 
         };
       } catch (error) {
