@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLayout } from "@/components/PageLayout";
@@ -29,20 +30,24 @@ const HallOfFame = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["hallOfFame"],
     queryFn: async () => {
-      // Fetch all staff members without the hidden filter
+      // Fetch all staff members to check hidden status
       const { data: allStaff, error: staffError } = await supabase
         .from("staff_roles")
-        .select("user_display_name");
+        .select("user_display_name, hidden");
 
       if (staffError) throw staffError;
 
-      const allStaffNames = new Set(allStaff.map(s => s.user_display_name));
+      // Create a map of staff names to their hidden status
+      const hiddenStaffMap = new Map<string, boolean>();
+      allStaff.forEach(staff => {
+        hiddenStaffMap.set(staff.user_display_name, staff.hidden);
+      });
 
       // Fetch all sales
       const { data: sales, error } = await supabase
         .from("total_purchases")
         .select("*")
-        .not("refunded", "eq", true)  // Exkludera återbetalade köp
+        .not("refunded", "eq", true)  // Exclude refunded purchases
         .order("timestamp", { ascending: true });
 
       if (error) throw error;
@@ -54,9 +59,12 @@ const HallOfFame = () => {
         
       if (manualError) throw manualError;
       
-      // Process manual entries
+      // Process manual entries - filtering out hidden staff
       const manualTopSales: TopSeller[] = (manualEntries || [])
-        .filter((entry: ManualHallOfFameEntry) => entry.category === 'sale')
+        .filter((entry: ManualHallOfFameEntry) => {
+          // Filter out hidden staff members
+          return entry.category === 'sale' && !hiddenStaffMap.get(entry.user_display_name);
+        })
         .map((entry: ManualHallOfFameEntry) => ({
           name: entry.user_display_name,
           points: Number(entry.points),
@@ -66,7 +74,10 @@ const HallOfFame = () => {
         }));
         
       const manualTopDays: TopSeller[] = (manualEntries || [])
-        .filter((entry: ManualHallOfFameEntry) => entry.category === 'day')
+        .filter((entry: ManualHallOfFameEntry) => {
+          // Filter out hidden staff members
+          return entry.category === 'day' && !hiddenStaffMap.get(entry.user_display_name);
+        })
         .map((entry: ManualHallOfFameEntry) => ({
           name: entry.user_display_name,
           points: Number(entry.points),
@@ -76,7 +87,10 @@ const HallOfFame = () => {
         }));
         
       const manualTopMonths: TopSeller[] = (manualEntries || [])
-        .filter((entry: ManualHallOfFameEntry) => entry.category === 'month')
+        .filter((entry: ManualHallOfFameEntry) => {
+          // Filter out hidden staff members
+          return entry.category === 'month' && !hiddenStaffMap.get(entry.user_display_name);
+        })
         .map((entry: ManualHallOfFameEntry) => ({
           name: entry.user_display_name,
           points: Number(entry.points),
@@ -91,8 +105,12 @@ const HallOfFame = () => {
         topMonths: manualTopMonths
       };
 
-      // Include all sales regardless of visibility
-      const allSales = sales;
+      // Filter sales to exclude hidden staff members
+      const visibleSales = sales.filter(sale => {
+        // Include sales only from non-hidden staff or staff without a record
+        const isHidden = hiddenStaffMap.get(sale.user_display_name);
+        return isHidden !== true; // Include if not explicitly hidden
+      });
 
       // Helper function to get unique top sellers
       const getUniqueTopSellers = (sellers: TopSeller[]): TopSeller[] => {
@@ -115,8 +133,8 @@ const HallOfFame = () => {
         return allEntries.sort((a, b) => b.points - a.points);
       };
 
-      // 1. Highest single sales
-      const allSalesByPoints = allSales
+      // 1. Highest single sales - only visible staff
+      const allSalesByPoints = visibleSales
         .filter(sale => sale.amount > 0)
         .map(sale => ({
           name: sale.user_display_name || 'Okänd',
@@ -129,8 +147,8 @@ const HallOfFame = () => {
 
       const topSales = getUniqueTopSellers(mergeEntries(allSalesByPoints, manualTopSales));
 
-      // 2. Best months
-      const monthlyTotals = allSales
+      // 2. Best months - only visible staff
+      const monthlyTotals = visibleSales
         .filter(sale => sale.amount > 0)
         .reduce((acc, sale) => {
           const monthKey = format(new Date(sale.timestamp), 'yyyy-MM');
@@ -163,8 +181,8 @@ const HallOfFame = () => {
 
       const topMonths = getUniqueTopSellers(mergeEntries(allMonthlyTopSellers, manualTopMonths));
 
-      // 3. Best days
-      const dailyTotals = allSales
+      // 3. Best days - only visible staff
+      const dailyTotals = visibleSales
         .filter(sale => sale.amount > 0)
         .reduce((acc, sale) => {
           const dateKey = format(new Date(sale.timestamp), 'yyyy-MM-dd');
