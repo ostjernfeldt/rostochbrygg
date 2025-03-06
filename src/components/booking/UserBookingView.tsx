@@ -20,15 +20,15 @@ interface UserBookingViewProps {
 }
 
 export const UserBookingView = ({ 
-  availableShifts, 
-  userBookedShifts, 
-  selectedShifts, 
+  availableShifts = [], 
+  userBookedShifts = [], 
+  selectedShifts = [], 
   onSelectShift, 
   onViewShiftDetails, 
   onOpenBookingDialog,
   isLoading
 }: UserBookingViewProps) => {
-  // Group shifts by date
+  // Group shifts by date - ensure availableShifts is an array
   const shiftsByDate = Array.isArray(availableShifts) 
     ? availableShifts.reduce((acc, shift) => {
         const date = shift.date;
@@ -78,7 +78,7 @@ export const UserBookingView = ({
           <div className="mb-4 p-3.5 bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm rounded-lg border border-[#33333A] shadow-md">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                {selectedShifts.length + (userBookedShifts?.length || 0) < 2 ? (
+                {selectedShifts.length + (Array.isArray(userBookedShifts) ? userBookedShifts.length : 0) < 2 ? (
                   <div className="flex items-center gap-2">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-600/30 text-amber-400">
                       <AlertTriangle className="h-3.5 w-3.5" />

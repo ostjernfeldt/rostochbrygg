@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
 export const useBookingAuth = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,6 +28,7 @@ export const useBookingAuth = () => {
           setAuthError('Kunde inte verifiera din inloggning. Vänligen logga in igen.');
           setIsAuthenticated(false);
           setUser(null);
+          setIsLoading(false);
           return;
         }
         
@@ -36,12 +37,11 @@ export const useBookingAuth = () => {
           setAuthError('Din session har utgått. Vänligen logga in igen.');
           setIsAuthenticated(false);
           setUser(null);
+          setIsLoading(false);
           return;
         }
         
-        setIsAuthenticated(true);
         setUser(session.user);
-        setAuthError(null);
         
         try {
           if (session.user.email) {
@@ -69,20 +69,27 @@ export const useBookingAuth = () => {
           if (error) {
             console.error('Error checking user role:', error);
             setIsAdmin(false);
-            return;
+          } else {
+            setIsAdmin(data && data.role === 'admin');
           }
           
-          setIsAdmin(data && data.role === 'admin');
+          // Only set authenticated after we've checked the role
+          setIsAuthenticated(true);
+          setAuthError(null);
         } catch (error) {
           console.error('Error checking user role:', error);
           setIsAdmin(false);
+          // Still set authenticated since we have a user
+          setIsAuthenticated(true);
+          setAuthError(null);
+        } finally {
+          setIsLoading(false);
         }
       } catch (error) {
         console.error('Unexpected error during auth check:', error);
         setAuthError('Ett oväntat fel uppstod. Vänligen försök igen.');
         setIsAuthenticated(false);
         setUser(null);
-      } finally {
         setIsLoading(false);
       }
     };
@@ -90,18 +97,16 @@ export const useBookingAuth = () => {
     checkUserSession();
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event, 'Session exists', !!session);
+      
       if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setUser(null);
         setAuthError(null);
         navigate('/login');
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        setIsAuthenticated(true);
-        setAuthError(null);
-        if (session && session.user) {
-          setUser(session.user);
-          checkUserSession(); // Refresh the user data
-        }
+        setUser(session?.user || null);
+        checkUserSession(); // Refresh the user data and role
       }
     });
     

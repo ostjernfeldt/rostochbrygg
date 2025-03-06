@@ -1,3 +1,4 @@
+
 import React, { useState, Suspense } from 'react';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { sv } from 'date-fns/locale';
@@ -17,9 +18,6 @@ import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Booking() {
-  const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  
   const {
     isAdmin,
     user,
@@ -55,7 +53,7 @@ export default function Booking() {
   return (
     <PageLayout>
       <BookingContent 
-        isAdmin={isAdmin} 
+        isAdmin={isAdmin ?? false} 
         user={user}
         currentWeekStart={currentWeekStart}
         weekEnd={weekEnd}
@@ -89,15 +87,22 @@ function BookingContent({
     isLoading: shiftDetailsLoading
   } = useShiftDetails(selectedShiftId || '');
   
+  // Ensure shifts is always an array and process each shift safely
   const processedShifts: ShiftWithBookings[] = Array.isArray(shifts) ? shifts.map(shift => {
     return {
       ...shift,
+      // Ensure bookings is always an array
       bookings: Array.isArray(shift.bookings) ? shift.bookings : [],
-      available_slots_remaining: shift.available_slots_remaining !== undefined ? shift.available_slots_remaining : shift.available_slots,
+      // Ensure available_slots_remaining has a value
+      available_slots_remaining: shift.available_slots_remaining !== undefined 
+        ? shift.available_slots_remaining 
+        : shift.available_slots,
+      // Ensure is_booked_by_current_user has a value
       is_booked_by_current_user: shift.is_booked_by_current_user || false
     };
   }) : [];
 
+  // Ensure we have arrays to work with
   const userBookedShifts = Array.isArray(processedShifts) 
     ? processedShifts.filter(shift => shift.is_booked_by_current_user)
     : [];
@@ -121,6 +126,7 @@ function BookingContent({
     setDialogOpen(true);
   };
   
+  // Ensure all arrays are defined before using them
   const selectedShiftsData = Array.isArray(processedShifts) && Array.isArray(selectedShifts) 
     ? processedShifts.filter(shift => selectedShifts.includes(shift.id))
     : [];
@@ -152,7 +158,7 @@ function BookingContent({
         <UserBookingView
           availableShifts={availableShifts}
           userBookedShifts={userBookedShifts}
-          selectedShifts={selectedShifts}
+          selectedShifts={selectedShifts || []} // Ensure selectedShifts is an array
           onSelectShift={handleSelectShift}
           onViewShiftDetails={handleViewShiftDetails}
           onOpenBookingDialog={handleOpenBookingDialog}

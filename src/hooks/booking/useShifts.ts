@@ -36,15 +36,12 @@ export const useShifts = (startDate: Date, endDate: Date, isAdmin = false) => {
         throw error;
       }
       
-      if (!data || !Array.isArray(data)) {
-        console.log('No shifts data returned or invalid format');
-        return [];
-      }
-      
-      console.log('Retrieved shifts:', data.length);
+      // Ensure we have an array to work with, even if data is null/undefined
+      const shiftsData = data || [];
+      console.log('Retrieved shifts:', shiftsData.length);
       
       // Get all bookings for retrieved shifts
-      const shiftIds = data.map(shift => shift.id);
+      const shiftIds = shiftsData.map(shift => shift.id);
       
       // If no shifts, return empty array
       if (shiftIds.length === 0) {
@@ -65,10 +62,8 @@ export const useShifts = (startDate: Date, endDate: Date, isAdmin = false) => {
           throw bookingsError;
         }
         
-        if (bookings && Array.isArray(bookings)) {
-          bookingsData = bookings;
-        }
-        
+        // Ensure we have an array to work with
+        bookingsData = bookings || [];
         console.log('Retrieved bookings:', bookingsData.length);
       } catch (error) {
         console.error('Error in bookings fetch:', error);
@@ -77,21 +72,21 @@ export const useShifts = (startDate: Date, endDate: Date, isAdmin = false) => {
       }
       
       // Transform shifts to ShiftWithBookings
-      const shiftsWithBookings: ShiftWithBookings[] = data.map(shift => {
+      const shiftsWithBookings: ShiftWithBookings[] = shiftsData.map(shift => {
+        // Filter bookings for this shift and ensure we have valid booking objects
         const shiftBookings = bookingsData
-          ? bookingsData.filter(booking => booking.shift_id === shift.id)
-              .map(booking => {
-                // Ensure status is correctly typed as "confirmed" | "cancelled"
-                const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
-                
-                return {
-                  ...booking,
-                  status: typedStatus,
-                  // Use user_display_name if available, otherwise use user_email or fallback to "Okänd säljare"
-                  user_display_name: booking.user_display_name || booking.user_email || 'Okänd säljare'
-                } as ShiftBooking;
-              })
-          : [];
+          .filter(booking => booking && booking.shift_id === shift.id)
+          .map(booking => {
+            // Ensure status is correctly typed as "confirmed" | "cancelled"
+            const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
+            
+            return {
+              ...booking,
+              status: typedStatus,
+              // Use user_display_name if available, otherwise use user_email or fallback to "Okänd säljare"
+              user_display_name: booking.user_display_name || booking.user_email || 'Okänd säljare'
+            } as ShiftBooking;
+          });
           
         // Get only confirmed bookings for availability calculation
         const confirmedBookings = shiftBookings.filter(booking => booking.status === 'confirmed');
@@ -118,7 +113,7 @@ export const useShifts = (startDate: Date, endDate: Date, isAdmin = false) => {
   });
   
   return {
-    shifts: data || [],
+    shifts: data || [], // Always return an array, even if data is undefined
     isLoading,
     error,
   };
