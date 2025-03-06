@@ -76,12 +76,19 @@ export const useBookingSystemEnabled = () => {
   
   useEffect(() => {
     if (value !== undefined) {
-      // Handle the value being a string "true"/"false" or a boolean
-      setIsEnabled(value === true || value === 'true');
+      // Handle various value types (boolean, string, etc.)
+      const enabled = 
+        value === true || 
+        value === 'true' || 
+        value === 1 || 
+        value === '1';
+      
+      setIsEnabled(enabled);
     }
   }, [value]);
   
   const setEnabled = (enabled: boolean) => {
+    // Always store as boolean
     setValue(enabled);
   };
   

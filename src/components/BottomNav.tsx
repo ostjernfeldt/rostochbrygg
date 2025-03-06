@@ -1,5 +1,5 @@
 
-import { Menu, LogOut, User, Calendar } from "lucide-react";
+import { Menu, LogOut, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useBookingSystemEnabled } from "@/hooks/useAppSettings";
 
 const useUserRole = () => {
   return useQuery({
@@ -36,6 +37,7 @@ export const BottomNav = () => {
   const { data: userRole } = useUserRole();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const { isEnabled: bookingSystemEnabled } = useBookingSystemEnabled();
 
   useEffect(() => {
     const getUserInfo = async () => {
@@ -56,8 +58,12 @@ export const BottomNav = () => {
       { path: "/leaderboard", label: "Topplista" },
       { path: "/hall-of-fame", label: "Hall of Fame" },
       { path: "/staff", label: "Personal" },
-      { path: "/booking", label: "Bokningar" },
     ];
+    
+    // Only add booking if system is enabled or user is admin
+    if (bookingSystemEnabled || userRole === 'admin') {
+      baseItems.push({ path: "/booking", label: "Bokningar" });
+    }
 
     // Only show "Idag" and "Bjud in" for admin users
     if (userRole === 'admin') {
