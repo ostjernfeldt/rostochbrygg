@@ -1,4 +1,3 @@
-
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { Calendar, Clock, Users } from "lucide-react";
@@ -69,8 +68,22 @@ export function ShiftDetailsDialog({
   };
   
   const handleDeleteShift = () => {
-    deleteShift(shift.id);
-    onOpenChange(false);
+    // Get the confirmed bookings count
+    const confirmedBookings = shift.bookings?.filter(booking => booking.status === 'confirmed') || [];
+    
+    if (confirmedBookings.length > 0) {
+      // If there are bookings, show a warning toast before deleting
+      if (window.confirm(
+        `Detta säljpass har ${confirmedBookings.length} bokningar som också kommer att tas bort. Vill du fortsätta?`
+      )) {
+        deleteShift(shift.id);
+        onOpenChange(false);
+      }
+    } else {
+      // If no bookings, just delete the shift
+      deleteShift(shift.id);
+      onOpenChange(false);
+    }
   };
   
   // Safely format shift data to avoid runtime errors

@@ -205,26 +205,49 @@ export const useDeleteShift = () => {
   
   return useMutation({
     mutationFn: async (shiftId: string) => {
-      const { error } = await supabase
-        .from('shifts')
-        .delete()
-        .eq('id', shiftId);
-      
-      if (error) {
-        console.error('Error deleting shift:', error);
+      try {
+        console.log('Attempting to delete shift with ID:', shiftId);
+        
+        // First, delete all associated bookings for this shift
+        const { error: bookingsDeleteError } = await supabase
+          .from('shift_bookings')
+          .delete()
+          .eq('shift_id', shiftId);
+        
+        if (bookingsDeleteError) {
+          console.error('Error deleting associated bookings:', bookingsDeleteError);
+          throw bookingsDeleteError;
+        }
+        
+        console.log('Successfully deleted all bookings for shift:', shiftId);
+        
+        // Now delete the shift itself
+        const { error: shiftDeleteError } = await supabase
+          .from('shifts')
+          .delete()
+          .eq('id', shiftId);
+        
+        if (shiftDeleteError) {
+          console.error('Error deleting shift:', shiftDeleteError);
+          throw shiftDeleteError;
+        }
+        
+        console.log('Successfully deleted shift:', shiftId);
+        return shiftId;
+      } catch (error) {
+        console.error('Error in delete shift process:', error);
         throw error;
       }
-      
-      return shiftId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
       toast({
         title: 'Säljpass borttaget',
-        description: 'Säljpasset har tagits bort framgångsrikt.',
+        description: 'Säljpasset och tillhörande bokningar har tagits bort framgångsrikt.',
       });
     },
     onError: (error) => {
+      console.error('Error in useDeleteShift:', error);
       toast({
         variant: 'destructive',
         title: 'Fel vid borttagning av säljpass',
