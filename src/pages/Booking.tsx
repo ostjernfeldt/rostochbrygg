@@ -17,6 +17,7 @@ import { Calendar, Clock, InfoIcon, Settings, User, X, Check, AlertTriangle } fr
 import { PageLayout } from '@/components/PageLayout';
 import { BatchBookingConfirmDialog } from '@/components/booking/BatchBookingConfirmDialog';
 import { toast } from "@/hooks/use-toast";
+
 export default function Booking() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
@@ -39,6 +40,7 @@ export default function Booking() {
   })} - ${format(weekEnd, 'd MMM yyyy', {
     locale: sv
   })}`;
+
   const {
     shifts,
     isLoading: shiftsLoading
@@ -51,6 +53,7 @@ export default function Booking() {
     mutate: batchBookShifts,
     isPending: isBatchBooking
   } = useBatchBookShifts();
+
   useEffect(() => {
     const checkUserSession = async () => {
       const {
@@ -90,10 +93,12 @@ export default function Booking() {
     };
     checkUserSession();
   }, [navigate]);
+
   const handleViewShiftDetails = (shiftId: string) => {
     setSelectedShiftId(shiftId);
     setDialogOpen(true);
   };
+
   const handleSelectShift = (shiftId: string) => {
     setSelectedShifts(prevSelected => {
       if (prevSelected.includes(shiftId)) {
@@ -103,6 +108,7 @@ export default function Booking() {
       }
     });
   };
+
   const handleConfirmBookings = () => {
     console.log('Confirming batch bookings for shifts:', selectedShifts);
     batchBookShifts(selectedShifts, {
@@ -111,7 +117,6 @@ export default function Booking() {
         setConfirmDialogOpen(false);
         setSelectedShifts([]);
 
-        // Invalidate all relevant queries to refresh the data
         queryClient.invalidateQueries({
           queryKey: ['shifts']
         });
@@ -119,7 +124,6 @@ export default function Booking() {
           queryKey: ['weekly-booking-summary']
         });
 
-        // If there were errors but some bookings succeeded
         if (data.errors && data.errors.length > 0 && data.results && data.results.length > 0) {
           setTimeout(() => {
             toast({
@@ -146,17 +150,31 @@ export default function Booking() {
       }
     });
   };
+
   const handleOpenBookingDialog = () => {
-    if (selectedShifts.length < 2) {
+    const totalBookedOrSelected = selectedShifts.length + userBookedShifts.length;
+    
+    if (selectedShifts.length === 0) {
       toast({
-        title: "För få pass valda",
-        description: "Du behöver välja minst 2 pass för att kunna boka",
+        title: "Inga pass valda",
+        description: "Du behöver välja minst ett pass för att kunna boka",
         variant: "destructive"
       });
       return;
     }
+    
+    if (totalBookedOrSelected < 2) {
+      toast({
+        title: "För få pass valda",
+        description: "Du behöver välja fler pass, totalt behöver du ha bokat minst 2 pass per vecka",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setConfirmDialogOpen(true);
   };
+
   const processedShifts: ShiftWithBookings[] = shifts.map(shift => {
     return {
       ...shift,
@@ -165,6 +183,7 @@ export default function Booking() {
       is_booked_by_current_user: shift.is_booked_by_current_user || false
     };
   });
+
   const selectedShiftsData: ShiftWithBookings[] = processedShifts.filter(shift => selectedShifts.includes(shift.id));
   const availableShifts = processedShifts.filter(shift => !shift.is_booked_by_current_user);
   const shiftsByDate = availableShifts.reduce((acc, shift) => {
@@ -175,11 +194,14 @@ export default function Booking() {
     acc[date].push(shift);
     return acc;
   }, {} as Record<string, ShiftWithBookings[]>);
+
   const userBookedShifts = processedShifts.filter(shift => shift.is_booked_by_current_user);
+
   useEffect(() => {
     console.log('Current user booked shifts:', userBookedShifts.length);
     console.log('Available shifts:', availableShifts.length);
   }, [userBookedShifts, availableShifts]);
+
   const renderContent = () => {
     if (!user) return null;
     if (isAdmin) {
@@ -250,23 +272,28 @@ export default function Booking() {
             {selectedShifts.length > 0 && <div className="mb-4 p-3.5 bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm rounded-lg border border-[#33333A] shadow-md">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    {selectedShifts.length < 2 ? <div className="flex items-center gap-2">
+                    {selectedShifts.length + userBookedShifts.length < 2 ? <div className="flex items-center gap-2">
                         <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-600/30 text-amber-400">
                           <AlertTriangle className="h-3.5 w-3.5" />
                         </div>
                         <div className="font-medium">
-                          <span className="text-amber-400">Minst 2 krävs</span>
+                          <span className="text-amber-400">Minst 2 krävs totalt</span>
                         </div>
                       </div> : <div className="flex items-center gap-2">
                         <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary">
                           <Check className="h-3.5 w-3.5" />
                         </div>
                         <div className="font-medium text-white">
-                          {selectedShifts.length} pass valda
+                          {selectedShifts.length} pass valda {userBookedShifts.length > 0 ? `(totalt ${selectedShifts.length + userBookedShifts.length} med dina bokade pass)` : ''}
                         </div>
                       </div>}
                   </div>
-                  <Button size="sm" className={`${selectedShifts.length < 2 ? 'bg-gray-600/50 text-gray-300 cursor-not-allowed hover:bg-gray-600/50 border border-gray-600/30' : 'bg-primary hover:bg-primary/90 shadow-sm'} transition-all duration-200`} onClick={handleOpenBookingDialog} disabled={selectedShifts.length < 2}>
+                  <Button size="sm" 
+                    className={`${selectedShifts.length === 0 ? 
+                      'bg-gray-600/50 text-gray-300 cursor-not-allowed hover:bg-gray-600/50 border border-gray-600/30' : 
+                      'bg-primary hover:bg-primary/90 shadow-sm'} transition-all duration-200`} 
+                    onClick={handleOpenBookingDialog} 
+                    disabled={selectedShifts.length === 0}>
                     Boka valda pass
                   </Button>
                 </div>
@@ -286,6 +313,7 @@ export default function Booking() {
         </div>;
     }
   };
+
   return <PageLayout>
       {renderContent()}
       
