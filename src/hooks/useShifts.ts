@@ -1,12 +1,11 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Shift, ShiftWithBookings, ShiftBooking } from '@/types/booking';
 
-export const useShifts = (startDate: Date, endDate: Date) => {
+export const useShifts = (startDate: Date, endDate: Date, isAdmin = false, enabled = true) => {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['shifts', startDate.toISOString(), endDate.toISOString()],
+    queryKey: ['shifts', startDate.toISOString(), endDate.toISOString(), isAdmin],
     queryFn: async () => {
       console.log('Fetching shifts for date range:', startDate.toISOString(), 'to', endDate.toISOString());
       
@@ -37,7 +36,12 @@ export const useShifts = (startDate: Date, endDate: Date) => {
         throw error;
       }
       
-      console.log('Retrieved shifts:', data ? data.length : 0);
+      if (!data || !Array.isArray(data)) {
+        console.log('No shifts data returned or invalid format');
+        return [];
+      }
+      
+      console.log('Retrieved shifts:', data.length);
       
       // Get all bookings for retrieved shifts
       const shiftIds = data.map(shift => shift.id);
@@ -58,7 +62,12 @@ export const useShifts = (startDate: Date, endDate: Date) => {
         throw bookingsError;
       }
       
-      console.log('Retrieved bookings:', bookings ? bookings.length : 0);
+      if (!bookings || !Array.isArray(bookings)) {
+        console.log('No bookings data returned or invalid format');
+        bookings = [];
+      }
+      
+      console.log('Retrieved bookings:', bookings.length);
       
       // Transform shifts to ShiftWithBookings
       const shiftsWithBookings: ShiftWithBookings[] = data.map(shift => {
@@ -95,8 +104,8 @@ export const useShifts = (startDate: Date, endDate: Date) => {
       
       return shiftsWithBookings;
     },
-    // Only run this query when startDate and endDate are valid
-    enabled: !!startDate && !!endDate,
+    // Only run this query when startDate and endDate are valid AND user is authenticated
+    enabled: !!startDate && !!endDate && enabled,
     staleTime: 1000 * 60, // Refresh cache every minute
     retry: 1, // Only retry once to avoid excessive retries on auth issues
   });

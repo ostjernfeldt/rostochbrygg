@@ -3,11 +3,20 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ShiftWithBookings, ShiftBooking } from '@/types/booking';
 
-export const useShiftDetails = (shiftId: string) => {
+export const useShiftDetails = (shiftId: string, enabled = true) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['shift', shiftId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      if (!shiftId) {
+        return null;
+      }
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('Authentication error:', authError);
+        throw new Error('Du måste vara inloggad för att se detaljer');
+      }
       
       // Fetch the shift
       const { data: shift, error: shiftError } = await supabase
@@ -16,7 +25,14 @@ export const useShiftDetails = (shiftId: string) => {
         .eq('id', shiftId)
         .single();
       
-      if (shiftError) throw shiftError;
+      if (shiftError) {
+        console.error('Error fetching shift:', shiftError);
+        throw shiftError;
+      }
+      
+      if (!shift) {
+        throw new Error('Kunde inte hitta säljpasset');
+      }
       
       // Fetch all bookings for this shift
       const { data: bookings, error: bookingsError } = await supabase
@@ -24,10 +40,13 @@ export const useShiftDetails = (shiftId: string) => {
         .select('*')
         .eq('shift_id', shiftId);
       
-      if (bookingsError) throw bookingsError;
+      if (bookingsError) {
+        console.error('Error fetching bookings:', bookingsError);
+        throw bookingsError;
+      }
       
-      // Process bookings to ensure they have the correct types
-      const processedBookings = bookings.map(booking => {
+      // Initialize bookings as empty array if undefined
+      const processedBookings = Array.isArray(bookings) ? bookings.map(booking => {
         // Ensure status is correctly typed
         const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
         
@@ -39,13 +58,16 @@ export const useShiftDetails = (shiftId: string) => {
           status: typedStatus,
           user_display_name: displayName
         } as ShiftBooking;
-      });
+      }) : [];
+      
+      // Filter to get only confirmed bookings for availability calculation
+      const confirmedBookings = processedBookings.filter(booking => booking.status === 'confirmed');
       
       // Check if current user has booked this shift
-      const isBookedByCurrentUser = user ? bookings.some(b => b.user_id === user.id) : false;
+      const isBookedByCurrentUser = user ? confirmedBookings.some(b => b.user_id === user.id) : false;
       
-      // Calculate remaining slots
-      const availableSlotsRemaining = shift.available_slots - bookings.length;
+      // Calculate remaining slots based on confirmed bookings only
+      const availableSlotsRemaining = shift.available_slots - confirmedBookings.length;
       
       return {
         ...shift,
@@ -54,7 +76,8 @@ export const useShiftDetails = (shiftId: string) => {
         is_booked_by_current_user: isBookedByCurrentUser
       } as ShiftWithBookings;
     },
-    enabled: !!shiftId,
+    enabled: enabled && !!shiftId, // Only run query when enabled and shiftId exists
+    retry: 1,
   });
   
   return {

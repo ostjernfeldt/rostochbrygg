@@ -26,51 +26,62 @@ export const useBookingAuth = () => {
         if (sessionError) {
           console.error('Error checking session:', sessionError);
           setAuthError('Kunde inte verifiera din inloggning. Vänligen logga in igen.');
-          navigate('/login');
+          setIsAuthenticated(false);
+          setUser(null);
           return;
         }
         
-        if (!session) {
-          console.log('No active session found, redirecting to login');
+        if (!session || !session.user) {
+          console.log('No active session found');
           setAuthError('Din session har utgått. Vänligen logga in igen.');
-          navigate('/login');
+          setIsAuthenticated(false);
+          setUser(null);
           return;
         }
         
         setIsAuthenticated(true);
         setUser(session.user);
+        setAuthError(null);
         
         try {
-          const {
-            data,
-            error
-          } = await supabase.from('staff_roles').select('user_display_name').eq('email', session.user.email).maybeSingle();
-          
-          if (data && !error) {
-            setUserName(data.user_display_name);
+          if (session.user.email) {
+            const { data, error } = await supabase
+              .from('staff_roles')
+              .select('user_display_name')
+              .eq('email', session.user.email)
+              .maybeSingle();
+            
+            if (data && !error) {
+              setUserName(data.user_display_name);
+            }
           }
         } catch (error) {
           console.error('Error fetching user name:', error);
         }
         
         try {
-          const {
-            data,
-            error
-          } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).single();
+          const { data, error } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .single();
           
           if (error) {
             console.error('Error checking user role:', error);
+            setIsAdmin(false);
             return;
           }
           
-          setIsAdmin(data.role === 'admin');
+          setIsAdmin(data && data.role === 'admin');
         } catch (error) {
           console.error('Error checking user role:', error);
+          setIsAdmin(false);
         }
       } catch (error) {
         console.error('Unexpected error during auth check:', error);
         setAuthError('Ett oväntat fel uppstod. Vänligen försök igen.');
+        setIsAuthenticated(false);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -82,11 +93,14 @@ export const useBookingAuth = () => {
       if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setUser(null);
+        setAuthError(null);
         navigate('/login');
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         setIsAuthenticated(true);
-        if (session) {
+        setAuthError(null);
+        if (session && session.user) {
           setUser(session.user);
+          checkUserSession(); // Refresh the user data
         }
       }
     });

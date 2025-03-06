@@ -15,7 +15,10 @@ export const AuthError = ({ errorMessage }: AuthErrorProps) => {
       <AlertTriangle className="h-12 w-12 text-amber-500 mb-3" />
       <h2 className="text-xl font-semibold mb-2">Åtkomst nekad</h2>
       <p className="text-muted-foreground mb-4">{errorMessage || 'Du behöver vara inloggad för att komma åt denna sida'}</p>
-      <Button onClick={() => navigate('/login')} variant="default">
+      <Button 
+        onClick={() => navigate('/login')}
+        variant="default"
+      >
         Gå till inloggning
       </Button>
     </div>
