@@ -66,7 +66,7 @@ export function WeeklyBookingsSummary() {
             </div>
             
             <div className="mt-2 text-xs text-indigo-200/60 font-medium">
-              {format(startOfWeek, 'd', { locale: sv })} mars - {format(endDate, 'd', { locale: sv })} mars
+              {format(startOfWeek, 'd', { locale: sv })} - {format(endDate, 'd MMMM', { locale: sv })}
             </div>
           </div>
         </div>
