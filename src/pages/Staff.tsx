@@ -19,10 +19,11 @@ const Staff = () => {
       console.log("Fetching staff members data...");
       
       try {
-        // Fetch all staff roles including hidden staff members
+        // Fetch all visible staff roles (not hidden)
         const rolesResponse = await supabase
           .from("staff_roles")
-          .select("*");
+          .select("*")
+          .eq("hidden", false);
 
         if (rolesResponse.error) {
           console.error("Error fetching staff roles:", rolesResponse.error);
@@ -30,10 +31,10 @@ const Staff = () => {
         }
         
         const roles = rolesResponse.data || [];
-        console.log(`Fetched ${roles.length} staff roles`);
+        console.log(`Fetched ${roles.length} visible staff roles`);
         
         if (roles.length === 0) {
-          console.log("No staff members found in staff_roles table");
+          console.log("No visible staff members found in staff_roles table");
           return [];
         }
         
@@ -55,7 +56,7 @@ const Staff = () => {
         // Initialize staff stats from roles data
         const staffStats: { [key: string]: StaffMemberStats } = {};
         
-        // Create base stats for all staff members from roles, including hidden ones
+        // Create base stats for all visible staff members from roles
         roles.forEach(roleData => {
           const displayName = roleData.user_display_name;
           staffStats[displayName] = {
@@ -68,8 +69,7 @@ const Staff = () => {
             averageAmount: 0,
             daysActive: 0,
             salesCount: 0,
-            sales: [],
-            hidden: roleData.hidden || false // Track hidden status for UI filtering
+            sales: []
           };
         });
         
@@ -78,7 +78,7 @@ const Staff = () => {
           sales.forEach(sale => {
             const displayName = sale.user_display_name as string;
             
-            // Skip if the staff member is not in our list (not in staff_roles)
+            // Skip if the staff member is not in our visible list
             if (!staffStats[displayName]) return;
             
             const points = calculatePoints(sale.quantity);
@@ -118,16 +118,17 @@ const Staff = () => {
           });
         }
         
-        // Convert to array, but filter out hidden staff only for display
-        // This ensures data consistency between admin and user views
-        return Object.values(staffStats).filter(staff => !staff.hidden);
+        // Convert to array for display
+        return Object.values(staffStats);
       } catch (error) {
         console.error("Error in staffMembers query:", error);
-        throw error; // Make sure errors are thrown to be caught by React Query
+        throw error;
       }
     },
-    staleTime: 1000 * 60 * 5, // Add staleTime to prevent unnecessary refetches
-    retry: 3 // Add retry to handle network issues
+    staleTime: 1000 * 60 * 5,
+    retry: 3,
+    // Always enable the query since we don't need authentication
+    enabled: true
   });
 
   // Add debug logging to track data loading

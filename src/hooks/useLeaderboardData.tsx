@@ -224,7 +224,9 @@ const calculateLeaders = (
   // Group sales by user
   processedSales.forEach(sale => {
     const name = sale.user_display_name;
-    if (!name || !staffNames.has(name)) return;
+    
+    // Include all sales, even if the user is not in staff_roles
+    if (!name) return;
     
     if (!userTotals[name]) {
       userTotals[name] = {

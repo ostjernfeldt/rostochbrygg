@@ -21,15 +21,17 @@ const StaffMember = () => {
       
       if (!name) throw new Error("No name provided");
       
-      // Fetch role data - without checking if hidden
+      // Fetch role data without checking if hidden
       const { data: roleData, error: roleError } = await supabase
         .from("staff_roles")
-        .select("role")
+        .select("*")
         .eq("user_display_name", decodeURIComponent(name))
         .single();
 
       if (roleError) {
         console.error("Error fetching role:", roleError);
+        // If no role is found, still create a default one so the page works
+        // This handles the case where user_display_name in total_purchases doesn't match staff_roles
       }
 
       // Fetch historical points data
@@ -58,6 +60,10 @@ const StaffMember = () => {
       }
 
       console.log(`Fetched ${sales?.length || 0} sales for ${name}`);
+
+      // Use the role from the database or default to "Sales Intern"
+      const userRole = roleData?.role || 'Sales Intern';
+      const isHidden = roleData?.hidden || false;
 
       // Initialize default values for a staff member without sales
       let validSales: TotalPurchase[] = [];
@@ -141,7 +147,7 @@ const StaffMember = () => {
 
       const memberStats: StaffMemberStats = {
         displayName: name,
-        role: roleData?.role || 'Sales Intern',
+        role: userRole,
         firstSale: firstSaleDate,
         totalAmount,
         averageAmount,
@@ -151,7 +157,8 @@ const StaffMember = () => {
         daysActive,
         sales: validSales,
         // Add the historical points
-        historicalPoints: historicalPoints
+        historicalPoints: historicalPoints,
+        hidden: isHidden
       };
 
       return {
@@ -162,7 +169,9 @@ const StaffMember = () => {
       };
     },
     staleTime: 1000 * 60 * 5, // Add stale time to prevent unnecessary refetches
-    retry: 3 // Add retry to handle network issues
+    retry: 3, // Add retry to handle network issues
+    // Always enable the query since we don't need authentication
+    enabled: true
   });
 
   // Add debug logging
