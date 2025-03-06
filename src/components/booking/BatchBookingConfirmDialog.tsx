@@ -1,7 +1,7 @@
 
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Calendar, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { Calendar, Clock, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -37,7 +37,10 @@ export function BatchBookingConfirmDialog({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="bg-[#1A1F2C] border-[#33333A] shadow-xl">
+      <AlertDialogContent 
+        className="bg-[#1A1F2C] border-[#33333A] shadow-xl"
+        onInteractOutside={(e) => isPending && e.preventDefault()}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
@@ -89,6 +92,7 @@ export function BatchBookingConfirmDialog({
         <AlertDialogFooter className="mt-4">
           <AlertDialogCancel 
             className="bg-[#151A25] border-[#33333A] text-white hover:bg-[#1A1F2C] hover:text-white"
+            disabled={isPending}
           >
             Avbryt
           </AlertDialogCancel>
@@ -102,7 +106,12 @@ export function BatchBookingConfirmDialog({
               'bg-primary hover:bg-primary/90 text-white'} transition-all duration-200`}
             disabled={isPending || notEnoughShifts}
           >
-            {isPending ? "Bokar..." : "Bekräfta bokningar"}
+            {isPending ? (
+              <span className="flex items-center">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Bokar...
+              </span>
+            ) : "Bekräfta bokningar"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

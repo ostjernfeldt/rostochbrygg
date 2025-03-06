@@ -8,7 +8,14 @@ export const useShifts = (startDate: Date, endDate: Date) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['shifts', startDate.toISOString(), endDate.toISOString()],
     queryFn: async () => {
+      console.log('Fetching shifts for date range:', startDate.toISOString(), 'to', endDate.toISOString());
+      
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No authenticated user found');
+      } else {
+        console.log('Fetching shifts for user:', user.id);
+      }
       
       const { data, error } = await supabase
         .from('shifts')
@@ -23,11 +30,14 @@ export const useShifts = (startDate: Date, endDate: Date) => {
         throw error;
       }
       
+      console.log('Retrieved shifts:', data ? data.length : 0);
+      
       // Get all bookings for retrieved shifts
       const shiftIds = data.map(shift => shift.id);
       
       // If no shifts, return empty array
       if (shiftIds.length === 0) {
+        console.log('No shifts found for the date range');
         return [];
       }
       
@@ -41,26 +51,32 @@ export const useShifts = (startDate: Date, endDate: Date) => {
         throw bookingsError;
       }
       
+      console.log('Retrieved bookings:', bookings ? bookings.length : 0);
+      
       // Transform shifts to ShiftWithBookings
       const shiftsWithBookings: ShiftWithBookings[] = data.map(shift => {
-        const shiftBookings = bookings.filter(booking => booking.shift_id === shift.id)
-          .map(booking => {
-            // Ensure status is correctly typed as "confirmed" | "cancelled"
-            const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
-            
-            return {
-              ...booking,
-              status: typedStatus,
-              // Use user_display_name if available, otherwise use user_email or fallback to "Okänd säljare"
-              user_display_name: booking.user_display_name || booking.user_email || 'Okänd säljare'
-            } as ShiftBooking;
-          });
+        const shiftBookings = bookings
+          ? bookings.filter(booking => booking.shift_id === shift.id)
+              .map(booking => {
+                // Ensure status is correctly typed as "confirmed" | "cancelled"
+                const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
+                
+                return {
+                  ...booking,
+                  status: typedStatus,
+                  // Use user_display_name if available, otherwise use user_email or fallback to "Okänd säljare"
+                  user_display_name: booking.user_display_name || booking.user_email || 'Okänd säljare'
+                } as ShiftBooking;
+              })
+          : [];
           
         // Get only confirmed bookings for availability calculation
         const confirmedBookings = shiftBookings.filter(booking => booking.status === 'confirmed');
         
         // Check if user has a confirmed booking for this shift
-        const isBooked = user ? confirmedBookings.some(booking => booking.user_id === user.id) : false;
+        const isBooked = user 
+          ? confirmedBookings.some(booking => booking.user_id === user.id) 
+          : false;
         
         return {
           ...shift,
@@ -72,6 +88,7 @@ export const useShifts = (startDate: Date, endDate: Date) => {
       
       return shiftsWithBookings;
     },
+    staleTime: 1000 * 60, // Refresh cache every minute
   });
   
   return {

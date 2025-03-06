@@ -111,18 +111,42 @@ export default function Booking() {
   };
 
   const handleConfirmBookings = () => {
+    console.log('Confirming batch bookings for shifts:', selectedShifts);
+    
     batchBookShifts(selectedShifts, {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        console.log('Batch booking success:', data);
         setConfirmDialogOpen(false);
         setSelectedShifts([]);
+        
+        // Invalidate all relevant queries to refresh the data
         queryClient.invalidateQueries({ queryKey: ['shifts'] });
         queryClient.invalidateQueries({ queryKey: ['weekly-booking-summary'] });
-        setTimeout(() => {
-          toast({
-            title: "Bokningar genomförda",
-            description: "Dina pass har bokats framgångsrikt",
-          });
-        }, 300);
+        
+        // If there were errors but some bookings succeeded
+        if (data.errors && data.errors.length > 0 && data.results && data.results.length > 0) {
+          setTimeout(() => {
+            toast({
+              title: "Delvis framgång",
+              description: `${data.results.length} pass bokades framgångsrikt, men ${data.errors.length} pass kunde inte bokas.`,
+            });
+          }, 300);
+        } else if (!data.errors || data.errors.length === 0) {
+          setTimeout(() => {
+            toast({
+              title: "Bokningar genomförda",
+              description: "Dina pass har bokats framgångsrikt",
+            });
+          }, 300);
+        }
+      },
+      onError: (error) => {
+        console.error('Batch booking error:', error);
+        toast({
+          variant: "destructive",
+          title: "Fel vid bokning",
+          description: error.message || "Ett fel uppstod vid bokning av passen",
+        });
       }
     });
   };
@@ -162,6 +186,11 @@ export default function Booking() {
   }, {} as Record<string, ShiftWithBookings[]>);
 
   const userBookedShifts = processedShifts.filter(shift => shift.is_booked_by_current_user);
+
+  useEffect(() => {
+    console.log('Current user booked shifts:', userBookedShifts.length);
+    console.log('Available shifts:', availableShifts.length);
+  }, [userBookedShifts, availableShifts]);
 
   const renderContent = () => {
     if (!user) return null;
