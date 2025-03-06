@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format, startOfWeek, endOfWeek, parseISO, subMonths } from "date-fns";
 import { sv } from "date-fns/locale";
@@ -7,7 +8,7 @@ import { LeaderboardSection } from "@/components/leaderboard/LeaderboardSection"
 import { useLeaderboardDates } from "@/hooks/useLeaderboardDates";
 import { useLeaderboardData } from "@/hooks/useLeaderboardData";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import { AlertTriangle } from "lucide-react";
 
 const Leaderboard = () => {
   const navigate = useNavigate();
@@ -87,7 +88,7 @@ const Leaderboard = () => {
 
   const ErrorAlert = ({ error }: { error: Error }) => (
     <Alert variant="destructive" className="mb-4">
-      <ExclamationTriangleIcon className="h-4 w-4" />
+      <AlertTriangle className="h-4 w-4" />
       <AlertTitle>Error</AlertTitle>
       <AlertDescription>
         {error.message}
