@@ -19,7 +19,7 @@ const Staff = () => {
       console.log("Fetching staff members data...");
       
       try {
-        // Fetch all staff roles without any filters
+        // Fetch all staff roles without any role-based filtering
         const rolesResponse = await supabase
           .from("staff_roles")
           .select("*");

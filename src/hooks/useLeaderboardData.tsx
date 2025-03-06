@@ -64,7 +64,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             throw new Error(`Unsupported time period: ${type}`);
         }
 
-        // Get all staff members (both visible and hidden) - removing any filtering by role
+        // Get all staff members - removed any role-based filtering
         const { data: allStaff, error: staffError } = await supabase
           .from("staff_roles")
           .select("user_display_name");
