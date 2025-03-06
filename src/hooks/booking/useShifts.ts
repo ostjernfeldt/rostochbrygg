@@ -85,8 +85,8 @@ export const useShifts = (startDate: Date, endDate: Date, isAdmin = false) => {
                   return {
                     ...booking,
                     status: typedStatus,
-                    // Use user_display_name if available, otherwise use user_email or fallback to "Okänd säljare"
-                    user_display_name: booking.user_display_name || booking.user_email || 'Okänd säljare'
+                    // Use user_display_name if available, otherwise use user_email or fallback to "Unknown seller"
+                    user_display_name: booking.user_display_name || booking.user_email || 'Unknown seller'
                   } as ShiftBooking;
                 })
             : [];

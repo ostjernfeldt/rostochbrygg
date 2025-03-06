@@ -29,7 +29,7 @@ export default function Booking() {
   if (authLoading) {
     return (
       <PageLayout>
-        <LoadingFallback message="Verifierar användardata..." />
+        <LoadingFallback message="Verifying user data..." />
       </PageLayout>
     );
   }
@@ -37,7 +37,7 @@ export default function Booking() {
   if (authError || !isAuthenticated) {
     return (
       <PageLayout>
-        <AuthError errorMessage={authError} />
+        <AuthError errorMessage={authError || "You need to be logged in to access this page"} />
       </PageLayout>
     );
   }
@@ -136,12 +136,12 @@ function BookingContent({
     return (
       <div className="flex flex-col items-center justify-center h-[50vh] p-6">
         <AlertTriangle className="h-12 w-12 text-amber-500 mb-3" />
-        <h2 className="text-xl font-semibold mb-2">Kunde inte ladda bokningar</h2>
+        <h2 className="text-xl font-semibold mb-2">Could not load bookings</h2>
         <p className="text-muted-foreground mb-4">
-          {shiftsError instanceof Error ? shiftsError.message : 'Ett fel uppstod vid laddning av bokningar'}
+          {shiftsError instanceof Error ? shiftsError.message : 'An error occurred while loading bookings'}
         </p>
         <Button onClick={() => window.location.reload()} variant="outline">
-          Försök igen
+          Try again
         </Button>
       </div>
     );

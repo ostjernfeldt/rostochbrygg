@@ -17,12 +17,12 @@ export const useShiftDetails = (shiftId: string) => {
         
         if (authError) {
           console.error('Authentication error:', authError);
-          throw new Error('Du måste vara inloggad för att se detaljer');
+          throw new Error('Authentication error. Please try logging in again.');
         }
         
         if (!user) {
           console.log('No authenticated user found');
-          throw new Error('Du måste vara inloggad för att se detaljer');
+          throw new Error('You must be logged in to view shift details');
         }
         
         // Fetch the shift
@@ -30,7 +30,7 @@ export const useShiftDetails = (shiftId: string) => {
           .from('shifts')
           .select('*')
           .eq('id', shiftId)
-          .single();
+          .maybeSingle();
         
         if (shiftError) {
           console.error('Error fetching shift:', shiftError);
@@ -39,7 +39,7 @@ export const useShiftDetails = (shiftId: string) => {
         
         if (!shift) {
           console.log('Shift not found');
-          throw new Error('Kunde inte hitta säljpasset');
+          throw new Error('Could not find the shift');
         }
         
         // Fetch all bookings for this shift
@@ -60,8 +60,8 @@ export const useShiftDetails = (shiftId: string) => {
           // Ensure status is correctly typed
           const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
           
-          // Use user_display_name from the booking if available, otherwise use the email, or fallback to "Okänd säljare"
-          const displayName = booking.user_display_name || booking.user_email || 'Okänd säljare';
+          // Use user_display_name from the booking if available, otherwise use the email, or fallback to "Unknown seller"
+          const displayName = booking.user_display_name || booking.user_email || 'Unknown seller';
           
           return {
             ...booking,

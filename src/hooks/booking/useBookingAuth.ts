@@ -26,7 +26,7 @@ export const useBookingAuth = () => {
         
         if (sessionError) {
           console.error('Error checking session:', sessionError);
-          setAuthError('Kunde inte verifiera din inloggning. Vänligen logga in igen.');
+          setAuthError('Could not verify your login. Please log in again.');
           setIsAuthenticated(false);
           setUser(null);
           setIsRoleChecked(true);
@@ -36,7 +36,7 @@ export const useBookingAuth = () => {
         
         if (!session || !session.user) {
           console.log('No active session found');
-          setAuthError('Din session har utgått. Vänligen logga in igen.');
+          setAuthError('Your session has expired. Please log in again.');
           setIsAuthenticated(false);
           setUser(null);
           setIsRoleChecked(true);
@@ -67,7 +67,7 @@ export const useBookingAuth = () => {
             .from('user_roles')
             .select('role')
             .eq('user_id', session.user.id)
-            .single();
+            .maybeSingle();
           
           if (error) {
             console.error('Error checking user role:', error);
@@ -92,7 +92,7 @@ export const useBookingAuth = () => {
         }
       } catch (error) {
         console.error('Unexpected error during auth check:', error);
-        setAuthError('Ett oväntat fel uppstod. Vänligen försök igen.');
+        setAuthError('An unexpected error occurred. Please try again.');
         setIsAuthenticated(false);
         setUser(null);
         setIsRoleChecked(true);
