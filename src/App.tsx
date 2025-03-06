@@ -181,11 +181,6 @@ const AppContent = () => {
             <Home />
           </PrivateRoute>
         } />
-        <Route path="/invite" element={
-          <PrivateRoute requireAdmin={true}>
-            <Invite />
-          </PrivateRoute>
-        } />
         
         {/* Routes for all users - completely public with no authentication required */}
         <Route path="/leaderboard" element={<Leaderboard />} />
@@ -193,15 +188,23 @@ const AppContent = () => {
         <Route path="/staff" element={<Staff />} />
         <Route path="/staff/:name" element={<StaffMember />} />
         
-        {/* Routes that still require authentication */}
-        <Route path="/transactions" element={
-          <PrivateRoute>
-            <TransactionList />
-          </PrivateRoute>
-        } />
+        {/* Routes that require authentication */}
         <Route path="/booking" element={
           <PrivateRoute>
             <Booking />
+          </PrivateRoute>
+        } />
+        
+        {/* Admin routes that should appear after booking */}
+        <Route path="/invite" element={
+          <PrivateRoute requireAdmin={true}>
+            <Invite />
+          </PrivateRoute>
+        } />
+        
+        <Route path="/transactions" element={
+          <PrivateRoute>
+            <TransactionList />
           </PrivateRoute>
         } />
         

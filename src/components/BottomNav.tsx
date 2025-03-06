@@ -85,6 +85,10 @@ export const BottomNav = () => {
   // Only admins can see "Idag" and "Bjud in" pages
   const adminMenuItems = [
     { path: "/", label: "Idag", showFor: ["admin"] },
+  ];
+
+  // Admin item that should appear after "Booking"
+  const adminAfterBookingItems = [
     { path: "/invite", label: "Bjud in", showFor: ["admin"] },
   ];
 
@@ -96,6 +100,15 @@ export const BottomNav = () => {
     
     if (userRole === 'admin') {
       menuItems = [...adminMenuItems, ...menuItems];
+      
+      // Insert admin-only items that should appear after Booking
+      const bookingIndex = menuItems.findIndex(item => item.path === "/booking");
+      if (bookingIndex !== -1) {
+        menuItems.splice(bookingIndex + 1, 0, ...adminAfterBookingItems);
+      } else {
+        // If booking is not found for some reason, just append them
+        menuItems = [...menuItems, ...adminAfterBookingItems];
+      }
     }
   }
 
