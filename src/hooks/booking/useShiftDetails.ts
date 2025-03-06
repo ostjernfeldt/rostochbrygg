@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ShiftWithBookings, ShiftBooking } from '@/types/booking';
+import { toast } from '@/components/ui/use-toast';
 
 export const useShiftDetails = (shiftId: string) => {
   const { data, isLoading, error } = useQuery({
@@ -17,12 +18,22 @@ export const useShiftDetails = (shiftId: string) => {
         
         if (authError) {
           console.error('Authentication error:', authError);
-          throw new Error('Authentication error. Please try logging in again.');
+          toast({
+            title: "Authentication error",
+            description: "Please try logging in again.",
+            variant: "destructive"
+          });
+          return null;
         }
         
         if (!user) {
           console.log('No authenticated user found');
-          throw new Error('You must be logged in to view shift details');
+          toast({
+            title: "Authentication required",
+            description: "You must be logged in to view shift details",
+            variant: "destructive"
+          });
+          return null;
         }
         
         // Fetch the shift
@@ -34,12 +45,22 @@ export const useShiftDetails = (shiftId: string) => {
         
         if (shiftError) {
           console.error('Error fetching shift:', shiftError);
-          throw shiftError;
+          toast({
+            title: "Error fetching shift",
+            description: shiftError.message,
+            variant: "destructive"
+          });
+          return null;
         }
         
         if (!shift) {
           console.log('Shift not found');
-          throw new Error('Could not find the shift');
+          toast({
+            title: "Shift not found",
+            description: "Could not find the requested shift",
+            variant: "destructive"
+          });
+          return null;
         }
         
         // Fetch all bookings for this shift
@@ -50,7 +71,12 @@ export const useShiftDetails = (shiftId: string) => {
         
         if (bookingsError) {
           console.error('Error fetching bookings:', bookingsError);
-          throw bookingsError;
+          toast({
+            title: "Error fetching bookings",
+            description: bookingsError.message,
+            variant: "destructive"
+          });
+          // Still continue, just with empty bookings
         }
         
         // Initialize bookings as empty array if undefined
@@ -87,7 +113,12 @@ export const useShiftDetails = (shiftId: string) => {
         } as ShiftWithBookings;
       } catch (error) {
         console.error('Error in useShiftDetails query:', error);
-        throw error;
+        toast({
+          title: "Error loading shift details",
+          description: error instanceof Error ? error.message : "An unexpected error occurred",
+          variant: "destructive"
+        });
+        return null;
       }
     },
     enabled: !!shiftId, // Only run query when shiftId exists

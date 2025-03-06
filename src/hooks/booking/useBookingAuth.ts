@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 export const useBookingAuth = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -36,6 +37,7 @@ export const useBookingAuth = () => {
         
         if (!session || !session.user) {
           console.log('No active session found');
+          // Don't show an error toast for simply not being logged in
           setAuthError('Your session has expired. Please log in again.');
           setIsAuthenticated(false);
           setUser(null);
@@ -60,6 +62,7 @@ export const useBookingAuth = () => {
           }
         } catch (error) {
           console.error('Error fetching user name:', error);
+          // Continue anyway
         }
         
         try {

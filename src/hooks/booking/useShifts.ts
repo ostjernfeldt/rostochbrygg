@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ShiftWithBookings, ShiftBooking } from '@/types/booking';
+import { toast } from '@/components/ui/use-toast';
 
 export const useShifts = (startDate: Date, endDate: Date, isAdmin = false) => {
   const { data, isLoading, error } = useQuery({
@@ -14,11 +15,17 @@ export const useShifts = (startDate: Date, endDate: Date, isAdmin = false) => {
         
         if (authError) {
           console.error('Error fetching user:', authError);
-          throw new Error('Authentication error. Please try logging in again.');
+          toast({
+            title: "Authentication error",
+            description: "Please try logging in again.",
+            variant: "destructive"
+          });
+          return [];
         }
         
         if (!user) {
           console.log('No authenticated user found, returning empty shifts array');
+          // Don't show error toast for simply not being logged in
           return [];
         }
         
@@ -34,7 +41,12 @@ export const useShifts = (startDate: Date, endDate: Date, isAdmin = false) => {
         
         if (error) {
           console.error('Error fetching shifts:', error);
-          throw error;
+          toast({
+            title: "Error fetching shifts",
+            description: error.message,
+            variant: "destructive"
+          });
+          return [];
         }
         
         // Ensure we have an array to work with, even if data is null/undefined
@@ -60,12 +72,18 @@ export const useShifts = (startDate: Date, endDate: Date, isAdmin = false) => {
           
           if (bookingsError) {
             console.error('Error fetching shift bookings:', bookingsError);
-            throw bookingsError;
+            toast({
+              title: "Error fetching bookings",
+              description: bookingsError.message,
+              variant: "destructive"
+            });
+            // Continue with empty bookings rather than fail the whole query
+            bookingsData = [];
+          } else {
+            // Ensure we have an array to work with
+            bookingsData = bookings || [];
+            console.log('Retrieved bookings:', bookingsData.length);
           }
-          
-          // Ensure we have an array to work with
-          bookingsData = bookings || [];
-          console.log('Retrieved bookings:', bookingsData.length);
         } catch (error) {
           console.error('Error in bookings fetch:', error);
           // Continue with empty bookings rather than fail the whole query
@@ -110,6 +128,11 @@ export const useShifts = (startDate: Date, endDate: Date, isAdmin = false) => {
         return shiftsWithBookings;
       } catch (error) {
         console.error('Unexpected error in useShifts query:', error);
+        toast({
+          title: "Error loading shifts",
+          description: error instanceof Error ? error.message : "An unexpected error occurred",
+          variant: "destructive"
+        });
         // Always return an empty array instead of null/undefined
         return [];
       }
