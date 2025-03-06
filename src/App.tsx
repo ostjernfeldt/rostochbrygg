@@ -127,7 +127,8 @@ const PrivateRoute = ({ children, requireAdmin = false }: PrivateRouteProps) => 
     return <Navigate to="/login" replace />;
   }
 
-  if (requireAdmin && userRole !== 'admin') {
+  // Only restrict access for invite page which is admin-only
+  if (requireAdmin && userRole !== 'admin' && window.location.hash.includes('/invite')) {
     console.log("User is not admin, redirecting to leaderboard");
     return <Navigate to="/leaderboard" replace />;
   }
@@ -149,7 +150,7 @@ const AppContent = () => {
         <Route path="/create-account" element={<CreateAccount />} />
         
         <Route path="/" element={
-          <PrivateRoute requireAdmin={true}>
+          <PrivateRoute>
             <Home />
           </PrivateRoute>
         } />

@@ -14,7 +14,10 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
         .from("total_purchases")
         .select("*", { count: 'exact', head: true });
       
-      if (countError) throw countError;
+      if (countError) {
+        console.error("Error checking for sales:", countError);
+        throw countError;
+      }
       
       // If no sales exist, return empty dates array and let onDatesLoaded handle it
       if (count === 0) {
@@ -32,7 +35,10 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
         .eq('refunded', false)
         .order("timestamp", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching sales dates:", error);
+        throw error;
+      }
 
       // Group sales by date
       const salesByDate = data.reduce((acc: { [key: string]: Set<string> }, sale) => {

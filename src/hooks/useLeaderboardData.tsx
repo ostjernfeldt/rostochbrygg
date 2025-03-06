@@ -22,44 +22,58 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
       console.log(`Fetching ${type} challenge leaders from total_purchases...`);
       
       try {
-        // First, get the list of visible staff members in a single query
-        const { data: visibleStaff, error: staffError } = await supabase
-          .from("staff_roles")
-          .select("user_display_name, historical_points:staff_historical_points(points)")
-          .eq("hidden", false)
-          .order("user_display_name");
+        // Parse the selectedDate once to ensure proper date handling
+        let parsedDate;
+        try {
+          parsedDate = parseISO(selectedDate);
+        } catch (error) {
+          console.error("Invalid date format:", selectedDate, error);
+          return { [type + 'Leaders']: [] };
+        }
 
-        if (staffError) throw staffError;
-
-        const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
-        
         // Calculate date ranges based on the selected date and type
         let startDate: Date;
         let endDate: Date;
         let useLatestDate = false;
         
-        // Parse the selectedDate once
-        const parsedSelectedDate = parseISO(selectedDate);
-
         switch (type) {
           case 'daily':
-            startDate = new Date(parsedSelectedDate);
+            startDate = new Date(parsedDate);
             startDate.setHours(0, 0, 0, 0);
-            endDate = new Date(startDate);
+            endDate = new Date(parsedDate);
             endDate.setHours(23, 59, 59, 999);
             break;
           case 'weekly':
-            startDate = startOfWeek(parsedSelectedDate);
-            endDate = endOfWeek(startDate);
+            startDate = startOfWeek(parsedDate);
+            endDate = endOfWeek(parsedDate);
             break;
           case 'monthly':
             const [year, month] = selectedDate.split('-').map(Number);
             startDate = startOfMonth(new Date(year, month - 1));
             endDate = endOfMonth(startDate);
             break;
+          default:
+            throw new Error(`Unsupported time period: ${type}`);
         }
 
-        // Get all relevant sales in a single query
+        // Get all staff members (both visible and hidden)
+        const { data: allStaff, error: staffError } = await supabase
+          .from("staff_roles")
+          .select("user_display_name");
+
+        if (staffError) {
+          console.error("Error fetching staff:", staffError);
+          throw staffError;
+        }
+
+        const allStaffNames = new Set(allStaff.map(s => s.user_display_name));
+        
+        if (allStaffNames.size === 0) {
+          console.log("No staff members found in staff_roles table");
+          return { [type + 'Leaders']: [] };
+        }
+
+        // Get all relevant sales within the date range
         const { data: sales, error: salesError } = await supabase
           .from("total_purchases")
           .select("*")
@@ -68,7 +82,10 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           .not("refunded", "eq", true)
           .not("user_display_name", "is", null);
 
-        if (salesError) throw salesError;
+        if (salesError) {
+          console.error("Error fetching sales:", salesError);
+          throw salesError;
+        }
 
         // If no sales are found for the selected date range and we need the latest date
         if ((!sales || sales.length === 0) && type === 'daily') {
@@ -80,18 +97,9 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           if (countError) throw countError;
           
           if (count === 0) {
-            // No sales at all - return empty array for placeholder message
+            // No sales at all - return empty array
             console.log("No sales found at all, returning empty array");
-            const emptyLeaders: UserSales[] = [];
-            
-            // Create a result object based on the requested type
-            const result: Record<string, any> = { latestDate: null };
-            
-            // Use the string literal to create property name dynamically
-            const leaderKey = `${type}Leaders` as const;
-            result[leaderKey] = emptyLeaders;
-            
-            return result;
+            return { [type + 'Leaders']: [], latestDate: null };
           }
           
           // If there are sales but none for selected date, find the latest date with sales
@@ -106,13 +114,7 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           if (latestError) {
             console.log("Error getting latest sale, using current date", latestError);
             // Use current date as fallback
-            const emptyResult: Record<string, any> = { latestDate: null };
-            
-            // Use the string literal to create property name dynamically
-            const leaderKey = `${type}Leaders` as const;
-            emptyResult[leaderKey] = [];
-            
-            return emptyResult;
+            return { [type + 'Leaders']: [], latestDate: null };
           }
           
           // Update date range to use latest date
@@ -135,41 +137,26 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           
           if (!latestSales || latestSales.length === 0) {
             // Still no valid sales - return empty array
-            const emptyLeaders: UserSales[] = [];
-            const emptyResult: Record<string, any> = { latestDate: startDate.toISOString() };
-            
-            // Use the string literal to create property name dynamically
-            const leaderKey = `${type}Leaders` as const;
-            emptyResult[leaderKey] = emptyLeaders;
-            
-            return emptyResult;
+            return { [type + 'Leaders']: [], latestDate: startDate.toISOString() };
           }
           
           // Calculate leaders with the latest sales
-          const leaders = calculateLeaders(latestSales, visibleStaffNames);
+          const leaders = calculateLeaders(latestSales, allStaffNames);
           
-          const result: Record<string, any> = { latestDate: startDate.toISOString() };
-          
-          // Use the string literal to create property name dynamically
-          const leaderKey = `${type}Leaders` as const;
-          result[leaderKey] = leaders;
-          
-          return result;
+          return { 
+            [type + 'Leaders']: leaders, 
+            latestDate: startDate.toISOString() 
+          };
         }
 
         // Calculate leaders with the originally requested date range
-        const leaders = calculateLeaders(sales, visibleStaffNames);
+        const leaders = calculateLeaders(sales, allStaffNames);
         
         // Create result object based on the requested type
-        const result: Record<string, any> = { 
+        return { 
+          [type + 'Leaders']: leaders,
           latestDate: useLatestDate ? startDate.toISOString() : null 
         };
-        
-        // Use the string literal to create property name dynamically
-        const leaderKey = `${type}Leaders` as const;
-        result[leaderKey] = leaders;
-        
-        return result;
       } catch (error) {
         console.error(`Error in ${type} challenge leaders query:`, error);
         throw error;
@@ -178,8 +165,8 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
   });
 };
 
-// Simplified leader calculation with better performance
-const calculateLeaders = (sales: TotalPurchase[] | null, visibleStaffNames: Set<string>): UserSales[] => {
+// Simplified leader calculation
+const calculateLeaders = (sales: TotalPurchase[] | null, staffNames: Set<string>): UserSales[] => {
   if (!sales || sales.length === 0) {
     return [];
   }
@@ -187,18 +174,13 @@ const calculateLeaders = (sales: TotalPurchase[] | null, visibleStaffNames: Set<
   // Process sales only once and track totals by user
   const userTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[] }> = {};
   
-  // Pre-filter sales to only include visible staff members - do this once
-  const visibleSales = sales.filter(sale => 
-    sale.user_display_name && visibleStaffNames.has(sale.user_display_name)
-  );
-  
   // Process transactions once
-  const processedSales = processTransactions(visibleSales);
+  const processedSales = processTransactions(sales);
   
   // Group sales by user
   processedSales.forEach(sale => {
     const name = sale.user_display_name;
-    if (!name || !visibleStaffNames.has(name)) return;
+    if (!name || !staffNames.has(name)) return;
     
     if (!userTotals[name]) {
       userTotals[name] = {

@@ -13,18 +13,20 @@ const Staff = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   
-  const { data: staffMembers, isLoading } = useQuery({
+  const { data: staffMembers, isLoading, error } = useQuery({
     queryKey: ["staffMembers"],
     queryFn: async () => {
       console.log("Fetching staff members data...");
       
-      // Fetch staff roles first, as this is the primary source of staff members
-      // Remove the hidden filter to show all staff members
+      // Fetch all staff roles without any filters
       const rolesResponse = await supabase
         .from("staff_roles")
         .select("*");
 
-      if (rolesResponse.error) throw rolesResponse.error;
+      if (rolesResponse.error) {
+        console.error("Error fetching staff roles:", rolesResponse.error);
+        throw rolesResponse.error;
+      }
       
       const roles = rolesResponse.data || [];
       
@@ -40,13 +42,17 @@ const Staff = () => {
         .not("user_display_name", "is", null)
         .order("timestamp", { ascending: true });
       
-      if (salesResponse.error) throw salesResponse.error;
+      if (salesResponse.error) {
+        console.error("Error fetching sales data:", salesResponse.error);
+        throw salesResponse.error;
+      }
+      
       const sales = salesResponse.data || [];
       
       // Initialize staff stats from roles data
       const staffStats: { [key: string]: StaffMemberStats } = {};
       
-      // Create base stats for all staff members from roles, including hidden ones
+      // Create base stats for all staff members from roles
       roles.forEach(roleData => {
         const displayName = roleData.user_display_name;
         staffStats[displayName] = {
@@ -112,6 +118,10 @@ const Staff = () => {
       return Object.values(staffStats);
     }
   });
+
+  if (error) {
+    console.error("Error loading staff data:", error);
+  }
 
   const filteredStaff = staffMembers?.filter(member => 
     member.displayName.toLowerCase().includes(searchQuery.toLowerCase())
