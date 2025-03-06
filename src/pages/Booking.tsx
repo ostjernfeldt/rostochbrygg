@@ -140,7 +140,10 @@ export default function Booking() {
 
   const selectedShiftsData: ShiftWithBookings[] = processedShifts.filter(shift => selectedShifts.includes(shift.id));
 
-  const shiftsByDate = processedShifts.reduce((acc, shift) => {
+  // Filter out shifts that are already booked by the current user for the "Available shifts" section
+  const availableShifts = processedShifts.filter(shift => !shift.is_booked_by_current_user);
+
+  const shiftsByDate = availableShifts.reduce((acc, shift) => {
     const date = shift.date;
     if (!acc[date]) {
       acc[date] = [];
@@ -259,11 +262,11 @@ export default function Booking() {
             <div className="space-y-2">
               {shiftsLoading ? <div className="space-y-3">
                   {[1, 2, 3].map(i => <div key={i} className="bg-card/50 h-24 rounded-xl animate-pulse border border-[#33333A]"></div>)}
-                </div> : processedShifts.length > 0 ? Object.entries(shiftsByDate).map(([date, dateShifts]) => <div key={date} className="space-y-3">
+                </div> : availableShifts.length > 0 ? Object.entries(shiftsByDate).map(([date, dateShifts]) => <div key={date} className="space-y-3">
                     {dateShifts.map(shift => <ShiftCard key={shift.id} shift={shift} isUserAdmin={isAdmin} onViewDetails={handleViewShiftDetails} isSelectable={true} isSelected={selectedShifts.includes(shift.id)} onSelectShift={handleSelectShift} />)}
                   </div>) : <div className="flex flex-col items-center justify-center py-8 text-center bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 rounded-xl border border-[#33333A] shadow-lg">
                   <Calendar className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                  <p className="text-muted-foreground">Inga säljpass tillgängliga för denna vecka.</p>
+                  <p className="text-muted-foreground">Inga lediga säljpass tillgängliga för denna vecka.</p>
                 </div>}
             </div>
           </div>
