@@ -1,5 +1,4 @@
-
-import { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { sv } from 'date-fns/locale';
@@ -19,18 +18,26 @@ import { PageLayout } from '@/components/PageLayout';
 import { BatchBookingConfirmDialog } from '@/components/booking/BatchBookingConfirmDialog';
 import { toast } from "@/hooks/use-toast";
 
-// Error Boundary Component
-class ErrorBoundary extends React.Component {
-  constructor(props) {
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  errorMessage: string;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, errorMessage: '' };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, errorMessage: error.message };
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("Booking page error:", error, errorInfo);
   }
 
@@ -52,7 +59,6 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// Loading Fallback Component
 const LoadingFallback = () => (
   <div className="flex flex-col items-center justify-center h-[50vh]">
     <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
@@ -250,7 +256,6 @@ export default function Booking() {
     setConfirmDialogOpen(true);
   };
 
-  // Safely process shifts data with null checks
   const processedShifts: ShiftWithBookings[] = Array.isArray(shifts) ? shifts.map(shift => {
     return {
       ...shift,
@@ -283,7 +288,6 @@ export default function Booking() {
     ? processedShifts.filter(shift => shift.is_booked_by_current_user)
     : [];
 
-  // If we're in a loading state or auth error, show appropriate UI
   if (isLoading) {
     return (
       <PageLayout>
