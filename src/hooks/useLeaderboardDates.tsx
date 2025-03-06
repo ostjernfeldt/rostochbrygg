@@ -14,7 +14,12 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
         .from("total_purchases")
         .select("*", { count: 'exact', head: true });
       
-      if (countError) throw countError;
+      if (countError) {
+        console.error("Error counting sales:", countError);
+        throw countError;
+      }
+      
+      console.log(`Total sales count: ${count}`);
       
       // If no sales exist, return empty dates array and let onDatesLoaded handle it
       if (count === 0) {
@@ -31,8 +36,12 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
         .select("user_display_name")
         .eq("hidden", false);
 
-      if (staffError) throw staffError;
+      if (staffError) {
+        console.error("Error fetching visible staff:", staffError);
+        throw staffError;
+      }
 
+      console.log(`Found ${visibleStaff.length} visible staff members`);
       const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
 
       // Get all sales
@@ -42,7 +51,12 @@ export const useLeaderboardDates = (onDatesLoaded?: (dates: string[]) => void) =
         .eq('refunded', false)
         .order("timestamp", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching sales data:", error);
+        throw error;
+      }
+
+      console.log(`Found ${data.length} total non-refunded sales`);
 
       // Group sales by date and filter days where all sellers are hidden
       const salesByDate = data.reduce((acc: { [key: string]: Set<string> }, sale) => {

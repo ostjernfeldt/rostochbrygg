@@ -29,9 +29,13 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           .eq("hidden", false)
           .order("user_display_name");
 
-        if (staffError) throw staffError;
+        if (staffError) {
+          console.error("Error fetching staff roles:", staffError);
+          throw staffError;
+        }
 
         const visibleStaffNames = new Set(visibleStaff.map(s => s.user_display_name));
+        console.log(`Found ${visibleStaffNames.size} visible staff members`);
         
         // Calculate date ranges based on the selected date and type
         let startDate: Date;
@@ -59,6 +63,8 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             break;
         }
 
+        console.log(`Date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+
         // Get all relevant sales in a single query
         const { data: sales, error: salesError } = await supabase
           .from("total_purchases")
@@ -68,7 +74,12 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
           .not("refunded", "eq", true)
           .not("user_display_name", "is", null);
 
-        if (salesError) throw salesError;
+        if (salesError) {
+          console.error("Error fetching sales:", salesError);
+          throw salesError;
+        }
+
+        console.log(`Found ${sales?.length || 0} sales in the date range`);
 
         // If no sales are found for the selected date range and we need the latest date
         if ((!sales || sales.length === 0) && type === 'daily') {
@@ -77,7 +88,10 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             .from("total_purchases")
             .select("*", { count: 'exact', head: true });
           
-          if (countError) throw countError;
+          if (countError) {
+            console.error("Error counting sales:", countError);
+            throw countError;
+          }
           
           if (count === 0) {
             // No sales at all - return empty array for placeholder message
@@ -131,7 +145,12 @@ export const useLeaderboardData = (type: TimePeriod, selectedDate: string) => {
             .not("refunded", "eq", true)
             .not("user_display_name", "is", null);
             
-          if (latestSalesError) throw latestSalesError;
+          if (latestSalesError) {
+            console.error("Error fetching latest sales:", latestSalesError);
+            throw latestSalesError;
+          }
+          
+          console.log(`Found ${latestSales?.length || 0} sales on latest date`);
           
           if (!latestSales || latestSales.length === 0) {
             // Still no valid sales - return empty array
@@ -187,13 +206,8 @@ const calculateLeaders = (sales: TotalPurchase[] | null, visibleStaffNames: Set<
   // Process sales only once and track totals by user
   const userTotals: Record<string, { points: number, salesCount: number, sales: TotalPurchase[] }> = {};
   
-  // Pre-filter sales to only include visible staff members - do this once
-  const visibleSales = sales.filter(sale => 
-    sale.user_display_name && visibleStaffNames.has(sale.user_display_name)
-  );
-  
-  // Process transactions once
-  const processedSales = processTransactions(visibleSales);
+  // Process transactions once for all sales
+  const processedSales = processTransactions(sales);
   
   // Group sales by user
   processedSales.forEach(sale => {
