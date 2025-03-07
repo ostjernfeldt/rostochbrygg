@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Check, ChevronsUpDown, Search } from "lucide-react";
+import { Check, ChevronsUpDown, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -46,7 +46,7 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
         {/* Search and List content */}
         <div className="w-full">
           {/* Search input */}
-          <div className="flex items-center border-b px-3">
+          <div className="flex items-center border-b px-3 bg-[#1A1F2C]">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <Input
               placeholder="Sök säljare..."
@@ -58,7 +58,7 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
           
           {/* Loading state */}
           {loading && (
-            <div className="p-4 text-center">
+            <div className="p-4 text-center bg-[#1A1F2C]">
               <div className="h-4 w-4 border-2 border-current/30 border-t-current/90 rounded-full animate-spin mx-auto mb-2"></div>
               <p className="text-sm text-muted-foreground">Laddar säljare...</p>
             </div>
@@ -66,28 +66,31 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
           
           {/* Empty state */}
           {!loading && sellers.length === 0 && (
-            <div className="py-6 text-center text-sm">
+            <div className="py-6 text-center text-sm bg-[#1A1F2C] text-white">
               Ingen säljare hittades.
             </div>
           )}
           
           {/* Sellers list */}
           {!loading && sellers.length > 0 && (
-            <div className="max-h-[200px] overflow-y-auto p-1">
+            <div className="max-h-[200px] overflow-y-auto p-1 bg-[#1A1F2C]">
               {sellers.map((seller) => (
                 <div
                   key={seller.user_display_name}
-                  className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50"
+                  className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-primary/20 hover:text-white data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 my-1"
                   onClick={() => {
                     onSellerSelect(seller);
                     setOpen(false);
                   }}
                 >
-                  <div className="flex flex-col flex-1">
-                    <span>{seller.user_display_name}</span>
-                    <span className="text-xs text-muted-foreground">{seller.role}</span>
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-white mr-2">
+                    {seller.user_display_name[0].toUpperCase()}
                   </div>
-                  <Check className="ml-auto h-4 w-4 opacity-0" />
+                  <div className="flex flex-col flex-1">
+                    <span className="text-white font-medium">{seller.user_display_name}</span>
+                    <span className="text-xs text-primary">{seller.role}</span>
+                  </div>
+                  <Check className="ml-auto h-4 w-4 opacity-0 text-primary" />
                 </div>
               ))}
             </div>
