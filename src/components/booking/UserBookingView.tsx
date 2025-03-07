@@ -47,6 +47,11 @@ export const UserBookingView = ({
 
   return (
     <div className="max-w-md mx-auto">
+      <div className="mb-6 text-center">
+        <h1 className="text-2xl font-bold mb-1">Bokningar</h1>
+        <p className="text-muted-foreground">Boka dina pass för veckan</p>
+      </div>
+      
       <Suspense fallback={<div className="h-24 bg-card/50 rounded-xl animate-pulse"></div>}>
         <WeeklyBookingsSummary />
       </Suspense>
