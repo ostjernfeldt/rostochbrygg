@@ -1,10 +1,8 @@
-
 import { format, addDays } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { AlertCircle, Calendar, CheckCircle, InfoIcon, Clock, ListChecks, CalendarCheck } from "lucide-react";
 import { useWeeklyBookingSummary } from '@/hooks/booking';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
 export function WeeklyBookingsSummary() {
   // Always use the current week's start date
   const today = new Date();
@@ -13,15 +11,16 @@ export function WeeklyBookingsSummary() {
   // Adjust to Monday as first day (1 = Monday, 0 = Sunday)
   startOfWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
   startOfWeek.setHours(0, 0, 0, 0);
-  
-  const { data: summary, isLoading, error } = useWeeklyBookingSummary(undefined, startOfWeek);
-  
+  const {
+    data: summary,
+    isLoading,
+    error
+  } = useWeeklyBookingSummary(undefined, startOfWeek);
   if (isLoading) {
     return <div className="w-full bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 backdrop-blur-sm rounded-xl p-4 border border-[#33333A] animate-pulse shadow-lg">
         <div className="h-16"></div>
       </div>;
   }
-  
   if (error) {
     return <div className="w-full bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 backdrop-blur-sm rounded-xl p-4 border border-[#33333A] shadow-lg">
         <div className="flex items-center gap-2 text-amber-400">
@@ -30,16 +29,14 @@ export function WeeklyBookingsSummary() {
         </div>
       </div>;
   }
-  
+
   // Safely handle summary object if it's not available
   const totalBookings = summary?.total_bookings || 0;
   const endDate = addDays(startOfWeek, 6);
 
   // Check if requirement is met
   const requirementMet = totalBookings >= 2;
-  
-  return (
-    <Popover>
+  return <Popover>
       <PopoverTrigger asChild>
         <div className="w-full bg-gradient-to-br from-[#19243e]/90 to-[#23294a]/95 backdrop-blur-sm rounded-xl border border-indigo-900/30 shadow-lg cursor-pointer hover:border-indigo-500/50 transition-all duration-300 overflow-hidden group relative">
           {/* Top highlight line */}
@@ -66,7 +63,11 @@ export function WeeklyBookingsSummary() {
             </div>
             
             <div className="mt-2 text-xs text-indigo-200/60 font-medium">
-              {format(startOfWeek, 'd', { locale: sv })} - {format(endDate, 'd MMMM', { locale: sv })}
+              {format(startOfWeek, 'd', {
+              locale: sv
+            })} - {format(endDate, 'd MMMM', {
+              locale: sv
+            })}
             </div>
           </div>
         </div>
@@ -84,14 +85,11 @@ export function WeeklyBookingsSummary() {
               </div>
               <div>
                 <h3 className="font-semibold text-amber-300 mb-2">Viktigt om bokningar</h3>
-                <p className="text-sm text-amber-100/80 leading-relaxed">
-                  Kom ihåg att boka minst 2 pass per vecka. Om du behöver avboka ett pass måste du kontakta din säljledare direkt.
-                </p>
+                <p className="text-sm text-amber-100/80 leading-relaxed">Boka minst 2 pass per vecka. Om du har förhinder eller behöver avboka - kontakta teamleader direkt.</p>
               </div>
             </div>
           </div>
         </div>
       </PopoverContent>
-    </Popover>
-  );
+    </Popover>;
 }
