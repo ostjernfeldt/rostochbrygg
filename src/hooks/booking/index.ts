@@ -8,3 +8,4 @@ export * from './useBookingAuth';
 export * from './useShiftSelection';
 export * from './useWeeklyBookingSummary';
 export * from './useBatchBookShifts';
+export * from './useSellerSearch';
