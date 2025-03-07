@@ -1,6 +1,7 @@
+
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Calendar, Clock, Users } from "lucide-react";
+import { Calendar, Clock, Users, Info, Trash2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { 
   Dialog, 
   DialogContent, 
@@ -15,6 +16,7 @@ import { useCancelBooking, useBookShift } from '@/hooks/booking';
 import { Separator } from '@/components/ui/separator';
 import { useDeleteShift } from '@/hooks/useShifts';
 import { toast } from '@/hooks/use-toast';
+import { Badge } from "@/components/ui/badge";
 
 interface ShiftDetailsDialogProps {
   shift: ShiftWithBookings;
@@ -120,59 +122,81 @@ export function ShiftDetailsDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent 
-        className="sm:max-w-md bg-[#1A1F2C] border-[#33333A] shadow-xl"
+        className="sm:max-w-md bg-gradient-to-br from-[#1e253a]/95 to-[#252a3d]/98 border-[#33333A]/80 shadow-xl rounded-xl overflow-hidden max-h-[90vh] overflow-y-auto"
       >
+        {/* Top highlight line */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/5 via-primary/40 to-primary/5"></div>
+        
         <DialogHeader className="pb-2">
           <DialogTitle className="capitalize text-lg flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
+            <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center">
+              <Calendar className="h-4 w-4 text-primary" />
+            </div>
             {formattedDate}
           </DialogTitle>
           <DialogDescription className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="h-4 w-4 text-primary/80" />
+            <Clock className="h-4 w-4 text-primary/70" />
             {startTime} - {endTime}
           </DialogDescription>
         </DialogHeader>
         
-        <div className="py-2 space-y-4">
+        <div className="py-2 space-y-5">
+          {/* Meta information badges */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="bg-primary/10 border-primary/30 flex items-center gap-1.5 px-2.5 py-1">
+              <Users className="h-3.5 w-3.5" />
+              <span>
+                {confirmedBookings.length} av {shift.available_slots} bokade
+              </span>
+            </Badge>
+            
+            <Badge variant="outline" className="bg-primary/5 border-[#33333A]/50 flex items-center gap-1.5 px-2.5 py-1">
+              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-muted-foreground">
+                {startTime} - {endTime}
+              </span>
+            </Badge>
+          </div>
+          
+          {/* Description section */}
           {shift.description && (
-            <div className="bg-[#151A25] p-3.5 rounded-lg border border-[#33333A]/30">
-              <h3 className="text-sm font-medium mb-1 flex items-center gap-1.5">
-                <Calendar className="h-4 w-4 text-primary/80" />
+            <div className="bg-black/20 p-4 rounded-lg border border-[#33333A]/50">
+              <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+                <Info className="h-4 w-4 text-primary/70" />
                 Beskrivning
               </h3>
               <p className="text-sm text-muted-foreground">{shift.description}</p>
             </div>
           )}
           
-          <div className="flex items-center gap-2 bg-[#151A25] p-3.5 rounded-lg border border-[#33333A]/30">
-            <Users className="h-5 w-5 text-primary/80" />
-            <span className="text-sm">
-              {confirmedBookings.length} av {shift.available_slots} platser bokade
-              ({shift.available_slots - confirmedBookings.length} lediga)
-            </span>
-          </div>
+          <Separator className="my-5 bg-[#33333A]/40" />
           
-          <Separator className="my-4 bg-[#33333A]/50" />
-          
+          {/* Booked sellers section */}
           <div>
-            <h3 className="text-sm font-medium mb-2 flex items-center gap-1.5">
-              <Users className="h-4 w-4 text-primary/80" />
+            <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary/70" />
               Bokade säljare
             </h3>
             {confirmedBookings.length > 0 ? (
               <ul className="space-y-2">
                 {confirmedBookings.map((booking) => (
-                  <li key={booking.id} className="flex justify-between text-sm items-center bg-[#151A25] p-3 rounded-lg border border-[#33333A]/30">
-                    <span>{booking.user_display_name || 'Okänd säljare'}</span>
+                  <li key={booking.id} className="flex justify-between text-sm items-center bg-black/20 p-3.5 rounded-lg border border-[#33333A]/40">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
+                        {(booking.user_display_name || 'U')[0].toUpperCase()}
+                      </div>
+                      <span>{booking.user_display_name || 'Okänd säljare'}</span>
+                    </div>
                     
                     {isUserAdmin && (
                       <Button
-                        variant="destructive"
+                        variant="outline"
                         size="sm"
                         onClick={() => handleCancelBooking(booking.id)}
                         disabled={isCancelling}
-                        className="h-7 text-xs"
+                        className="h-8 text-xs bg-black/20 border-[#33333A]/80 hover:bg-red-950/30 hover:text-red-400 hover:border-red-900/50 transition-all"
                       >
+                        <XCircle className="h-3.5 w-3.5 mr-1.5" />
                         {isCancelling ? "Avbokar..." : "Avboka"}
                       </Button>
                     )}
@@ -180,32 +204,57 @@ export function ShiftDetailsDialog({
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground bg-[#151A25] p-3 rounded-lg border border-[#33333A]/30">
-                Inga bokningar ännu
-              </p>
+              <div className="flex flex-col items-center justify-center py-6 text-center bg-black/20 rounded-lg border border-[#33333A]/40">
+                <div className="h-12 w-12 rounded-full bg-black/30 flex items-center justify-center mb-3">
+                  <Users className="h-6 w-6 text-muted-foreground/60" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Inga bokningar gjorda ännu
+                </p>
+              </div>
             )}
           </div>
         </div>
         
-        <DialogFooter className="gap-2 sm:gap-0 mt-4">
+        <DialogFooter className="gap-2 sm:gap-0 mt-2">
           {!isUserAdmin && !shift.is_booked_by_current_user && (shift.available_slots - confirmedBookings.length) > 0 && (
             <Button 
               onClick={handleBookShift} 
               disabled={isBooking}
-              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white"
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white flex items-center gap-1.5"
             >
-              {isBooking ? "Bokar..." : "Boka pass"}
+              {isBooking ? (
+                <>
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white/90 rounded-full animate-spin"></div>
+                  Bokar...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4" />
+                  Boka pass
+                </>
+              )}
             </Button>
           )}
           
           {isUserAdmin && (
             <Button 
-              variant="destructive" 
+              variant="outline" 
               onClick={handleDeleteShift}
               disabled={isDeleting}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto bg-black/20 border-[#33333A]/80 hover:bg-red-950/30 hover:text-red-400 hover:border-red-900/50 transition-all"
             >
-              {isDeleting ? "Tar bort..." : "Ta bort pass"}
+              {isDeleting ? (
+                <>
+                  <div className="h-4 w-4 border-2 border-current/30 border-t-current/90 rounded-full animate-spin mr-1.5"></div>
+                  Tar bort...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-1.5" />
+                  Ta bort pass
+                </>
+              )}
             </Button>
           )}
         </DialogFooter>

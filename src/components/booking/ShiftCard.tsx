@@ -1,7 +1,7 @@
 
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Calendar, Clock, Users, Check } from "lucide-react";
+import { Calendar, Clock, Users, Check, Alarm } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShiftWithBookings } from '@/types/booking';
@@ -49,7 +49,9 @@ export function ShiftCard({
   
   const isBooked = !!shift.is_booked_by_current_user;
   const availableSlots = shift.available_slots || 0;
-  const isFull = availableSlots - confirmedBookings.length <= 0;
+  const bookedSlots = confirmedBookings.length;
+  const remainingSlots = availableSlots - bookedSlots;
+  const isFull = remainingSlots <= 0;
 
   const handleCardClick = () => {
     if (isSelectable && onSelectShift && !isBooked && !isFull) {
@@ -61,69 +63,86 @@ export function ShiftCard({
 
   return (
     <div 
-      className={`rounded-xl p-4 border shadow-sm transition-all duration-300 ${
+      className={`rounded-xl overflow-hidden transition-all duration-300 ${
         isSelected 
-          ? 'bg-gradient-to-br from-primary/20 to-primary/10 border-primary/40 shadow-primary/20'
+          ? 'bg-gradient-to-br from-[#1A467B] to-[#18365F] border border-primary/40 shadow-md shadow-primary/10'
           : isBooked 
-            ? 'bg-gradient-to-br from-[#1F2937]/90 to-[#1A2333]/95 backdrop-blur-sm border-primary/40 shadow-primary/10' 
+            ? 'bg-gradient-to-br from-[#1F2937]/90 to-[#1A2333]/95 border border-primary/30 shadow-sm' 
             : isFull 
-              ? 'bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 backdrop-blur-sm border-[#33333A]/50 opacity-80' 
-              : 'bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm border-[#33333A] hover:border-primary/30 hover:shadow-md hover:shadow-primary/5'
-      } ${(!isBooked && !isFull) ? 'cursor-pointer' : isFull ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+              ? 'bg-gradient-to-br from-[#1A1F2C]/80 to-[#222632]/90 border border-[#33333A]/50 opacity-80' 
+              : 'bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 border border-[#33333A] hover:border-primary/30 hover:shadow-md hover:shadow-primary/5'
+      } ${(!isBooked && !isFull || isUserAdmin) ? 'cursor-pointer' : isFull ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       onClick={handleCardClick}
     >
-      <div className="flex items-start justify-between mb-2">
-        <div>
-          <h3 className="font-semibold text-base capitalize">{day}</h3>
-          <p className="text-sm text-muted-foreground">{dateNumber}</p>
-        </div>
-        <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-          <Clock className="h-3.5 w-3.5 text-primary" />
-          <span>{startTime} - {endTime}</span>
-        </div>
-      </div>
+      {/* Top highlight line */}
+      <div className="h-[2px] w-full bg-gradient-to-r from-primary/5 via-primary/30 to-primary/5"></div>
       
-      {shift.description && (
-        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{shift.description}</p>
-      )}
-      
-      <div className="flex justify-between items-center mt-3">
-        <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-          <Users className="h-3.5 w-3.5 text-primary" />
-          <span>{confirmedBookings.length} / {availableSlots}</span>
+      <div className="p-4">
+        {/* Time badge */}
+        <div className="flex items-center justify-between mb-3">
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-2 py-1 text-xs font-medium flex items-center gap-1.5">
+            <Clock className="h-3 w-3" />
+            {startTime} - {endTime}
+          </Badge>
+          
+          {isUserAdmin && (
+            <Badge 
+              variant={remainingSlots > 0 ? "outline" : "destructive"} 
+              className={`text-xs px-2 py-1 ${remainingSlots > 0 ? 'bg-card/40 border-[#33333A]/50' : ''}`}
+            >
+              <Users className="h-3 w-3 mr-1" />
+              {remainingSlots} av {availableSlots}
+            </Badge>
+          )}
+          
+          {isSelected && (
+            <Badge className="bg-primary text-white text-xs px-2 py-1 border-none">
+              <Check className="h-3 w-3 mr-1" /> Vald
+            </Badge>
+          )}
         </div>
         
-        {isSelected && (
-          <Badge className="bg-primary text-white border-none">
-            <Check className="h-3 w-3 mr-1" /> Vald
-          </Badge>
+        {/* Description */}
+        {shift.description && (
+          <p className="text-sm text-muted-foreground/90 mb-3 line-clamp-2">{shift.description}</p>
         )}
         
-        {!isSelectable && !isUserAdmin && !isBooked && (availableSlots - confirmedBookings.length) > 0 && (
-          <Button 
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewDetails(shift.id);
-            }} 
-            size="sm"
-            className="text-xs h-8 bg-primary hover:bg-primary/90 shadow-sm transition-all"
-          >
-            Detaljer
-          </Button>
-        )}
-        
-        {!isUserAdmin && isBooked && (
-          <Badge variant="secondary" className="text-xs bg-primary/20 text-primary border border-primary/20 shadow-sm">Bokad</Badge>
-        )}
-        
-        {isUserAdmin && (
-          <Badge 
-            variant={availableSlots - confirmedBookings.length > 0 ? "outline" : "destructive"} 
-            className={`text-xs shadow-sm ${availableSlots - confirmedBookings.length > 0 ? 'bg-card/50' : ''}`}
-          >
-            {availableSlots - confirmedBookings.length} platser kvar
-          </Badge>
-        )}
+        {/* User booking status or admin controls */}
+        <div className="flex justify-between items-center mt-2">
+          {!isSelectable && !isUserAdmin && !isBooked && remainingSlots > 0 && (
+            <Button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails(shift.id);
+              }} 
+              size="sm"
+              className="h-8 bg-primary hover:bg-primary/90 shadow-sm transition-all text-xs"
+            >
+              Visa detaljer
+            </Button>
+          )}
+          
+          {!isUserAdmin && isBooked && (
+            <Badge variant="secondary" className="bg-primary/20 text-primary border border-primary/20 px-2 py-1 text-xs flex items-center gap-1.5">
+              <Check className="h-3 w-3" />
+              Bokad
+            </Badge>
+          )}
+          
+          {isUserAdmin && (
+            <Button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails(shift.id);
+              }} 
+              size="sm" 
+              variant="outline"
+              className="h-8 bg-black/20 border-[#33333A] hover:bg-black/30 hover:border-primary/30 text-xs"
+            >
+              Hantera pass
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
