@@ -28,7 +28,7 @@ export const useCancelBooking = () => {
         throw new Error('Booking not found');
       }
       
-      // Update without using select() to avoid empty response issues
+      // Update the booking status
       const { error } = await supabase
         .from('shift_bookings')
         .update({ status: 'cancelled' })
@@ -39,7 +39,7 @@ export const useCancelBooking = () => {
         throw error;
       }
 
-      // Return the booking with updated status
+      // Since we already have the booking data, just return it with updated status
       return { 
         ...currentBooking, 
         status: 'cancelled' 
@@ -84,7 +84,7 @@ export const useCancelUserBooking = () => {
         throw new Error('Booking not found');
       }
 
-      // Update without using select() to avoid empty response issues
+      // Update the booking status
       const { error } = await supabase
         .from('shift_bookings')
         .update({ status: 'cancelled' })
