@@ -47,7 +47,7 @@ export const UserBookingView = ({
 
   return (
     <div className="max-w-md mx-auto">
-      <div className="mb-6 text-center">
+      <div className="mb-6 text-left">
         <h1 className="text-2xl font-bold mb-1">Bokningar</h1>
         <p className="text-muted-foreground">Boka dina pass för veckan</p>
       </div>
