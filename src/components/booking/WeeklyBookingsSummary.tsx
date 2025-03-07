@@ -85,7 +85,7 @@ export function WeeklyBookingsSummary() {
               </div>
               <div>
                 <h3 className="font-semibold text-amber-300 mb-2">Viktigt om bokningar</h3>
-                <p className="text-sm text-amber-100/80 leading-relaxed">Boka minst 2 pass per vecka. Om du har förhinder eller behöver avboka - kontakta teamleader direkt.</p>
+                <p className="text-sm text-amber-100/80 leading-relaxed">Om du inte kan boka 2 pass eller behöver avboka - kontakta teamleader direkt.</p>
               </div>
             </div>
           </div>
