@@ -31,7 +31,10 @@ export const useCancelBooking = () => {
       // Update the booking status
       const { error } = await supabase
         .from('shift_bookings')
-        .update({ status: 'cancelled' })
+        .update({ 
+          status: 'cancelled',
+          updated_at: new Date().toISOString()
+        })
         .eq('id', bookingId);
 
       if (error) {
@@ -39,18 +42,48 @@ export const useCancelBooking = () => {
         throw error;
       }
 
-      // Since we already have the booking data, just return it with updated status
-      return { 
-        ...currentBooking, 
-        status: 'cancelled' 
-      };
+      // Fetch the updated booking to ensure we have the correct data
+      const { data: updatedBooking, error: fetchUpdatedError } = await supabase
+        .from('shift_bookings')
+        .select('*')
+        .eq('id', bookingId)
+        .maybeSingle();
+        
+      if (fetchUpdatedError) {
+        console.error('Error fetching booking after cancel:', fetchUpdatedError);
+        // If fetch fails, create a result with the data we know is correct
+        return { 
+          ...currentBooking, 
+          status: 'cancelled',
+          updated_at: new Date().toISOString()
+        };
+      }
+      
+      if (!updatedBooking) {
+        console.error('Updated booking not found after cancel:', bookingId);
+        // If booking not found, create a result with the data we know is correct
+        return { 
+          ...currentBooking, 
+          status: 'cancelled',
+          updated_at: new Date().toISOString() 
+        };
+      }
+      
+      // Return the updated booking with the cancelled status
+      return updatedBooking;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
       queryClient.invalidateQueries({ queryKey: ['shift'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-booking-summary'] });
     },
     onError: (error) => {
       console.error('Error in cancel booking mutation:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Fel vid avbokning',
+        description: error instanceof Error ? error.message : 'Ett fel uppstod vid avbokningen.',
+      });
     },
   });
 };
@@ -87,7 +120,10 @@ export const useCancelUserBooking = () => {
       // Update the booking status
       const { error } = await supabase
         .from('shift_bookings')
-        .update({ status: 'cancelled' })
+        .update({ 
+          status: 'cancelled',
+          updated_at: new Date().toISOString()
+        })
         .eq('shift_id', shiftId)
         .eq('user_id', user.id);
 
@@ -96,21 +132,41 @@ export const useCancelUserBooking = () => {
         throw error;
       }
 
-      // Return the booking with updated status
-      return {
-        ...currentBooking,
-        status: 'cancelled'
-      };
+      // Fetch the updated booking to ensure we have the correct data
+      const { data: updatedBooking, error: fetchUpdatedError } = await supabase
+        .from('shift_bookings')
+        .select('*')
+        .eq('id', currentBooking.id)
+        .maybeSingle();
+        
+      if (fetchUpdatedError || !updatedBooking) {
+        console.error('Error fetching updated user booking:', fetchUpdatedError);
+        // Return the booking with updated status using our known data
+        return {
+          ...currentBooking,
+          status: 'cancelled',
+          updated_at: new Date().toISOString()
+        };
+      }
+
+      // Return the updated booking with cancelled status
+      return updatedBooking;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
       queryClient.invalidateQueries({ queryKey: ['shift'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-booking-summary'] });
+      
+      toast({
+        title: 'Pass avbokat',
+        description: 'Du har avbokat passet framgångsrikt.',
+      });
     },
     onError: (error) => {
       toast({
         variant: 'destructive',
         title: 'Fel vid avbokning',
-        description: error.message || 'Ett fel uppstod vid avbokningen av passet.',
+        description: error instanceof Error ? error.message : 'Ett fel uppstod vid avbokningen av passet.',
       });
     },
   });

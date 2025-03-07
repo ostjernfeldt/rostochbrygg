@@ -85,7 +85,7 @@ export const useBookShift = () => {
           const cancelledBooking = existingCancelledBookings[0];
           const bookingId = cancelledBooking.id;
           
-          // Update the booking without expecting data back
+          // Step 1: Update the booking without returning data
           const { error: updateError } = await supabase
             .from('shift_bookings')
             .update({ 
@@ -100,13 +100,39 @@ export const useBookShift = () => {
             throw updateError;
           }
           
-          // Create the result object based on the cancelled booking we already have
-          bookingResult = {
-            ...cancelledBooking,
-            status: 'confirmed',
-            user_display_name: displayName,
-            updated_at: new Date().toISOString()
-          };
+          // Step 2: Fetch the updated booking data in a separate query
+          console.log('Fetching updated booking data after status change');
+          const { data: updatedBooking, error: fetchError } = await supabase
+            .from('shift_bookings')
+            .select('*')
+            .eq('id', bookingId)
+            .maybeSingle();
+          
+          if (fetchError) {
+            console.error('Error fetching updated booking:', fetchError);
+            // Fallback: use what we know about the booking with updated status
+            bookingResult = {
+              ...cancelledBooking,
+              status: 'confirmed',
+              user_display_name: displayName,
+              updated_at: new Date().toISOString()
+            };
+            console.log('Using fallback booking data:', bookingResult);
+          } else if (!updatedBooking) {
+            console.error('Updated booking not found in database');
+            // Fallback: use what we know about the booking with updated status
+            bookingResult = {
+              ...cancelledBooking,
+              status: 'confirmed',
+              user_display_name: displayName,
+              updated_at: new Date().toISOString()
+            };
+            console.log('Using fallback booking data (no updated booking):', bookingResult);
+          } else {
+            // Use the freshly fetched booking data
+            bookingResult = updatedBooking;
+            console.log('Successfully fetched updated booking:', bookingResult);
+          }
           
         } else {
           // No existing bookings, create a new one
@@ -121,7 +147,7 @@ export const useBookShift = () => {
             status: 'confirmed'
           };
           
-          // Insert without expecting data back
+          // Step 1: Insert without expecting data back
           const { error: insertError } = await supabase
             .from('shift_bookings')
             .insert([newBookingData]);
@@ -131,7 +157,8 @@ export const useBookShift = () => {
             throw insertError;
           }
           
-          // Fetch the newly created booking to get its ID and timestamps
+          // Step 2: Fetch the newly created booking in a separate query
+          console.log('Fetching newly created booking data');
           const { data: freshBooking, error: fetchError } = await supabase
             .from('shift_bookings')
             .select('*')
@@ -142,23 +169,28 @@ export const useBookShift = () => {
             
           if (fetchError) {
             console.error('Error fetching new booking:', fetchError);
-            // If we can't fetch the data, use what we know
+            // Fallback: use what we know about the booking
             bookingResult = {
               id: 'temporary-id', // Will be replaced when data is refetched
               ...newBookingData,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             };
+            console.log('Using fallback booking data:', bookingResult);
           } else if (!freshBooking) {
-            console.log('New booking created but not found in fetch, using fallback data');
+            console.error('New booking created but not found in fetch');
+            // Fallback: use what we know about the booking
             bookingResult = {
               id: 'temporary-id',
               ...newBookingData,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             };
+            console.log('Using fallback booking data (no fresh booking):', bookingResult);
           } else {
+            // Use the freshly fetched booking data
             bookingResult = freshBooking;
+            console.log('Successfully fetched new booking:', bookingResult);
           }
         }
         
