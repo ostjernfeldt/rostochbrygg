@@ -59,7 +59,7 @@ export async function updateCancelledBooking(
   const { data, error } = await supabase
     .from('shift_bookings')
     .update({ 
-      status: 'confirmed',
+      status: 'confirmed' as const,
       user_display_name: displayName,
       updated_at: new Date().toISOString()
     })
@@ -79,7 +79,7 @@ export async function updateCancelledBooking(
     return await fetchBookingById(bookingId, originalBooking, displayName);
   }
   
-  return data;
+  return data as ShiftBooking;
 }
 
 /**
@@ -99,7 +99,7 @@ export async function createNewBooking(
     user_id: userId,
     user_email: userEmail,
     user_display_name: displayName,
-    status: 'confirmed'
+    status: 'confirmed' as const
   };
   
   // Insert with returning
@@ -121,7 +121,7 @@ export async function createNewBooking(
     return await fetchNewlyCreatedBooking(shiftId, userId, newBookingData);
   }
   
-  return data;
+  return data as ShiftBooking;
 }
 
 /**
@@ -152,7 +152,7 @@ async function fetchBookingById(
   }
   
   console.log('Successfully fetched updated booking:', data);
-  return data;
+  return data as ShiftBooking;
 }
 
 /**
@@ -185,14 +185,14 @@ async function fetchNewlyCreatedBooking(
   }
   
   console.log('Successfully fetched new booking:', data);
-  return data;
+  return data as ShiftBooking;
 }
 
 /**
  * Creates a fallback booking object for an updated booking
  */
-function createFallbackBooking(originalBooking: ShiftBooking, displayName: string) {
-  const fallback = {
+function createFallbackBooking(originalBooking: ShiftBooking, displayName: string): ShiftBooking {
+  const fallback: ShiftBooking = {
     ...originalBooking,
     status: 'confirmed',
     user_display_name: displayName,
@@ -205,10 +205,11 @@ function createFallbackBooking(originalBooking: ShiftBooking, displayName: strin
 /**
  * Creates a fallback booking object for a new booking
  */
-function createFallbackNewBooking(newBookingData: any) {
-  const fallback = {
+function createFallbackNewBooking(newBookingData: any): ShiftBooking {
+  const fallback: ShiftBooking = {
     id: 'temporary-id', // Will be replaced when data is refetched
     ...newBookingData,
+    status: 'confirmed',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
