@@ -8,7 +8,7 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 2000 // Changed from 1000000 to 2000 (2 seconds)
+const TOAST_REMOVE_DELAY = 2000 // 2 seconds for toast removal after dismiss
 
 type ToasterToast = ToastProps & {
   id: string
@@ -73,12 +73,40 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout)
 }
 
+// Auto dismiss timeout implementation
+const autoDismissTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+
+const addToAutoDismissQueue = (toast: ToasterToast) => {
+  if (autoDismissTimeouts.has(toast.id)) {
+    return
+  }
+  
+  // Auto dismiss after 2 seconds for success and destructive (error) toasts
+  if (toast.variant === 'default' || toast.variant === 'destructive') {
+    const timeout = setTimeout(() => {
+      autoDismissTimeouts.delete(toast.id)
+      dispatch({
+        type: "DISMISS_TOAST",
+        toastId: toast.id,
+      })
+    }, 2000) // 2 seconds
+    
+    autoDismissTimeouts.set(toast.id, timeout)
+  }
+}
+
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
+      // Add toast and set up auto-dismiss for certain variants
+      const newToast = action.toast
+      
+      // Queue auto-dismiss for toast
+      addToAutoDismissQueue(newToast)
+      
       return {
         ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
+        toasts: [newToast, ...state.toasts].slice(0, TOAST_LIMIT),
       }
 
     case "UPDATE_TOAST":
@@ -121,6 +149,13 @@ export const reducer = (state: State, action: Action): State => {
           toasts: [],
         }
       }
+      
+      // Clear any auto-dismiss timeout when removing toast
+      if (autoDismissTimeouts.has(action.toastId)) {
+        clearTimeout(autoDismissTimeouts.get(action.toastId))
+        autoDismissTimeouts.delete(action.toastId)
+      }
+      
       return {
         ...state,
         toasts: state.toasts.filter((t) => t.id !== action.toastId),
