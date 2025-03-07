@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
-import { CalendarIcon, Clock, Users, AlignLeft, CheckCircle } from "lucide-react";
+import { CalendarIcon, Clock, Users, AlignLeft, CheckCircle, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,10 @@ import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateShift } from "@/hooks/useShifts";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Switch } from "@/components/ui/switch";
+import { SellerSelect } from "./SellerSelect";
+import { SelectedSellersList } from "./SelectedSellersList";
+import { useBatchBookShifts } from "@/hooks/booking/useBatchBookShifts";
 
 interface CreateShiftFormValues {
   date: Date;
@@ -30,19 +34,30 @@ interface CreateShiftFormProps {
   onSuccess?: () => void;
 }
 
+interface Seller {
+  user_display_name: string;
+  email: string | null;
+  role: string;
+}
+
 export function CreateShiftForm({ onSuccess }: CreateShiftFormProps) {
   const [date, setDate] = useState<Date>();
+  const [enableSellerSelection, setEnableSellerSelection] = useState(false);
+  const [selectedSellers, setSelectedSellers] = useState<Seller[]>([]);
   const { register, handleSubmit, reset, formState: { errors, isValid } } = useForm<CreateShiftFormValues>({
     mode: "onChange"
   });
+  
   const createShift = useCreateShift();
+  const batchBookShifts = useBatchBookShifts();
   const isMobile = useIsMobile();
   
   const onSubmit = async (data: CreateShiftFormValues) => {
     if (!date) return;
     
     try {
-      await createShift.mutateAsync({
+      // Create the shift
+      const shiftResult = await createShift.mutateAsync({
         date: format(date, 'yyyy-MM-dd'),
         start_time: data.startTime,
         end_time: data.endTime,
@@ -50,9 +65,27 @@ export function CreateShiftForm({ onSuccess }: CreateShiftFormProps) {
         description: data.description || undefined
       });
       
+      // If we have selected sellers and a valid shift ID, book them
+      if (enableSellerSelection && selectedSellers.length > 0 && shiftResult?.id) {
+        try {
+          // Map sellers to booking format
+          const bookings = selectedSellers.map(seller => ({
+            shiftId: shiftResult.id,
+            userDisplayName: seller.user_display_name,
+            userEmail: seller.email || undefined
+          }));
+          
+          // Book all selected sellers
+          await batchBookShifts.mutateAsync(bookings);
+        } catch (error) {
+          console.error("Error booking sellers:", error);
+        }
+      }
+      
       // Reset form
       reset();
       setDate(undefined);
+      setSelectedSellers([]);
       
       // Close sheet if onSuccess callback is provided
       if (onSuccess) {
@@ -61,6 +94,19 @@ export function CreateShiftForm({ onSuccess }: CreateShiftFormProps) {
     } catch (error) {
       console.error("Error creating shift:", error);
     }
+  };
+  
+  const handleSellerSelect = (seller: Seller) => {
+    // Check if seller is already selected
+    if (!selectedSellers.some(s => s.user_display_name === seller.user_display_name)) {
+      setSelectedSellers([...selectedSellers, seller]);
+    }
+  };
+  
+  const handleRemoveSeller = (index: number) => {
+    const newSellers = [...selectedSellers];
+    newSellers.splice(index, 1);
+    setSelectedSellers(newSellers);
   };
   
   return (
@@ -175,6 +221,36 @@ export function CreateShiftForm({ onSuccess }: CreateShiftFormProps) {
           className="bg-black/20 resize-none min-h-24 border-[#33333A] focus-visible:border-primary/30"
           {...register("description")}
         />
+      </div>
+      
+      {/* Seller selection toggle */}
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <Label 
+            htmlFor="enable-seller-selection" 
+            className="text-sm flex items-center gap-2 font-medium cursor-pointer"
+          >
+            <UserPlus className="h-4 w-4 text-primary/80" />
+            Lägg till säljare direkt
+          </Label>
+          <Switch
+            id="enable-seller-selection"
+            checked={enableSellerSelection}
+            onCheckedChange={setEnableSellerSelection}
+          />
+        </div>
+        
+        {enableSellerSelection && (
+          <div className="mt-3 space-y-3">
+            <SellerSelect 
+              onSellerSelect={handleSellerSelect}
+            />
+            <SelectedSellersList 
+              sellers={selectedSellers} 
+              onRemove={handleRemoveSeller} 
+            />
+          </div>
+        )}
       </div>
       
       {/* Submit button */}
