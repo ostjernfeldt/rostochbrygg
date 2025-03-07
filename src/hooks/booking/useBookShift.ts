@@ -78,10 +78,12 @@ export const useBookShift = () => {
         console.log('Using display name from staff_roles:', displayName);
 
         // If there's a cancelled booking, we need to update it rather than creating a new one
-        // to avoid the unique constraint violation
         if (existingCancelledBookings && existingCancelledBookings.length > 0) {
           console.log('Found cancelled booking, updating status to confirmed');
           const cancelledBooking = existingCancelledBookings[0];
+          
+          // Store the booking ID for later retrieval
+          const bookingId = cancelledBooking.id;
           
           // Update the cancelled booking, but don't use .select() to avoid empty response issues
           const { error: updateError } = await supabase
@@ -91,7 +93,7 @@ export const useBookShift = () => {
               user_display_name: displayName, // Update display name in case it changed
               updated_at: new Date().toISOString()
             })
-            .eq('id', cancelledBooking.id);
+            .eq('id', bookingId);
             
           if (updateError) {
             console.error('Error updating cancelled booking:', updateError);
@@ -102,14 +104,14 @@ export const useBookShift = () => {
           const { data: updatedBooking, error: fetchError } = await supabase
             .from('shift_bookings')
             .select('id, shift_id, user_id, status, user_display_name')
-            .eq('id', cancelledBooking.id)
+            .eq('id', bookingId)
             .maybeSingle();
             
           if (fetchError) {
             console.error('Error fetching updated booking:', fetchError);
             // If fetch fails, return a reconstructed booking object
             return {
-              id: cancelledBooking.id,
+              id: bookingId,
               shift_id: shiftId,
               user_id: user.id,
               status: 'confirmed',
@@ -120,7 +122,7 @@ export const useBookShift = () => {
           if (!updatedBooking) {
             console.log('No updated booking found, using reconstructed booking data');
             return {
-              id: cancelledBooking.id,
+              id: bookingId,
               shift_id: shiftId,
               user_id: user.id,
               status: 'confirmed',

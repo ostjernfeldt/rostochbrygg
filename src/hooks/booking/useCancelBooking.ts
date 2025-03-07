@@ -11,6 +11,23 @@ export const useCancelBooking = () => {
     mutationFn: async (bookingId: string) => {
       console.log('Cancelling booking with ID:', bookingId);
       
+      // First, get the current booking data before updating
+      const { data: currentBooking, error: fetchError } = await supabase
+        .from('shift_bookings')
+        .select('*')
+        .eq('id', bookingId)
+        .maybeSingle();
+        
+      if (fetchError) {
+        console.error('Error fetching booking before cancel:', fetchError);
+        throw fetchError;
+      }
+      
+      if (!currentBooking) {
+        console.error('Booking not found with ID:', bookingId);
+        throw new Error('Booking not found');
+      }
+      
       // Update without using select() to avoid empty response issues
       const { error } = await supabase
         .from('shift_bookings')
@@ -22,20 +39,11 @@ export const useCancelBooking = () => {
         throw error;
       }
 
-      // Fetch the updated booking to ensure we have data to return
-      const { data: updatedBooking, error: fetchError } = await supabase
-        .from('shift_bookings')
-        .select('*')
-        .eq('id', bookingId)
-        .maybeSingle();
-        
-      if (fetchError) {
-        console.error('Error fetching updated booking:', fetchError);
-        // Return a minimal object if we can't fetch the updated booking
-        return { id: bookingId, status: 'cancelled' };
-      }
-
-      return updatedBooking || { id: bookingId, status: 'cancelled' };
+      // Return the booking with updated status
+      return { 
+        ...currentBooking, 
+        status: 'cancelled' 
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
@@ -58,6 +66,24 @@ export const useCancelUserBooking = () => {
         throw new Error('Du måste vara inloggad för att avboka pass');
       }
 
+      // First, get the current booking before updating
+      const { data: currentBooking, error: fetchError } = await supabase
+        .from('shift_bookings')
+        .select('*')
+        .eq('shift_id', shiftId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+        
+      if (fetchError) {
+        console.error('Error fetching booking before user cancel:', fetchError);
+        throw fetchError;
+      }
+      
+      if (!currentBooking) {
+        console.error('User booking not found for shift:', shiftId);
+        throw new Error('Booking not found');
+      }
+
       // Update without using select() to avoid empty response issues
       const { error } = await supabase
         .from('shift_bookings')
@@ -70,21 +96,11 @@ export const useCancelUserBooking = () => {
         throw error;
       }
 
-      // Fetch the updated booking to ensure we have data to return
-      const { data: updatedBooking, error: fetchError } = await supabase
-        .from('shift_bookings')
-        .select('*')
-        .eq('shift_id', shiftId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-        
-      if (fetchError) {
-        console.error('Error fetching updated booking:', fetchError);
-        // Return a minimal object if we can't fetch the updated booking
-        return { shift_id: shiftId, user_id: user.id, status: 'cancelled' };
-      }
-
-      return updatedBooking || { shift_id: shiftId, user_id: user.id, status: 'cancelled' };
+      // Return the booking with updated status
+      return {
+        ...currentBooking,
+        status: 'cancelled'
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
