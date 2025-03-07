@@ -1,4 +1,3 @@
-
 // Exporting the React toast hook implementation from use-toast.ts
 import * as React from "react"
 
@@ -9,6 +8,7 @@ import type {
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 2000 // 2 seconds for toast removal after dismiss
+const AUTO_DISMISS_DELAY = 2000 // 2 seconds for auto-dismissal
 
 type ToasterToast = ToastProps & {
   id: string
@@ -81,18 +81,16 @@ const addToAutoDismissQueue = (toast: ToasterToast) => {
     return
   }
   
-  // Auto dismiss after 2 seconds for success and destructive (error) toasts
-  if (toast.variant === 'default' || toast.variant === 'destructive') {
-    const timeout = setTimeout(() => {
-      autoDismissTimeouts.delete(toast.id)
-      dispatch({
-        type: "DISMISS_TOAST",
-        toastId: toast.id,
-      })
-    }, 2000) // 2 seconds
-    
-    autoDismissTimeouts.set(toast.id, timeout)
-  }
+  // Auto dismiss all toasts after the set delay
+  const timeout = setTimeout(() => {
+    autoDismissTimeouts.delete(toast.id)
+    dispatch({
+      type: "DISMISS_TOAST",
+      toastId: toast.id,
+    })
+  }, AUTO_DISMISS_DELAY)
+  
+  autoDismissTimeouts.set(toast.id, timeout)
 }
 
 export const reducer = (state: State, action: Action): State => {
