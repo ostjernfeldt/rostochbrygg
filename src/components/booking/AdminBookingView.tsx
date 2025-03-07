@@ -1,4 +1,3 @@
-
 import { format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks, isThisWeek } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { Calendar, Clock, Users, PlusCircle, GanttChartSquare, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -52,17 +51,14 @@ export const AdminBookingView = ({
 
   const handleCalendarSelect = (date: Date | undefined) => {
     if (date) {
-      // Get the start of the week containing the selected date
       const newWeekStart = startOfWeek(date, { weekStartsOn: 1 });
       onWeekChange(newWeekStart);
       setCalendarOpen(false);
     }
   };
 
-  // Check if the currently displayed week is the current week
   const isCurrentWeek = isThisWeek(currentWeekStart, { weekStartsOn: 1 });
 
-  // Group shifts by date to display in a cleaner format
   const groupShiftsByDate = () => {
     const groupedShifts: Record<string, ShiftWithBookings[]> = {};
     
@@ -100,7 +96,6 @@ export const AdminBookingView = ({
 
   return (
     <div className="space-y-6">
-      {/* Header with title and week info */}
       <div className={`${isMobile ? 'flex flex-col space-y-4' : 'flex justify-between items-center'}`}>
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Bokningshantering</h1>
@@ -108,7 +103,6 @@ export const AdminBookingView = ({
         </div>
         
         <div className={`${isMobile ? 'flex flex-col space-y-3 w-full' : 'flex items-center gap-3'}`}>
-          {/* Week Navigation Controls - Redesigned for mobile */}
           <div className={`flex items-center ${isMobile ? 'justify-between w-full' : 'gap-2'}`}>
             <Button 
               variant="outline" 
@@ -132,7 +126,7 @@ export const AdminBookingView = ({
                 >
                   <Calendar className="h-4 w-4 flex-shrink-0" />
                   <span className="truncate">{formattedDateRange}</span>
-                  {isCurrentWeek && (
+                  {isCurrentWeek && !isMobile && (
                     <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-white rounded-sm whitespace-nowrap">
                       Nuvarande vecka
                     </span>
@@ -174,7 +168,6 @@ export const AdminBookingView = ({
         </div>
       </div>
       
-      {/* Weekly shifts view */}
       <Card className={`bg-gradient-to-br from-[#1e253a]/90 to-[#252a3d]/95 backdrop-blur-sm border-[#33333A]/60 shadow-lg overflow-hidden ${isCurrentWeek ? 'relative' : ''}`}>
         {isCurrentWeek && (
           <div className="absolute top-0 left-0 right-0 h-1 bg-primary"></div>
@@ -186,7 +179,12 @@ export const AdminBookingView = ({
               <GanttChartSquare className="h-4 w-4 text-primary" />
             </div>
             Schemalagda säljpass
-            {isCurrentWeek && (
+            {isCurrentWeek && isMobile && (
+              <Badge variant="default" className="ml-2 bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 text-xs">
+                Nu
+              </Badge>
+            )}
+            {isCurrentWeek && !isMobile && (
               <Badge variant="default" className="ml-auto bg-primary/20 text-primary border border-primary/30 px-2 py-0.5">
                 Nuvarande vecka
               </Badge>
@@ -223,7 +221,6 @@ export const AdminBookingView = ({
                 );
               })}
               
-              {/* When no shifts are available for the week */}
               {processedShifts.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 text-center px-4">
                   <div className="h-16 w-16 rounded-full bg-primary/5 flex items-center justify-center mb-4">
@@ -240,7 +237,6 @@ export const AdminBookingView = ({
         </CardContent>
       </Card>
       
-      {/* Create Shift Sheet */}
       <CreateShiftSheet open={sheetOpen} onOpenChange={setSheetOpen} />
     </div>
   );
