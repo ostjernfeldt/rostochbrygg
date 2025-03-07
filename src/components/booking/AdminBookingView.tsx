@@ -104,23 +104,28 @@ export const AdminBookingView = ({
           <p className="text-muted-foreground mt-1">Hantera säljpass och bokningar</p>
         </div>
         
-        <div className={`${isMobile ? 'flex justify-between items-center mt-4' : 'flex items-center gap-3'}`}>
-          {/* Week Navigation Controls */}
-          <div className="flex items-center gap-2">
+        <div className={`${isMobile ? 'flex flex-col space-y-3 w-full' : 'flex items-center gap-3'}`}>
+          {/* Week Navigation Controls - Redesigned for mobile */}
+          <div className={`flex items-center ${isMobile ? 'justify-between w-full' : 'gap-2'}`}>
             <Button 
               variant="outline" 
               size="icon" 
               onClick={handlePreviousWeek}
-              className="h-9 w-9 bg-primary/10 text-primary hover:bg-primary/15 border-primary/20"
+              className="h-10 w-10 bg-primary/10 text-primary hover:bg-primary/15 border-primary/20"
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
             
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
-                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer hover:bg-primary/15 transition-all">
-                  <Calendar className="h-4 w-4" />
-                  {formattedDateRange}
+                <Badge 
+                  variant="outline" 
+                  className={`bg-primary/10 text-primary border-primary/20 px-3 py-2 text-sm font-medium 
+                    flex items-center gap-2 cursor-pointer hover:bg-primary/15 transition-all
+                    ${isMobile ? 'flex-1 justify-center' : ''}`}
+                >
+                  <Calendar className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">{formattedDateRange}</span>
                 </Badge>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="center">
@@ -138,7 +143,7 @@ export const AdminBookingView = ({
               variant="outline" 
               size="icon" 
               onClick={handleNextWeek}
-              className="h-9 w-9 bg-primary/10 text-primary hover:bg-primary/15 border-primary/20"
+              className="h-10 w-10 bg-primary/10 text-primary hover:bg-primary/15 border-primary/20"
             >
               <ChevronRight className="h-5 w-5" />
             </Button>
@@ -147,10 +152,13 @@ export const AdminBookingView = ({
           <Button 
             onClick={() => setSheetOpen(true)}
             size="sm"
-            className="h-10 px-4 gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium shadow-lg shadow-primary/20 border border-primary/30 hover:border-primary/50 transition-all duration-200 rounded-lg"
+            className={`h-10 gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 
+              hover:to-primary/70 text-white font-medium shadow-lg shadow-primary/20 
+              border border-primary/30 hover:border-primary/50 transition-all duration-200 rounded-lg
+              ${isMobile ? 'w-full justify-center' : 'px-4'}`}
           >
             <PlusCircle className="h-4 w-4" />
-            {isMobile ? '' : 'Nytt pass'}
+            <span>Nytt pass</span>
           </Button>
         </div>
       </div>
