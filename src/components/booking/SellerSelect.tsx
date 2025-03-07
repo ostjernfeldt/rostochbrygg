@@ -30,6 +30,7 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
   const isMobile = useIsMobile();
 
   const handleSellerSelect = (seller: Seller) => {
+    console.log("Seller selected:", seller);
     onSellerSelect(seller);
     setOpen(false);
   };
@@ -93,9 +94,8 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
                     key={seller.user_display_name}
                     type="button"
                     className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-3 sm:py-1.5 text-sm outline-none hover:bg-primary/20 hover:text-white data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 my-1"
-                    onClick={() => handleSellerSelect(seller)}
-                    onTouchEnd={(e) => {
-                      e.preventDefault();
+                    onClick={() => {
+                      console.log("Button clicked for seller:", seller.user_display_name);
                       handleSellerSelect(seller);
                     }}
                   >
