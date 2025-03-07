@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Check, ChevronsUpDown, Search, User } from "lucide-react";
+import { Check, ChevronsUpDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -87,15 +87,14 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
           
           {/* Sellers list */}
           {!loading && sellers.length > 0 && (
-            <ScrollArea className="h-[40vh] sm:h-[200px] bg-[#1A1F2C]">
+            <div className="max-h-[40vh] overflow-y-auto bg-[#1A1F2C]">
               <div className="p-1">
                 {sellers.map((seller) => (
-                  <button
+                  <div
                     key={seller.user_display_name}
-                    type="button"
                     className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-3 sm:py-1.5 text-sm outline-none hover:bg-primary/20 hover:text-white data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 my-1"
                     onClick={() => {
-                      console.log("Button clicked for seller:", seller.user_display_name);
+                      console.log("Seller item clicked:", seller.user_display_name);
                       handleSellerSelect(seller);
                     }}
                   >
@@ -107,10 +106,10 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
                       <span className="text-xs text-primary">{seller.role}</span>
                     </div>
                     <Check className="ml-auto h-4 w-4 opacity-0 text-primary" />
-                  </button>
+                  </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           )}
         </div>
       </PopoverContent>
