@@ -57,30 +57,83 @@ export const useBatchBookShifts = () => {
         throw new Error(`För många säljare valda. Det finns endast plats för ${availableSlots - existingCount} fler.`);
       }
 
+      // Get current user for audit purposes
+      const { data: { user } } = await supabase.auth.getUser();
+      const adminId = user?.id;
+
       // Process each booking
       for (const booking of bookings) {
         try {
-          // Check if the seller already has a booking for this shift
+          // First check if there's an existing booking (including cancelled ones) for this seller on this shift
           const { data: existingSellerBookings } = await supabase
             .from('shift_bookings')
             .select('*')
             .eq('shift_id', booking.shiftId)
-            .eq('user_display_name', booking.userDisplayName)
-            .eq('status', 'confirmed');
+            .eq('user_display_name', booking.userDisplayName);
 
-          if (existingSellerBookings && existingSellerBookings.length > 0) {
+          // Case 1: If there's an existing CONFIRMED booking for this seller, skip
+          if (existingSellerBookings && existingSellerBookings.some(b => b.status === 'confirmed')) {
             errors.push(`${booking.userDisplayName} har redan bokat detta pass`);
             continue;
           }
+          
+          // Case 2: If there's a cancelled booking, update it to confirmed
+          const cancelledBooking = existingSellerBookings?.find(b => b.status === 'cancelled');
+          if (cancelledBooking) {
+            console.log('Found cancelled booking, updating to confirmed:', cancelledBooking.id);
+            
+            const { data, error } = await supabase
+              .from('shift_bookings')
+              .update({ 
+                status: 'confirmed',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', cancelledBooking.id)
+              .select()
+              .single();
+              
+            if (error) {
+              errors.push(`Fel vid återaktivering av bokning för ${booking.userDisplayName}: ${error.message}`);
+            } else if (data) {
+              results.push(data as ShiftBooking);
+            }
+            continue;
+          }
+          
+          // Case 3: New booking - we need to look up the user ID for the seller or use admin's ID
+          // If there's a user email, try to find their user ID
+          let userId = adminId || '00000000-0000-0000-0000-000000000000';
+          
+          if (booking.userEmail) {
+            // Try to find the user ID from the email
+            const { data: userData, error: userError } = await supabase
+              .from('users')
+              .select('id')
+              .eq('email', booking.userEmail)
+              .maybeSingle();
+              
+            if (!userError && userData) {
+              userId = userData.id;
+            }
+          }
+          
+          // If we still don't have a valid ID, use null for the user_id if the column allows it
+          // Check if user_id is nullable
+          const { data: tableInfo } = await supabase
+            .rpc('get_column_info', { 
+              table_name: 'shift_bookings', 
+              column_name: 'user_id' 
+            });
+            
+          const isNullable = tableInfo && tableInfo.is_nullable;
 
           // Create new booking
           const newBookingData = {
             shift_id: booking.shiftId,
             user_display_name: booking.userDisplayName,
             user_email: booking.userEmail,
-            // User ID is not known for admin-created bookings, use dummy ID
-            user_id: '00000000-0000-0000-0000-000000000000',
-            status: 'confirmed' as const
+            // If column is nullable, we can set to null; otherwise use admin ID
+            user_id: isNullable ? null : userId
           };
 
           const { data, error } = await supabase
@@ -90,7 +143,28 @@ export const useBatchBookShifts = () => {
             .single();
 
           if (error) {
-            errors.push(`Fel vid bokning för ${booking.userDisplayName}: ${error.message}`);
+            // If foreign key error, we need a different approach
+            if (error.message.includes('violates foreign key constraint')) {
+              // Try the insert without user_id entirely, letting the DB use default value if one exists
+              const { data: retryData, error: retryError } = await supabase
+                .from('shift_bookings')
+                .insert([{
+                  shift_id: booking.shiftId,
+                  user_display_name: booking.userDisplayName,
+                  user_email: booking.userEmail,
+                  status: 'confirmed'
+                }])
+                .select()
+                .single();
+                
+              if (retryError) {
+                errors.push(`Fel vid bokning för ${booking.userDisplayName}: ${retryError.message}`);
+              } else if (retryData) {
+                results.push(retryData as ShiftBooking);
+              }
+            } else {
+              errors.push(`Fel vid bokning för ${booking.userDisplayName}: ${error.message}`);
+            }
           } else if (data) {
             results.push(data as ShiftBooking);
           }
