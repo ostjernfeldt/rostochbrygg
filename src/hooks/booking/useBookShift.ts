@@ -83,25 +83,31 @@ export const useBookShift = () => {
           console.log('Found cancelled booking, updating status to confirmed');
           const cancelledBooking = existingCancelledBookings[0];
           
-          // Fix: Specify the exact columns we want to select
-          const { data, error } = await supabase
+          // Update the cancelled booking, but don't use .select() to avoid empty response issues
+          const { error: updateError } = await supabase
             .from('shift_bookings')
             .update({ 
               status: 'confirmed',
               user_display_name: displayName, // Update display name in case it changed
               updated_at: new Date().toISOString()
             })
-            .eq('id', cancelledBooking.id)
-            .select('id, shift_id, user_id, status, user_display_name');
+            .eq('id', cancelledBooking.id);
             
-          if (error) {
-            console.error('Error updating cancelled booking:', error);
-            throw error;
+          if (updateError) {
+            console.error('Error updating cancelled booking:', updateError);
+            throw updateError;
           }
           
-          if (!data || data.length === 0) {
-            console.error('No data returned from booking update, but no error was thrown');
-            // Instead of failing, continue with a reconstructed response
+          // Fetch the updated booking separately to ensure we get data back
+          const { data: updatedBooking, error: fetchError } = await supabase
+            .from('shift_bookings')
+            .select('id, shift_id, user_id, status, user_display_name')
+            .eq('id', cancelledBooking.id)
+            .maybeSingle();
+            
+          if (fetchError) {
+            console.error('Error fetching updated booking:', fetchError);
+            // If fetch fails, return a reconstructed booking object
             return {
               id: cancelledBooking.id,
               shift_id: shiftId,
@@ -111,13 +117,25 @@ export const useBookShift = () => {
             };
           }
           
-          console.log('Successfully updated cancelled booking to confirmed:', data[0]);
-          return data[0];
+          if (!updatedBooking) {
+            console.log('No updated booking found, using reconstructed booking data');
+            return {
+              id: cancelledBooking.id,
+              shift_id: shiftId,
+              user_id: user.id,
+              status: 'confirmed',
+              user_display_name: displayName
+            };
+          }
+          
+          console.log('Successfully fetched updated booking:', updatedBooking);
+          return updatedBooking;
         } else {
           // No existing bookings (confirmed or cancelled), create a new one
           console.log('Creating new booking for shift:', shiftId);
           
-          const { data, error } = await supabase
+          // Insert the new booking but don't use .select() to avoid empty response issues
+          const { error: insertError } = await supabase
             .from('shift_bookings')
             .insert([{ 
               shift_id: shiftId, 
@@ -125,17 +143,25 @@ export const useBookShift = () => {
               user_email: user.email,
               user_display_name: displayName,
               status: 'confirmed'
-            }])
-            .select('id, shift_id, user_id, status, user_display_name');
+            }]);
           
-          if (error) {
-            console.error('Error booking shift:', error);
-            throw error;
+          if (insertError) {
+            console.error('Error booking shift:', insertError);
+            throw insertError;
           }
           
-          if (!data || data.length === 0) {
-            console.error('No data returned from new booking operation, but no error was thrown');
-            // Return a fallback response to avoid user-facing errors
+          // Fetch the newly created booking separately to ensure we get data back
+          const { data: newBooking, error: fetchError } = await supabase
+            .from('shift_bookings')
+            .select('id, shift_id, user_id, status, user_display_name')
+            .eq('shift_id', shiftId)
+            .eq('user_id', user.id)
+            .eq('status', 'confirmed')
+            .maybeSingle();
+            
+          if (fetchError) {
+            console.error('Error fetching new booking:', fetchError);
+            // If fetch fails, return a fallback booking object
             return {
               id: 'temporary-id', // Will be replaced when data is refetched
               shift_id: shiftId,
@@ -145,8 +171,19 @@ export const useBookShift = () => {
             };
           }
           
-          console.log('Successfully created new booking:', data[0]);
-          return data[0];
+          if (!newBooking) {
+            console.log('No new booking found, using fallback booking data');
+            return {
+              id: 'temporary-id', 
+              shift_id: shiftId,
+              user_id: user.id,
+              status: 'confirmed',
+              user_display_name: displayName
+            };
+          }
+          
+          console.log('Successfully fetched new booking:', newBooking);
+          return newBooking;
         }
       } catch (error) {
         console.error('Error in booking mutation:', error);

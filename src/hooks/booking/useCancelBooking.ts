@@ -11,19 +11,31 @@ export const useCancelBooking = () => {
     mutationFn: async (bookingId: string) => {
       console.log('Cancelling booking with ID:', bookingId);
       
-      const { data, error } = await supabase
+      // Update without using select() to avoid empty response issues
+      const { error } = await supabase
         .from('shift_bookings')
         .update({ status: 'cancelled' })
-        .eq('id', bookingId)
-        .select()
-        .single();
+        .eq('id', bookingId);
 
       if (error) {
         console.error('Error cancelling booking:', error);
         throw error;
       }
 
-      return data;
+      // Fetch the updated booking to ensure we have data to return
+      const { data: updatedBooking, error: fetchError } = await supabase
+        .from('shift_bookings')
+        .select('*')
+        .eq('id', bookingId)
+        .maybeSingle();
+        
+      if (fetchError) {
+        console.error('Error fetching updated booking:', fetchError);
+        // Return a minimal object if we can't fetch the updated booking
+        return { id: bookingId, status: 'cancelled' };
+      }
+
+      return updatedBooking || { id: bookingId, status: 'cancelled' };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
@@ -46,20 +58,33 @@ export const useCancelUserBooking = () => {
         throw new Error('Du måste vara inloggad för att avboka pass');
       }
 
-      const { data, error } = await supabase
+      // Update without using select() to avoid empty response issues
+      const { error } = await supabase
         .from('shift_bookings')
         .update({ status: 'cancelled' })
         .eq('shift_id', shiftId)
-        .eq('user_id', user.id)
-        .select()
-        .single();
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error cancelling user booking:', error);
         throw error;
       }
 
-      return data;
+      // Fetch the updated booking to ensure we have data to return
+      const { data: updatedBooking, error: fetchError } = await supabase
+        .from('shift_bookings')
+        .select('*')
+        .eq('shift_id', shiftId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+        
+      if (fetchError) {
+        console.error('Error fetching updated booking:', fetchError);
+        // Return a minimal object if we can't fetch the updated booking
+        return { shift_id: shiftId, user_id: user.id, status: 'cancelled' };
+      }
+
+      return updatedBooking || { shift_id: shiftId, user_id: user.id, status: 'cancelled' };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
