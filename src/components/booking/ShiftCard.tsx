@@ -76,16 +76,14 @@ export function ShiftCard({
       <div className="h-[2px] w-full bg-gradient-to-r from-primary/5 via-primary/30 to-primary/5"></div>
       
       <div className="p-4">
-        {/* Always show date for booked shifts */}
-        {(showDateInCard || isBooked) && (
-          <div className="flex items-center mb-3 text-white">
-            <Calendar className="h-4 w-4 mr-2 text-primary" />
-            <div>
-              <span className="font-medium capitalize">{day}</span>
-              <span className="ml-1 text-muted-foreground">{dateNumber}</span>
-            </div>
+        {/* Show date for all shifts, not just booked ones */}
+        <div className="flex items-center mb-3 text-white">
+          <Calendar className="h-4 w-4 mr-2 text-primary" />
+          <div>
+            <span className="font-medium capitalize">{day}</span>
+            <span className="ml-1 text-muted-foreground">{dateNumber}</span>
           </div>
-        )}
+        </div>
         
         <div className="flex items-center justify-between mb-3">
           <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-2 py-1 text-xs font-medium flex items-center gap-1.5">
