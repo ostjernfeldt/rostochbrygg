@@ -52,7 +52,7 @@ export function WeeklyBookingsSummary() {
                 <div className="p-1.5 bg-indigo-500/15 rounded-full">
                   <CalendarCheck className="h-4 w-4 text-indigo-400" />
                 </div>
-                <h3 className="font-semibold text-[15px] text-indigo-50">Dina bokningar</h3>
+                <h3 className="font-semibold text-[15px] text-indigo-50">Din bokning</h3>
               </div>
               <div className="flex items-center gap-2 bg-indigo-950/50 px-2.5 py-1.5 rounded-full border border-indigo-800/30">
                 <ListChecks className="h-3.5 w-3.5 text-amber-400" />
