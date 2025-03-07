@@ -1,5 +1,5 @@
 
-import { format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks, isThisWeek } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { Calendar, Clock, Users, PlusCircle, GanttChartSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -58,6 +58,9 @@ export const AdminBookingView = ({
       setCalendarOpen(false);
     }
   };
+
+  // Check if the currently displayed week is the current week
+  const isCurrentWeek = isThisWeek(currentWeekStart, { weekStartsOn: 1 });
 
   // Group shifts by date to display in a cleaner format
   const groupShiftsByDate = () => {
@@ -120,12 +123,20 @@ export const AdminBookingView = ({
               <PopoverTrigger asChild>
                 <Badge 
                   variant="outline" 
-                  className={`bg-primary/10 text-primary border-primary/20 px-3 py-2 text-sm font-medium 
+                  className={`${isCurrentWeek 
+                    ? 'bg-primary/30 text-primary-foreground border-primary/50 ring-2 ring-primary/20' 
+                    : 'bg-primary/10 text-primary border-primary/20'} 
+                    px-3 py-2 text-sm font-medium 
                     flex items-center gap-2 cursor-pointer hover:bg-primary/15 transition-all
                     ${isMobile ? 'flex-1 justify-center' : ''}`}
                 >
                   <Calendar className="h-4 w-4 flex-shrink-0" />
                   <span className="truncate">{formattedDateRange}</span>
+                  {isCurrentWeek && (
+                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-white rounded-sm whitespace-nowrap">
+                      Nuvarande vecka
+                    </span>
+                  )}
                 </Badge>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="center">
@@ -164,7 +175,10 @@ export const AdminBookingView = ({
       </div>
       
       {/* Weekly shifts view */}
-      <Card className="bg-gradient-to-br from-[#1e253a]/90 to-[#252a3d]/95 backdrop-blur-sm border-[#33333A]/60 shadow-lg overflow-hidden">
+      <Card className={`bg-gradient-to-br from-[#1e253a]/90 to-[#252a3d]/95 backdrop-blur-sm border-[#33333A]/60 shadow-lg overflow-hidden ${isCurrentWeek ? 'relative' : ''}`}>
+        {isCurrentWeek && (
+          <div className="absolute top-0 left-0 right-0 h-1 bg-primary"></div>
+        )}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/5 via-primary/40 to-primary/5"></div>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-medium flex items-center gap-2">
@@ -172,6 +186,11 @@ export const AdminBookingView = ({
               <GanttChartSquare className="h-4 w-4 text-primary" />
             </div>
             Schemalagda säljpass
+            {isCurrentWeek && (
+              <Badge variant="default" className="ml-auto bg-primary/20 text-primary border border-primary/30 px-2 py-0.5">
+                Nuvarande vecka
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
