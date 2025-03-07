@@ -1,7 +1,13 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { 
+  getCurrentUser,
+  fetchExistingBooking, 
+  fetchUserStaffRole,
+  updateCancelledBooking,
+  createNewBooking
+} from './utils/bookingOperations';
 
 export const useBookShift = () => {
   const queryClient = useQueryClient();
@@ -14,31 +20,11 @@ export const useBookShift = () => {
           throw new Error('Ogiltig pass-ID');
         }
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError) {
-          console.error('Authentication error:', authError);
-          throw new Error('Autentiseringsfel: Du måste vara inloggad för att boka pass');
-        }
-        
-        if (!user) {
-          throw new Error('Du måste vara inloggad för att boka pass');
-        }
-
+        const user = await getCurrentUser();
         console.log('Booking shift for user:', user.id, user.email);
 
         // First check if user already has a CONFIRMED booking for this shift
-        const { data: existingConfirmedBookings, error: bookingCheckError } = await supabase
-          .from('shift_bookings')
-          .select('*')
-          .eq('shift_id', shiftId)
-          .eq('user_id', user.id)
-          .eq('status', 'confirmed');
-
-        if (bookingCheckError) {
-          console.error('Error checking existing bookings:', bookingCheckError);
-          throw bookingCheckError;
-        }
+        const existingConfirmedBookings = await fetchExistingBooking(shiftId, user.id, 'confirmed');
 
         // If user already has a confirmed booking, prevent rebooking
         if (existingConfirmedBookings && existingConfirmedBookings.length > 0) {
@@ -46,36 +32,12 @@ export const useBookShift = () => {
         }
 
         // Get the user's display name from staff_roles table by matching email
-        const { data: staffRoleData, error: staffRoleError } = await supabase
-          .from('staff_roles')
-          .select('user_display_name')
-          .eq('email', user.email)
-          .maybeSingle();
-
-        if (staffRoleError) {
-          console.error('Error fetching staff role:', staffRoleError);
-          throw new Error('Du måste vara registrerad som säljare för att boka pass');
-        }
-
-        if (!staffRoleData) {
-          throw new Error('Du måste vara registrerad som säljare för att boka pass');
-        }
-
+        const staffRoleData = await fetchUserStaffRole(user.email!);
         const displayName = staffRoleData.user_display_name;
         console.log('Using display name from staff_roles:', displayName);
 
         // Check if there's a cancelled booking for this shift
-        const { data: existingCancelledBookings, error: cancelledCheckError } = await supabase
-          .from('shift_bookings')
-          .select('*')
-          .eq('shift_id', shiftId)
-          .eq('user_id', user.id)
-          .eq('status', 'cancelled');
-          
-        if (cancelledCheckError) {
-          console.error('Error checking cancelled bookings:', cancelledCheckError);
-          throw cancelledCheckError;
-        }
+        const existingCancelledBookings = await fetchExistingBooking(shiftId, user.id, 'cancelled');
         
         let bookingResult;
         
@@ -85,142 +47,11 @@ export const useBookShift = () => {
           const cancelledBooking = existingCancelledBookings[0];
           const bookingId = cancelledBooking.id;
           
-          // Important: We make a copy of the original booking for fallback
-          const originalBooking = { ...cancelledBooking };
-          
-          // Update with returning data in the same query (which should work in most cases)
-          const { data: updateData, error: updateError } = await supabase
-            .from('shift_bookings')
-            .update({ 
-              status: 'confirmed',
-              user_display_name: displayName,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', bookingId)
-            .select('*')
-            .maybeSingle();
-            
-          if (updateError) {
-            console.error('Error updating cancelled booking:', updateError);
-            throw updateError;
-          }
-          
-          console.log('Update operation completed, returned data:', updateData);
-          
-          // If the update worked but didn't return data (which can happen),
-          // we fetch it separately to make sure we have fresh data
-          if (!updateData) {
-            console.log('No data returned from update operation, fetching booking explicitly');
-            
-            // Explicit fetch to get the latest data
-            const { data: freshBooking, error: fetchError } = await supabase
-              .from('shift_bookings')
-              .select('*')
-              .eq('id', bookingId)
-              .maybeSingle();
-            
-            if (fetchError) {
-              console.error('Error fetching updated booking:', fetchError);
-              // Return manually updated object as fallback
-              bookingResult = {
-                ...originalBooking,
-                status: 'confirmed',
-                user_display_name: displayName,
-                updated_at: new Date().toISOString()
-              };
-              console.log('Using fallback booking data due to fetch error:', bookingResult);
-            } else if (!freshBooking) {
-              console.error('Updated booking not found in database');
-              // Return manually updated object as fallback
-              bookingResult = {
-                ...originalBooking,
-                status: 'confirmed',
-                user_display_name: displayName,
-                updated_at: new Date().toISOString()
-              };
-              console.log('Using fallback booking data (no booking found):', bookingResult);
-            } else {
-              // Use the freshly fetched booking data
-              bookingResult = freshBooking;
-              console.log('Successfully fetched updated booking:', bookingResult);
-            }
-          } else {
-            // Use the data returned from the update operation
-            bookingResult = updateData;
-            console.log('Using data returned from update operation:', bookingResult);
-          }
-          
+          // Update the cancelled booking to confirmed
+          bookingResult = await updateCancelledBooking(bookingId, displayName, cancelledBooking);
         } else {
           // No existing bookings, create a new one
-          console.log('Creating new booking for shift:', shiftId);
-          
-          // Prepare the new booking data
-          const newBookingData = { 
-            shift_id: shiftId, 
-            user_id: user.id,
-            user_email: user.email,
-            user_display_name: displayName,
-            status: 'confirmed'
-          };
-          
-          // Insert with returning (which should work in most cases)
-          const { data: insertData, error: insertError } = await supabase
-            .from('shift_bookings')
-            .insert([newBookingData])
-            .select('*')
-            .maybeSingle();
-          
-          if (insertError) {
-            console.error('Error booking shift:', insertError);
-            throw insertError;
-          }
-          
-          console.log('Insert operation completed, returned data:', insertData);
-          
-          // If the insert worked but didn't return data (which can happen),
-          // we fetch it separately to make sure we have fresh data
-          if (!insertData) {
-            console.log('No data returned from insert operation, fetching booking explicitly');
-            
-            // Explicit fetch to get the latest data
-            const { data: freshBooking, error: fetchError } = await supabase
-              .from('shift_bookings')
-              .select('*')
-              .eq('shift_id', shiftId)
-              .eq('user_id', user.id)
-              .eq('status', 'confirmed')
-              .maybeSingle();
-              
-            if (fetchError) {
-              console.error('Error fetching new booking:', fetchError);
-              // Fallback: use what we know about the booking
-              bookingResult = {
-                id: 'temporary-id', // Will be replaced when data is refetched
-                ...newBookingData,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              };
-              console.log('Using fallback booking data due to fetch error:', bookingResult);
-            } else if (!freshBooking) {
-              console.error('New booking created but not found in fetch');
-              // Fallback: use what we know about the booking
-              bookingResult = {
-                id: 'temporary-id',
-                ...newBookingData,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              };
-              console.log('Using fallback booking data (no fresh booking):', bookingResult);
-            } else {
-              // Use the freshly fetched booking data
-              bookingResult = freshBooking;
-              console.log('Successfully fetched new booking:', bookingResult);
-            }
-          } else {
-            // Use the data returned from the insert operation
-            bookingResult = insertData;
-            console.log('Using data returned from insert operation:', bookingResult);
-          }
+          bookingResult = await createNewBooking(shiftId, user.id, user.email!, displayName);
         }
         
         // Final validation to ensure we're returning valid data

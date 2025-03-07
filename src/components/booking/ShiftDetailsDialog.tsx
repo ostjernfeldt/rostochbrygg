@@ -55,7 +55,7 @@ export function ShiftDetailsDialog({
         toast({
           variant: "destructive",
           title: "Fel vid bokning",
-          description: error.message || "Ett fel uppstod vid bokningen av passet"
+          description: error instanceof Error ? error.message : "Ett fel uppstod vid bokningen av passet"
         });
       }
     });
