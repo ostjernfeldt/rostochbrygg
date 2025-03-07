@@ -157,13 +157,21 @@ export const AdminBookingView = ({
           <Button 
             onClick={() => setSheetOpen(true)}
             size="sm"
-            className={`h-10 gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 
-              hover:to-primary/70 text-white font-medium shadow-lg shadow-primary/20 
-              border border-primary/30 hover:border-primary/50 transition-all duration-200 rounded-lg
-              ${isMobile ? 'w-full justify-center' : 'px-4'}`}
+            className={`h-10 gap-2 relative overflow-hidden 
+              bg-primary/90 hover:bg-primary/80 text-white font-medium 
+              shadow-md hover:shadow-lg shadow-primary/20 
+              border border-primary/20 hover:border-primary/30 
+              transition-all duration-200 rounded-md
+              ${isMobile ? 'w-full justify-center' : 'px-5'}
+              before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent 
+              before:via-white/20 before:to-transparent before:translate-x-[-200%] 
+              hover:before:animate-[shimmer_1.5s_infinite] before:transition-all before:duration-1000`}
           >
-            <PlusCircle className="h-4 w-4" />
-            <span>Nytt pass</span>
+            <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/70 opacity-80" />
+            <div className="relative flex items-center gap-2">
+              <PlusCircle className="h-4 w-4" />
+              <span>Nytt pass</span>
+            </div>
           </Button>
         </div>
       </div>
