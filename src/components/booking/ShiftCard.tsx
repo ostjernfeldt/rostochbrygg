@@ -1,7 +1,6 @@
-
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Calendar, Clock, Users, Check, Alarm } from "lucide-react";
+import { Calendar, Clock, Users, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShiftWithBookings } from '@/types/booking';
@@ -23,7 +22,6 @@ export function ShiftCard({
   isSelected = false,
   onSelectShift 
 }: ShiftCardProps) {
-  // Guard against undefined shift data
   if (!shift || !shift.start_time || !shift.end_time || !shift.date) {
     return null;
   }
@@ -43,7 +41,6 @@ export function ShiftCard({
     dateNumber = 'Ogiltigt datum';
   }
 
-  // Filter to only display confirmed bookings, ensure bookings is an array
   const bookings = Array.isArray(shift.bookings) ? shift.bookings : [];
   const confirmedBookings = bookings.filter(booking => booking && booking.status === 'confirmed');
   
@@ -74,11 +71,9 @@ export function ShiftCard({
       } ${(!isBooked && !isFull || isUserAdmin) ? 'cursor-pointer' : isFull ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       onClick={handleCardClick}
     >
-      {/* Top highlight line */}
       <div className="h-[2px] w-full bg-gradient-to-r from-primary/5 via-primary/30 to-primary/5"></div>
       
       <div className="p-4">
-        {/* Time badge */}
         <div className="flex items-center justify-between mb-3">
           <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-2 py-1 text-xs font-medium flex items-center gap-1.5">
             <Clock className="h-3 w-3" />
@@ -102,12 +97,10 @@ export function ShiftCard({
           )}
         </div>
         
-        {/* Description */}
         {shift.description && (
           <p className="text-sm text-muted-foreground/90 mb-3 line-clamp-2">{shift.description}</p>
         )}
         
-        {/* User booking status or admin controls */}
         <div className="flex justify-between items-center mt-2">
           {!isSelectable && !isUserAdmin && !isBooked && remainingSlots > 0 && (
             <Button 

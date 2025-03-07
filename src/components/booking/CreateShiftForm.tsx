@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
+import { sv } from "date-fns/locale"; // Added the missing sv locale import
 import { CalendarIcon, Clock, Users, AlignLeft, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
