@@ -48,6 +48,8 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
         setSellers(data || []);
       } catch (error) {
         console.error("Error fetching sellers:", error);
+        // Ensure sellers is always an array, even on error
+        setSellers([]);
       } finally {
         setLoading(false);
       }
@@ -55,6 +57,9 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
 
     fetchSellers();
   }, []);
+
+  // Safe guard - ensure sellers is always an array
+  const safeSellers = Array.isArray(sellers) ? sellers : [];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -73,33 +78,42 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        <Command>
-          <CommandInput 
-            placeholder="Sök säljare..." 
-            className="h-9" 
-            value={search}
-            onValueChange={setSearch}
-          />
-          <CommandEmpty>Ingen säljare hittades.</CommandEmpty>
-          <CommandGroup className="max-h-[200px] overflow-y-auto">
-            {sellers.map((seller) => (
-              <CommandItem
-                key={seller.user_display_name}
-                value={seller.user_display_name}
-                onSelect={() => {
-                  onSellerSelect(seller);
-                  setOpen(false);
-                }}
-              >
-                <div className="flex flex-col">
-                  <span>{seller.user_display_name}</span>
-                  <span className="text-xs text-muted-foreground">{seller.role}</span>
-                </div>
-                <Check className="ml-auto h-4 w-4 opacity-0" />
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </Command>
+        {/* Only render Command when sellers are loaded */}
+        {!loading && (
+          <Command>
+            <CommandInput 
+              placeholder="Sök säljare..." 
+              className="h-9" 
+              value={search}
+              onValueChange={setSearch}
+            />
+            <CommandEmpty>Ingen säljare hittades.</CommandEmpty>
+            <CommandGroup className="max-h-[200px] overflow-y-auto">
+              {safeSellers.map((seller) => (
+                <CommandItem
+                  key={seller.user_display_name}
+                  value={seller.user_display_name}
+                  onSelect={() => {
+                    onSellerSelect(seller);
+                    setOpen(false);
+                  }}
+                >
+                  <div className="flex flex-col">
+                    <span>{seller.user_display_name}</span>
+                    <span className="text-xs text-muted-foreground">{seller.role}</span>
+                  </div>
+                  <Check className="ml-auto h-4 w-4 opacity-0" />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        )}
+        {loading && (
+          <div className="p-4 text-center">
+            <div className="h-4 w-4 border-2 border-current/30 border-t-current/90 rounded-full animate-spin mx-auto mb-2"></div>
+            <p className="text-sm text-muted-foreground">Laddar säljare...</p>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
