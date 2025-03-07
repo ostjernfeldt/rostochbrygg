@@ -100,40 +100,29 @@ export const useBatchBookShifts = () => {
             continue;
           }
           
-          // Case 3: New booking - we need to look up the user ID for the seller or use admin's ID
-          // If there's a user email, try to find their user ID
+          // Case 3: New booking - we need a valid user_id, either from the admin or use a default
           let userId = adminId || '00000000-0000-0000-0000-000000000000';
           
           if (booking.userEmail) {
-            // Try to find the user ID from the email
+            // Try to find the user ID from staff_roles table using email
             const { data: userData, error: userError } = await supabase
-              .from('users')
+              .from('staff_roles')
               .select('id')
               .eq('email', booking.userEmail)
               .maybeSingle();
               
-            if (!userError && userData) {
+            if (!userError && userData?.id) {
               userId = userData.id;
             }
           }
           
-          // If we still don't have a valid ID, use null for the user_id if the column allows it
-          // Check if user_id is nullable
-          const { data: tableInfo } = await supabase
-            .rpc('get_column_info', { 
-              table_name: 'shift_bookings', 
-              column_name: 'user_id' 
-            });
-            
-          const isNullable = tableInfo && tableInfo.is_nullable;
-
           // Create new booking
           const newBookingData = {
             shift_id: booking.shiftId,
             user_display_name: booking.userDisplayName,
             user_email: booking.userEmail,
-            // If column is nullable, we can set to null; otherwise use admin ID
-            user_id: isNullable ? null : userId
+            user_id: userId,
+            status: 'confirmed'
           };
 
           const { data, error } = await supabase
@@ -143,24 +132,29 @@ export const useBatchBookShifts = () => {
             .single();
 
           if (error) {
-            // If foreign key error, we need a different approach
+            // If foreign key error, try a different approach with admin ID
             if (error.message.includes('violates foreign key constraint')) {
-              // Try the insert without user_id entirely, letting the DB use default value if one exists
-              const { data: retryData, error: retryError } = await supabase
+              console.log('Foreign key constraint error, retrying with admin ID');
+              
+              // Always use the admin ID as a fallback
+              const retryData = {
+                shift_id: booking.shiftId,
+                user_display_name: booking.userDisplayName,
+                user_email: booking.userEmail,
+                user_id: adminId || '00000000-0000-0000-0000-000000000000',
+                status: 'confirmed'
+              };
+              
+              const { data: retryResult, error: retryError } = await supabase
                 .from('shift_bookings')
-                .insert([{
-                  shift_id: booking.shiftId,
-                  user_display_name: booking.userDisplayName,
-                  user_email: booking.userEmail,
-                  status: 'confirmed'
-                }])
+                .insert([retryData])
                 .select()
                 .single();
                 
               if (retryError) {
                 errors.push(`Fel vid bokning för ${booking.userDisplayName}: ${retryError.message}`);
-              } else if (retryData) {
-                results.push(retryData as ShiftBooking);
+              } else if (retryResult) {
+                results.push(retryResult as ShiftBooking);
               }
             } else {
               errors.push(`Fel vid bokning för ${booking.userDisplayName}: ${error.message}`);
