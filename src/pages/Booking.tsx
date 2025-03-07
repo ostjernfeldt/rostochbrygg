@@ -1,6 +1,6 @@
 
-import React, { useState, Suspense } from 'react';
-import { format, startOfWeek, endOfWeek } from 'date-fns';
+import React, { useState, Suspense, useEffect } from 'react';
+import { format, startOfWeek, endOfWeek, addDays } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { ShiftWithBookings } from '@/types/booking';
 import { ShiftDetailsDialog } from '@/components/booking/ShiftDetailsDialog';
@@ -42,11 +42,9 @@ export default function Booking() {
     );
   }
   
+  // Always use the current week for initial load
   const today = new Date();
-  const currentWeekStart = startOfWeek(today, {
-    weekStartsOn: 1
-  });
-  const weekEnd = endOfWeek(currentWeekStart, {
+  const initialWeekStart = startOfWeek(today, {
     weekStartsOn: 1
   });
   
@@ -55,8 +53,7 @@ export default function Booking() {
       <BookingContent 
         isAdmin={isAdmin ?? false} 
         user={user}
-        currentWeekStart={currentWeekStart}
-        weekEnd={weekEnd}
+        initialWeekStart={initialWeekStart}
       />
     </PageLayout>
   );
@@ -65,16 +62,20 @@ export default function Booking() {
 function BookingContent({ 
   isAdmin, 
   user,
-  currentWeekStart,
-  weekEnd
+  initialWeekStart
 }: { 
   isAdmin: boolean;
   user: any;
-  currentWeekStart: Date;
-  weekEnd: Date;
+  initialWeekStart: Date;
 }) {
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(initialWeekStart);
+  
+  // Calculate week end based on current week start
+  const weekEnd = endOfWeek(currentWeekStart, {
+    weekStartsOn: 1
+  });
   
   const {
     shifts = [],
@@ -118,12 +119,17 @@ function BookingContent({
     isBatchBooking,
     handleSelectShift,
     handleOpenBookingDialog,
-    handleConfirmBookings
+    handleConfirmBookings,
+    hasMinimumBookings
   } = useShiftSelection(userBookedShifts);
 
   const handleViewShiftDetails = (shiftId: string) => {
     setSelectedShiftId(shiftId);
     setDialogOpen(true);
+  };
+  
+  const handleWeekChange = (newWeekStart: Date) => {
+    setCurrentWeekStart(newWeekStart);
   };
   
   // Create a safe array for selected shifts data
@@ -154,6 +160,9 @@ function BookingContent({
           shifts={processedShifts}
           isLoading={shiftsLoading}
           onViewShiftDetails={handleViewShiftDetails}
+          currentWeekStart={currentWeekStart}
+          weekEnd={weekEnd}
+          onWeekChange={handleWeekChange}
         />
       ) : (
         <UserBookingView

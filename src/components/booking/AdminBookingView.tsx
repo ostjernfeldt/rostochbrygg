@@ -1,7 +1,7 @@
 
-import { format, startOfWeek, endOfWeek, addDays } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Calendar, Clock, Users, PlusCircle, GanttChartSquare } from 'lucide-react';
+import { Calendar, Clock, Users, PlusCircle, GanttChartSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ShiftCard } from '@/components/booking/ShiftCard';
 import { ShiftWithBookings } from '@/types/booking';
@@ -10,30 +10,54 @@ import { Button } from "@/components/ui/button";
 import { CreateShiftSheet } from '@/components/booking/CreateShiftSheet';
 import { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface AdminBookingViewProps {
   shifts: ShiftWithBookings[];
   isLoading: boolean;
   onViewShiftDetails: (shiftId: string) => void;
+  currentWeekStart: Date;
+  weekEnd: Date;
+  onWeekChange: (newWeekStart: Date) => void;
 }
 
 export const AdminBookingView = ({ 
   shifts, 
   isLoading, 
-  onViewShiftDetails 
+  onViewShiftDetails,
+  currentWeekStart,
+  weekEnd,
+  onWeekChange
 }: AdminBookingViewProps) => {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const isMobile = useIsMobile();
-  
-  const today = new Date();
-  const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
   
   const formattedDateRange = `${format(currentWeekStart, 'd MMM', {
     locale: sv
   })} - ${format(weekEnd, 'd MMM yyyy', {
     locale: sv
   })}`;
+
+  const handlePreviousWeek = () => {
+    const newWeekStart = subWeeks(currentWeekStart, 1);
+    onWeekChange(newWeekStart);
+  };
+
+  const handleNextWeek = () => {
+    const newWeekStart = addWeeks(currentWeekStart, 1);
+    onWeekChange(newWeekStart);
+  };
+
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (date) {
+      // Get the start of the week containing the selected date
+      const newWeekStart = startOfWeek(date, { weekStartsOn: 1 });
+      onWeekChange(newWeekStart);
+      setCalendarOpen(false);
+    }
+  };
 
   // Group shifts by date to display in a cleaner format
   const groupShiftsByDate = () => {
@@ -81,10 +105,44 @@ export const AdminBookingView = ({
         </div>
         
         <div className={`${isMobile ? 'flex justify-between items-center mt-4' : 'flex items-center gap-3'}`}>
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-2 text-sm font-medium flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            {formattedDateRange}
-          </Badge>
+          {/* Week Navigation Controls */}
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handlePreviousWeek}
+              className="h-9 w-9 bg-primary/10 text-primary hover:bg-primary/15 border-primary/20"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-2 text-sm font-medium flex items-center gap-2 cursor-pointer hover:bg-primary/15 transition-all">
+                  <Calendar className="h-4 w-4" />
+                  {formattedDateRange}
+                </Badge>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <CalendarComponent
+                  mode="single"
+                  selected={currentWeekStart}
+                  onSelect={handleCalendarSelect}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+            
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handleNextWeek}
+              className="h-9 w-9 bg-primary/10 text-primary hover:bg-primary/15 border-primary/20"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
           
           <Button 
             onClick={() => setSheetOpen(true)}
