@@ -28,49 +28,60 @@ export const useCancelBooking = () => {
         throw new Error('Booking not found');
       }
       
+      // Store the current data for reference
+      const bookingBeforeUpdate = { ...currentBooking };
+      
       // Update the booking status
-      const { error } = await supabase
+      const { data: updateData, error: updateError } = await supabase
         .from('shift_bookings')
         .update({ 
           status: 'cancelled',
           updated_at: new Date().toISOString()
         })
-        .eq('id', bookingId);
-
-      if (error) {
-        console.error('Error cancelling booking:', error);
-        throw error;
-      }
-
-      // Fetch the updated booking to ensure we have the correct data
-      const { data: updatedBooking, error: fetchUpdatedError } = await supabase
-        .from('shift_bookings')
-        .select('*')
         .eq('id', bookingId)
+        .select('*')
         .maybeSingle();
-        
-      if (fetchUpdatedError) {
-        console.error('Error fetching booking after cancel:', fetchUpdatedError);
-        // If fetch fails, create a result with the data we know is correct
-        return { 
-          ...currentBooking, 
-          status: 'cancelled',
-          updated_at: new Date().toISOString()
-        };
+
+      if (updateError) {
+        console.error('Error cancelling booking:', updateError);
+        throw updateError;
       }
       
-      if (!updatedBooking) {
-        console.error('Updated booking not found after cancel:', bookingId);
-        // If booking not found, create a result with the data we know is correct
-        return { 
-          ...currentBooking, 
-          status: 'cancelled',
-          updated_at: new Date().toISOString() 
-        };
+      // If update worked but didn't return data, fetch it explicitly
+      if (!updateData) {
+        console.log('No data returned from cancel operation, fetching booking explicitly');
+        
+        const { data: refetchedBooking, error: refetchError } = await supabase
+          .from('shift_bookings')
+          .select('*')
+          .eq('id', bookingId)
+          .maybeSingle();
+          
+        if (refetchError) {
+          console.error('Error fetching updated booking after cancel:', refetchError);
+          // Return manually updated object as fallback
+          return { 
+            ...bookingBeforeUpdate, 
+            status: 'cancelled',
+            updated_at: new Date().toISOString()
+          };
+        }
+        
+        if (!refetchedBooking) {
+          console.error('Could not find booking after update:', bookingId);
+          // Return manually updated object as fallback
+          return { 
+            ...bookingBeforeUpdate, 
+            status: 'cancelled',
+            updated_at: new Date().toISOString()
+          };
+        }
+        
+        return refetchedBooking;
       }
       
       // Return the updated booking with the cancelled status
-      return updatedBooking;
+      return updateData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
@@ -117,40 +128,61 @@ export const useCancelUserBooking = () => {
         throw new Error('Booking not found');
       }
 
-      // Update the booking status
-      const { error } = await supabase
+      // Store the current data for reference
+      const bookingBeforeUpdate = { ...currentBooking };
+
+      // Update the booking status with direct selection in the same query
+      const { data: updateData, error: updateError } = await supabase
         .from('shift_bookings')
         .update({ 
           status: 'cancelled',
           updated_at: new Date().toISOString()
         })
         .eq('shift_id', shiftId)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select('*')
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error cancelling user booking:', error);
-        throw error;
+      if (updateError) {
+        console.error('Error cancelling user booking:', updateError);
+        throw updateError;
       }
 
-      // Fetch the updated booking to ensure we have the correct data
-      const { data: updatedBooking, error: fetchUpdatedError } = await supabase
-        .from('shift_bookings')
-        .select('*')
-        .eq('id', currentBooking.id)
-        .maybeSingle();
+      // If update worked but didn't return data, fetch it explicitly
+      if (!updateData) {
+        console.log('No data returned from user cancel operation, fetching explicitly');
         
-      if (fetchUpdatedError || !updatedBooking) {
-        console.error('Error fetching updated user booking:', fetchUpdatedError);
-        // Return the booking with updated status using our known data
-        return {
-          ...currentBooking,
-          status: 'cancelled',
-          updated_at: new Date().toISOString()
-        };
+        const { data: refetchedBooking, error: refetchError } = await supabase
+          .from('shift_bookings')
+          .select('*')
+          .eq('id', currentBooking.id)
+          .maybeSingle();
+          
+        if (refetchError) {
+          console.error('Error fetching updated user booking after cancel:', refetchError);
+          // Return manually updated object as fallback
+          return {
+            ...bookingBeforeUpdate,
+            status: 'cancelled',
+            updated_at: new Date().toISOString()
+          };
+        }
+        
+        if (!refetchedBooking) {
+          console.error('Could not find booking after user cancel:', currentBooking.id);
+          // Return manually updated object as fallback
+          return {
+            ...bookingBeforeUpdate,
+            status: 'cancelled',
+            updated_at: new Date().toISOString()
+          };
+        }
+        
+        return refetchedBooking;
       }
 
       // Return the updated booking with cancelled status
-      return updatedBooking;
+      return updateData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });

@@ -9,12 +9,14 @@ import { Separator } from '@/components/ui/separator';
 import { useDeleteShift } from '@/hooks/useShifts';
 import { toast } from '@/hooks/use-toast';
 import { Badge } from "@/components/ui/badge";
+
 interface ShiftDetailsDialogProps {
   shift: ShiftWithBookings;
   isUserAdmin: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
 export function ShiftDetailsDialog({
   shift,
   isUserAdmin,
@@ -34,14 +36,31 @@ export function ShiftDetailsDialog({
     isPending: isDeleting
   } = useDeleteShift();
 
-  // Safeguard against undefined shift data
   if (!shift) {
     return null;
   }
+
   const handleBookShift = () => {
-    bookShift(shift.id);
-    onOpenChange(false);
+    bookShift(shift.id, {
+      onSuccess: () => {
+        console.log("Booking successfully completed");
+        toast({
+          title: "Pass bokat",
+          description: "Du har bokat passet framgångsrikt"
+        });
+        onOpenChange(false);
+      },
+      onError: error => {
+        console.error("Error booking shift:", error);
+        toast({
+          variant: "destructive",
+          title: "Fel vid bokning",
+          description: error.message || "Ett fel uppstod vid bokningen av passet"
+        });
+      }
+    });
   };
+
   const handleCancelBooking = (bookingId: string) => {
     console.log("Cancelling booking:", bookingId);
     cancelBooking(bookingId, {
@@ -51,7 +70,6 @@ export function ShiftDetailsDialog({
           title: "Bokning avbokad",
           description: "Säljaren har avbokats från passet"
         });
-        // Close the dialog to force a refresh of the data
         onOpenChange(false);
       },
       onError: error => {
@@ -64,23 +82,20 @@ export function ShiftDetailsDialog({
       }
     });
   };
+
   const handleDeleteShift = () => {
-    // Get the confirmed bookings count
     const confirmedBookings = shift.bookings?.filter(booking => booking.status === 'confirmed') || [];
     if (confirmedBookings.length > 0) {
-      // If there are bookings, show a warning toast before deleting
       if (window.confirm(`Detta säljpass har ${confirmedBookings.length} bokningar som också kommer att tas bort. Vill du fortsätta?`)) {
         deleteShift(shift.id);
         onOpenChange(false);
       }
     } else {
-      // If no bookings, just delete the shift
       deleteShift(shift.id);
       onOpenChange(false);
     }
   };
 
-  // Safely format shift data to avoid runtime errors
   const formatShiftData = () => {
     try {
       return {
@@ -99,25 +114,24 @@ export function ShiftDetailsDialog({
       };
     }
   };
+
   const {
     formattedDate,
     startTime,
     endTime
   } = formatShiftData();
 
-  // Filter to only show confirmed bookings
   const confirmedBookings = shift.bookings?.filter(booking => booking.status === 'confirmed') || [];
 
-  // Custom handler to prevent closing while operations are pending
   const handleOpenChange = (open: boolean) => {
     if ((isBooking || isCancelling || isDeleting) && !open) {
       return;
     }
     onOpenChange(open);
   };
+
   return <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md bg-gradient-to-br from-[#1e253a]/95 to-[#252a3d]/98 border-[#33333A]/80 shadow-xl rounded-xl overflow-hidden max-h-[90vh] overflow-y-auto">
-        {/* Top highlight line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/5 via-primary/40 to-primary/5"></div>
         
         <DialogHeader className="pb-2">
@@ -132,7 +146,6 @@ export function ShiftDetailsDialog({
         </DialogHeader>
         
         <div className="py-2 space-y-5">
-          {/* Meta information badges */}
           <div className="flex flex-wrap gap-2">
             <Badge variant="outline" className="bg-primary/10 border-primary/30 flex items-center gap-1.5 px-2.5 py-1">
               <Users className="h-3.5 w-3.5" />
@@ -149,7 +162,6 @@ export function ShiftDetailsDialog({
             </Badge>
           </div>
           
-          {/* Description section */}
           {shift.description && <div className="bg-black/20 p-4 rounded-lg border border-[#33333A]/50">
               <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
                 <Info className="h-4 w-4 text-primary/70" />
@@ -160,7 +172,6 @@ export function ShiftDetailsDialog({
           
           <Separator className="my-5 bg-[#33333A]/40" />
           
-          {/* Booked sellers section */}
           <div>
             <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
               <Users className="h-4 w-4 text-primary/70" />
