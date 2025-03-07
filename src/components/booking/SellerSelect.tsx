@@ -10,6 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { useSellerSearch } from "@/hooks/booking/useSellerSearch";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Seller {
   user_display_name: string;
@@ -25,6 +26,7 @@ interface SellerSelectProps {
 export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectProps) {
   const [open, setOpen] = useState(false);
   const { sellers, loading, search, setSearch } = useSellerSearch();
+  const isMobile = useIsMobile();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -42,7 +44,12 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
+      <PopoverContent 
+        className="w-[calc(100vw-2rem)] p-0 sm:w-auto" 
+        align={isMobile ? "center" : "start"}
+        side={isMobile ? "bottom" : undefined}
+        sideOffset={isMobile ? 5 : 4}
+      >
         {/* Search and List content */}
         <div className="w-full">
           {/* Search input */}
@@ -73,11 +80,11 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
           
           {/* Sellers list */}
           {!loading && sellers.length > 0 && (
-            <div className="max-h-[200px] overflow-y-auto p-1 bg-[#1A1F2C]">
+            <div className="max-h-[40vh] sm:max-h-[200px] overflow-y-auto p-1 bg-[#1A1F2C]">
               {sellers.map((seller) => (
                 <div
                   key={seller.user_display_name}
-                  className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-primary/20 hover:text-white data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 my-1"
+                  className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-3 sm:py-1.5 text-sm outline-none hover:bg-primary/20 hover:text-white data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 my-1"
                   onClick={() => {
                     onSellerSelect(seller);
                     setOpen(false);
