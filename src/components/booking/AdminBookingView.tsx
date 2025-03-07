@@ -89,7 +89,7 @@ export const AdminBookingView = ({
           <Button 
             onClick={() => setSheetOpen(true)}
             size="sm"
-            className="h-10 gap-1.5 bg-primary hover:bg-primary/90 shadow-sm"
+            className="h-10 px-4 gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium shadow-lg shadow-primary/20 border border-primary/30 hover:border-primary/50 transition-all duration-200 rounded-lg"
           >
             <PlusCircle className="h-4 w-4" />
             {isMobile ? '' : 'Nytt pass'}
