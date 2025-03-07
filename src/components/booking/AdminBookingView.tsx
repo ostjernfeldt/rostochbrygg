@@ -4,9 +4,11 @@ import { sv } from 'date-fns/locale';
 import { Calendar, Clock, Users, PlusCircle, GanttChartSquare } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ShiftCard } from '@/components/booking/ShiftCard';
-import { CreateShiftForm } from '@/components/booking/CreateShiftForm';
 import { ShiftWithBookings } from '@/types/booking';
 import { Badge } from '@/components/ui/badge';
+import { Button } from "@/components/ui/button";
+import { CreateShiftSheet } from '@/components/booking/CreateShiftSheet';
+import { useState } from 'react';
 
 interface AdminBookingViewProps {
   shifts: ShiftWithBookings[];
@@ -19,6 +21,8 @@ export const AdminBookingView = ({
   isLoading, 
   onViewShiftDetails 
 }: AdminBookingViewProps) => {
+  const [sheetOpen, setSheetOpen] = useState(false);
+  
   const today = new Date();
   const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
@@ -66,34 +70,30 @@ export const AdminBookingView = ({
   }) : [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header with title and week info */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Bokningshantering</h1>
           <p className="text-muted-foreground mt-1">Hantera säljpass och bokningar</p>
         </div>
-        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-1.5 text-sm font-medium flex items-center gap-2">
-          <Calendar className="h-4 w-4" />
-          {formattedDateRange}
-        </Badge>
+        
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-1.5 text-sm font-medium flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            {formattedDateRange}
+          </Badge>
+          
+          <Button 
+            onClick={() => setSheetOpen(true)}
+            size="sm"
+            className="h-9 gap-1.5 bg-primary hover:bg-primary/90 shadow-sm"
+          >
+            <PlusCircle className="h-4 w-4" />
+            Nytt pass
+          </Button>
+        </div>
       </div>
-      
-      {/* Create new shift card */}
-      <Card className="bg-gradient-to-br from-[#1e253a]/90 to-[#252a3d]/95 backdrop-blur-sm border-[#33333A]/60 shadow-lg overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/5 via-primary/40 to-primary/5"></div>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-medium flex items-center gap-2">
-            <div className="p-1.5 rounded-full bg-primary/15">
-              <PlusCircle className="h-4 w-4 text-primary" />
-            </div>
-            Skapa nytt säljpass
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CreateShiftForm />
-        </CardContent>
-      </Card>
       
       {/* Weekly shifts view */}
       <Card className="bg-gradient-to-br from-[#1e253a]/90 to-[#252a3d]/95 backdrop-blur-sm border-[#33333A]/60 shadow-lg overflow-hidden">
@@ -157,7 +157,7 @@ export const AdminBookingView = ({
                   </div>
                   <h3 className="text-lg font-medium mb-1">Inga säljpass schemalagda</h3>
                   <p className="text-muted-foreground max-w-md">
-                    Det finns inga säljpass schemalagda för denna vecka. Skapa nya pass med formuläret ovan.
+                    Det finns inga säljpass schemalagda för denna vecka. Skapa nya pass med knappen ovan.
                   </p>
                 </div>
               )}
@@ -165,6 +165,9 @@ export const AdminBookingView = ({
           )}
         </CardContent>
       </Card>
+      
+      {/* Create Shift Sheet */}
+      <CreateShiftSheet open={sheetOpen} onOpenChange={setSheetOpen} />
     </div>
   );
 };

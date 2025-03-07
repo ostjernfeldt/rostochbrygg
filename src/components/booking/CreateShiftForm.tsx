@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
-import { sv } from "date-fns/locale"; // Added the missing sv locale import
+import { sv } from "date-fns/locale";
 import { CalendarIcon, Clock, Users, AlignLeft, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -25,7 +25,11 @@ interface CreateShiftFormValues {
   description: string;
 }
 
-export function CreateShiftForm() {
+interface CreateShiftFormProps {
+  onSuccess?: () => void;
+}
+
+export function CreateShiftForm({ onSuccess }: CreateShiftFormProps) {
   const [date, setDate] = useState<Date>();
   const { register, handleSubmit, reset, formState: { errors, isValid } } = useForm<CreateShiftFormValues>({
     mode: "onChange"
@@ -47,6 +51,11 @@ export function CreateShiftForm() {
       // Reset form
       reset();
       setDate(undefined);
+      
+      // Close sheet if onSuccess callback is provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error("Error creating shift:", error);
     }
