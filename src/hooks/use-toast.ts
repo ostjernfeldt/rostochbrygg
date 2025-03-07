@@ -1,3 +1,4 @@
+
 // Exporting the React toast hook implementation from use-toast.ts
 import * as React from "react"
 
@@ -175,6 +176,16 @@ function dispatch(action: Action) {
 type Toast = Omit<ToasterToast, "id">
 
 function toast({ ...props }: Toast) {
+  // Skip default/success toasts entirely
+  if (props.variant === 'default' || props.variant === undefined) {
+    console.log('Success toast suppressed:', props);
+    return {
+      id: 'suppressed',
+      dismiss: () => {},
+      update: () => {},
+    };
+  }
+
   const id = genId()
 
   const update = (props: ToasterToast) =>
