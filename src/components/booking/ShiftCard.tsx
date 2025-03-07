@@ -50,8 +50,7 @@ export function ShiftCard({
   const isBooked = !!shift.is_booked_by_current_user;
   const availableSlots = shift.available_slots || 0;
   const bookedSlots = confirmedBookings.length;
-  const remainingSlots = availableSlots - bookedSlots;
-  const isFull = remainingSlots <= 0;
+  const isFull = bookedSlots >= availableSlots;
 
   const handleCardClick = () => {
     if (isSelectable && onSelectShift && !isBooked && !isFull) {
@@ -95,11 +94,11 @@ export function ShiftCard({
           
           {isUserAdmin && (
             <Badge 
-              variant={remainingSlots > 0 ? "outline" : "destructive"} 
-              className={`text-xs px-2 py-1 ${remainingSlots > 0 ? 'bg-card/40 border-[#33333A]/50' : ''}`}
+              variant={!isFull ? "outline" : "destructive"} 
+              className={`text-xs px-2 py-1 flex items-center gap-1.5 ${!isFull ? 'bg-card/40 border-[#33333A]/50' : ''}`}
             >
-              <Users className="h-3 w-3 mr-1" />
-              {remainingSlots} av {availableSlots}
+              <Users className="h-3 w-3" />
+              {bookedSlots}/{availableSlots}
             </Badge>
           )}
           
@@ -115,7 +114,7 @@ export function ShiftCard({
         )}
         
         <div className="flex justify-between items-center mt-2">
-          {!isSelectable && !isUserAdmin && !isBooked && remainingSlots > 0 && (
+          {!isSelectable && !isUserAdmin && !isBooked && !isFull && (
             <Button 
               onClick={(e) => {
                 e.stopPropagation();
