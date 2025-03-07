@@ -5,19 +5,24 @@ import { toast } from '@/hooks/use-toast';
 import { ShiftBooking } from '@/types/booking';
 import { fetchUserStaffRole } from './utils/bookingOperations';
 
-interface SellerBooking {
+export interface SellerBooking {
   shiftId: string;
   userDisplayName: string;
   userEmail?: string;
+}
+
+export interface BatchBookingResult {
+  results: ShiftBooking[];
+  errors: string[];
 }
 
 export const useBatchBookShifts = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (bookings: SellerBooking[]): Promise<ShiftBooking[]> => {
+    mutationFn: async (bookings: SellerBooking[]): Promise<BatchBookingResult> => {
       if (!bookings.length) {
-        return [];
+        return { results: [], errors: [] };
       }
 
       const results: ShiftBooking[] = [];
@@ -106,8 +111,8 @@ export const useBatchBookShifts = () => {
         });
       }
 
-      // Return successfully created bookings
-      return results;
+      // Return both results and errors
+      return { results, errors };
     },
     onSuccess: (data) => {
       console.log('Batch booking successful:', data);
@@ -115,10 +120,10 @@ export const useBatchBookShifts = () => {
       queryClient.invalidateQueries({ queryKey: ['shift'] });
       queryClient.invalidateQueries({ queryKey: ['weekly-booking-summary'] });
       
-      if (data.length > 0) {
+      if (data.results.length > 0) {
         toast({
           title: 'Säljare tillagda',
-          description: `${data.length} säljare har lagts till i passet.`,
+          description: `${data.results.length} säljare har lagts till i passet.`,
         });
       }
     },

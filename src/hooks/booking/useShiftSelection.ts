@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useBatchBookShifts } from '@/hooks/booking';
+import { useBatchBookShifts, SellerBooking } from '@/hooks/booking/useBatchBookShifts';
 import { ShiftWithBookings } from '@/types/booking';
 import { toast } from '@/hooks/use-toast';
 
@@ -76,8 +76,15 @@ export const useShiftSelection = (userBookedShifts: ShiftWithBookings[] = []) =>
       return;
     }
     
-    console.log('Confirming batch bookings for shifts:', safeSelectedShifts);
-    batchBookShifts(safeSelectedShifts, {
+    // Convert the array of shift IDs to an array of SellerBooking objects
+    const sellerBookings: SellerBooking[] = safeSelectedShifts.map(shiftId => ({
+      shiftId,
+      userDisplayName: 'Current User', // This should be replaced with actual user info
+      userEmail: null
+    }));
+    
+    console.log('Confirming batch bookings for shifts:', sellerBookings);
+    batchBookShifts(sellerBookings, {
       onSuccess: data => {
         console.log('Batch booking success:', data);
         setConfirmDialogOpen(false);
