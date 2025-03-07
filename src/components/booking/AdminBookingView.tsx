@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from "@/components/ui/button";
 import { CreateShiftSheet } from '@/components/booking/CreateShiftSheet';
 import { useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AdminBookingViewProps {
   shifts: ShiftWithBookings[];
@@ -22,6 +23,7 @@ export const AdminBookingView = ({
   onViewShiftDetails 
 }: AdminBookingViewProps) => {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const isMobile = useIsMobile();
   
   const today = new Date();
   const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
@@ -72,14 +74,14 @@ export const AdminBookingView = ({
   return (
     <div className="space-y-6">
       {/* Header with title and week info */}
-      <div className="flex justify-between items-center">
+      <div className={`${isMobile ? 'flex flex-col space-y-4' : 'flex justify-between items-center'}`}>
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Bokningshantering</h1>
           <p className="text-muted-foreground mt-1">Hantera säljpass och bokningar</p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-1.5 text-sm font-medium flex items-center gap-2">
+        <div className={`${isMobile ? 'flex justify-between items-center mt-4' : 'flex items-center gap-3'}`}>
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-2 text-sm font-medium flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             {formattedDateRange}
           </Badge>
@@ -87,10 +89,10 @@ export const AdminBookingView = ({
           <Button 
             onClick={() => setSheetOpen(true)}
             size="sm"
-            className="h-9 gap-1.5 bg-primary hover:bg-primary/90 shadow-sm"
+            className="h-10 gap-1.5 bg-primary hover:bg-primary/90 shadow-sm"
           >
             <PlusCircle className="h-4 w-4" />
-            Nytt pass
+            {isMobile ? '' : 'Nytt pass'}
           </Button>
         </div>
       </div>
@@ -108,7 +110,7 @@ export const AdminBookingView = ({
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 gap-5">
               {[1, 2, 3].map(i => (
                 <div key={i} className="bg-card/40 h-36 rounded-xl animate-pulse border border-[#33333A]/50"></div>
               ))}
@@ -124,7 +126,7 @@ export const AdminBookingView = ({
                 const dayNumber = format(dayDate, 'd MMMM', { locale: sv });
                 
                 return (
-                  <div key={dateKey} className="space-y-4">
+                  <div key={dateKey} className="space-y-5">
                     <div className="flex items-center gap-2">
                       <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
                         <Calendar className="h-4 w-4 text-primary" />
@@ -135,7 +137,7 @@ export const AdminBookingView = ({
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div className="grid grid-cols-1 gap-5">
                       {dayShifts.map(shift => (
                         <ShiftCard 
                           key={shift.id} 
@@ -151,7 +153,7 @@ export const AdminBookingView = ({
               
               {/* When no shifts are available for the week */}
               {processedShifts.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="flex flex-col items-center justify-center py-12 text-center px-4">
                   <div className="h-16 w-16 rounded-full bg-primary/5 flex items-center justify-center mb-4">
                     <Calendar className="h-8 w-8 text-primary/40" />
                   </div>
