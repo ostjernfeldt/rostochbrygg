@@ -76,7 +76,8 @@ export function ShiftCard({
       <div className="h-[2px] w-full bg-gradient-to-r from-primary/5 via-primary/30 to-primary/5"></div>
       
       <div className="p-4">
-        {showDateInCard && (
+        {/* Always show date for booked shifts */}
+        {(showDateInCard || isBooked) && (
           <div className="flex items-center mb-3 text-white">
             <Calendar className="h-4 w-4 mr-2 text-primary" />
             <div>
