@@ -30,6 +30,10 @@ export const useShiftSelection = (userBookedShifts: ShiftWithBookings[] = []) =>
     });
   };
 
+  const hasMinimumBookings = (selectedCount: number, existingCount: number) => {
+    return (selectedCount + existingCount) >= 2;
+  };
+
   const handleOpenBookingDialog = () => {
     // Ensure we're working with arrays
     const safeUserBookedShifts = Array.isArray(userBookedShifts) ? userBookedShifts : [];
@@ -121,6 +125,7 @@ export const useShiftSelection = (userBookedShifts: ShiftWithBookings[] = []) =>
     isBatchBooking,
     handleSelectShift,
     handleOpenBookingDialog,
-    handleConfirmBookings
+    handleConfirmBookings,
+    hasMinimumBookings
   };
 };

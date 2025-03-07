@@ -33,6 +33,10 @@ export const UserBookingView = ({
   const safeUserBookedShifts = Array.isArray(userBookedShifts) ? userBookedShifts : [];
   const safeSelectedShifts = Array.isArray(selectedShifts) ? selectedShifts : [];
   
+  // Check if we have enough bookings in total
+  const totalBookingsAfterSelection = safeUserBookedShifts.length + safeSelectedShifts.length;
+  const hasMinimumBookings = totalBookingsAfterSelection >= 2;
+  
   // Group shifts by date - ensure we're working with a valid array
   const shiftsByDate = safeAvailableShifts.reduce((acc, shift) => {
     if (!shift || !shift.date) return acc;
@@ -88,7 +92,7 @@ export const UserBookingView = ({
           <div className="mb-4 p-3.5 bg-gradient-to-br from-[#1A1F2C]/90 to-[#222632]/95 backdrop-blur-sm rounded-lg border border-[#33333A] shadow-md">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                {safeSelectedShifts.length + safeUserBookedShifts.length < 2 ? (
+                {!hasMinimumBookings ? (
                   <div className="flex items-center gap-2">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-600/30 text-amber-400">
                       <AlertTriangle className="h-3.5 w-3.5" />
@@ -110,11 +114,11 @@ export const UserBookingView = ({
               </div>
               <Button 
                 size="sm" 
-                className={`${safeSelectedShifts.length === 0 
+                className={`${!hasMinimumBookings || safeSelectedShifts.length === 0
                   ? 'bg-gray-600/50 text-gray-300 cursor-not-allowed hover:bg-gray-600/50 border border-gray-600/30' 
                   : 'bg-primary hover:bg-primary/90 shadow-sm'} transition-all duration-200`} 
                 onClick={onOpenBookingDialog} 
-                disabled={safeSelectedShifts.length === 0}
+                disabled={!hasMinimumBookings || safeSelectedShifts.length === 0}
               >
                 Boka valda pass
               </Button>
