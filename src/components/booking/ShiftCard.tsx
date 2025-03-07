@@ -134,20 +134,6 @@ export function ShiftCard({
               Bokad
             </Badge>
           )}
-          
-          {isUserAdmin && (
-            <Button 
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewDetails(shift.id);
-              }} 
-              size="sm" 
-              variant="outline"
-              className="h-8 bg-black/20 border-[#33333A] hover:bg-black/30 hover:border-primary/30 text-xs"
-            >
-              Hantera pass
-            </Button>
-          )}
         </div>
       </div>
     </div>
