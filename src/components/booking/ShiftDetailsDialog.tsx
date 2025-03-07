@@ -1,14 +1,18 @@
+
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Calendar, Clock, Users, Info, Trash2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Calendar, Clock, Users, Info, Trash2, CheckCircle, XCircle, AlertTriangle, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ShiftWithBookings } from '@/types/booking';
-import { useCancelBooking, useBookShift } from '@/hooks/booking';
+import { useCancelBooking, useBookShift, useBatchBookShifts } from '@/hooks/booking';
 import { Separator } from '@/components/ui/separator';
 import { useDeleteShift } from '@/hooks/useShifts';
 import { toast } from '@/hooks/use-toast';
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { SellerSelect } from './SellerSelect';
+import { SelectedSellersList } from './SelectedSellersList';
 
 interface ShiftDetailsDialogProps {
   shift: ShiftWithBookings;
@@ -23,6 +27,9 @@ export function ShiftDetailsDialog({
   open,
   onOpenChange
 }: ShiftDetailsDialogProps) {
+  const [showSellerSelect, setShowSellerSelect] = useState(false);
+  const [selectedSellers, setSelectedSellers] = useState<{ user_display_name: string; email: string | null; role: string }[]>([]);
+  
   const {
     mutate: bookShift,
     isPending: isBooking
@@ -35,6 +42,10 @@ export function ShiftDetailsDialog({
     mutate: deleteShift,
     isPending: isDeleting
   } = useDeleteShift();
+  const {
+    mutate: batchBookShifts,
+    isPending: isBatchBooking
+  } = useBatchBookShifts();
 
   if (!shift) {
     return null;
@@ -124,12 +135,90 @@ export function ShiftDetailsDialog({
   const confirmedBookings = shift.bookings?.filter(booking => booking.status === 'confirmed') || [];
 
   const handleOpenChange = (open: boolean) => {
-    if ((isBooking || isCancelling || isDeleting) && !open) {
+    if ((isBooking || isCancelling || isDeleting || isBatchBooking) && !open) {
       return;
+    }
+    if (!open) {
+      // Reset state when closing dialog
+      setShowSellerSelect(false);
+      setSelectedSellers([]);
     }
     onOpenChange(open);
   };
 
+  const handleSellerSelect = (seller: { user_display_name: string; email: string | null; role: string }) => {
+    // Check if seller is already in the list
+    if (!selectedSellers.some(s => s.user_display_name === seller.user_display_name)) {
+      setSelectedSellers([...selectedSellers, seller]);
+    }
+  };
+
+  const handleRemoveSeller = (index: number) => {
+    const newSellers = [...selectedSellers];
+    newSellers.splice(index, 1);
+    setSelectedSellers(newSellers);
+  };
+
+  const handleBatchBookSellers = () => {
+    if (selectedSellers.length === 0) {
+      toast({
+        title: "Inga säljare valda",
+        description: "Du måste välja minst en säljare.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Available slots check
+    const availableSlots = shift.available_slots - confirmedBookings.length;
+    if (selectedSellers.length > availableSlots) {
+      toast({
+        title: "För många säljare",
+        description: `Det finns endast plats för ${availableSlots} fler säljare.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Convert selected sellers to SellerBooking format
+    const sellerBookings = selectedSellers.map(seller => ({
+      shiftId: shift.id,
+      userDisplayName: seller.user_display_name,
+      userEmail: seller.email
+    }));
+
+    batchBookShifts(sellerBookings, {
+      onSuccess: (data) => {
+        console.log("Batch booking success:", data);
+        
+        // Handle success with potential partial failures
+        if (data.errors && data.errors.length > 0 && data.results && data.results.length > 0) {
+          toast({
+            title: "Delvis framgång",
+            description: `${data.results.length} säljare bokades framgångsrikt, men ${data.errors.length} kunde inte bokas.`
+          });
+        } else if (!data.errors || data.errors.length === 0) {
+          toast({
+            title: "Säljare tillagda",
+            description: `${data.results.length} säljare har lagts till i passet.`
+          });
+        }
+        
+        // Reset the selected sellers
+        setSelectedSellers([]);
+        setShowSellerSelect(false);
+      },
+      onError: (error) => {
+        console.error("Batch booking error:", error);
+        toast({
+          variant: "destructive",
+          title: "Fel vid tillägg av säljare",
+          description: error instanceof Error ? error.message : "Ett fel uppstod vid tillägg av säljare"
+        });
+      }
+    });
+  };
+  
   return <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md bg-gradient-to-br from-[#1e253a]/95 to-[#252a3d]/98 border-[#33333A]/80 shadow-xl rounded-xl overflow-hidden max-h-[90vh] overflow-y-auto">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/5 via-primary/40 to-primary/5"></div>
@@ -200,6 +289,75 @@ export function ShiftDetailsDialog({
                 </p>
               </div>}
           </div>
+          
+          {/* Admin Seller Selection Section */}
+          {isUserAdmin && (
+            <>
+              <Separator className="my-5 bg-[#33333A]/40" />
+              
+              {!showSellerSelect ? (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowSellerSelect(true)}
+                  className="w-full bg-black/20 border-[#33333A]/80 hover:bg-primary/10"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Lägg till säljare
+                </Button>
+              ) : (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    <Plus className="h-4 w-4 text-primary/70" />
+                    Lägg till säljare
+                  </h3>
+                  
+                  <SellerSelect 
+                    onSellerSelect={handleSellerSelect} 
+                    disabled={isBatchBooking}
+                  />
+                  
+                  <SelectedSellersList 
+                    sellers={selectedSellers} 
+                    onRemove={handleRemoveSeller} 
+                  />
+                  
+                  {selectedSellers.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <Button 
+                        onClick={handleBatchBookSellers} 
+                        disabled={isBatchBooking || selectedSellers.length === 0}
+                        className="bg-primary hover:bg-primary/90"
+                      >
+                        {isBatchBooking ? (
+                          <>
+                            <div className="h-4 w-4 border-2 border-white/30 border-t-white/90 rounded-full animate-spin mr-2"></div>
+                            Lägger till...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Lägg till säljare
+                          </>
+                        )}
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setShowSellerSelect(false);
+                          setSelectedSellers([]);
+                        }}
+                        disabled={isBatchBooking}
+                        className="bg-black/20 border-[#33333A]/80"
+                      >
+                        Avbryt
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
         
         <DialogFooter className="gap-2 sm:gap-0 mt-2">
