@@ -8,6 +8,7 @@ import {
   updateCancelledBooking,
   createNewBooking
 } from './utils/bookingOperations';
+import { ShiftBooking } from '@/types/booking';
 
 export const useBookShift = () => {
   const queryClient = useQueryClient();
@@ -39,12 +40,12 @@ export const useBookShift = () => {
         // Check if there's a cancelled booking for this shift
         const existingCancelledBookings = await fetchExistingBooking(shiftId, user.id, 'cancelled');
         
-        let bookingResult;
+        let bookingResult: ShiftBooking;
         
         // If there's a cancelled booking, update it to confirmed
         if (existingCancelledBookings && existingCancelledBookings.length > 0) {
           console.log('Found cancelled booking, updating status to confirmed');
-          const cancelledBooking = existingCancelledBookings[0];
+          const cancelledBooking = existingCancelledBookings[0] as ShiftBooking;
           const bookingId = cancelledBooking.id;
           
           // Update the cancelled booking to confirmed

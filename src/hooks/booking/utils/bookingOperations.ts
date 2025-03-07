@@ -52,7 +52,7 @@ export async function updateCancelledBooking(
   bookingId: string, 
   displayName: string, 
   originalBooking: ShiftBooking
-) {
+): Promise<ShiftBooking> {
   console.log('Updating cancelled booking to confirmed:', bookingId);
   
   // Update with returning data in the same query
@@ -90,7 +90,7 @@ export async function createNewBooking(
   userId: string, 
   userEmail: string, 
   displayName: string
-) {
+): Promise<ShiftBooking> {
   console.log('Creating new booking for shift:', shiftId);
   
   // Prepare the new booking data
@@ -131,7 +131,7 @@ async function fetchBookingById(
   bookingId: string, 
   originalBooking: ShiftBooking, 
   displayName: string
-) {
+): Promise<ShiftBooking> {
   // Explicit fetch to get the latest data
   const { data, error } = await supabase
     .from('shift_bookings')
@@ -162,7 +162,7 @@ async function fetchNewlyCreatedBooking(
   shiftId: string, 
   userId: string, 
   newBookingData: any
-) {
+): Promise<ShiftBooking> {
   // Explicit fetch to get the latest data
   const { data, error } = await supabase
     .from('shift_bookings')
@@ -194,7 +194,7 @@ async function fetchNewlyCreatedBooking(
 function createFallbackBooking(originalBooking: ShiftBooking, displayName: string): ShiftBooking {
   const fallback: ShiftBooking = {
     ...originalBooking,
-    status: 'confirmed',
+    status: 'confirmed' as const,
     user_display_name: displayName,
     updated_at: new Date().toISOString()
   };
@@ -209,7 +209,7 @@ function createFallbackNewBooking(newBookingData: any): ShiftBooking {
   const fallback: ShiftBooking = {
     id: 'temporary-id', // Will be replaced when data is refetched
     ...newBookingData,
-    status: 'confirmed',
+    status: 'confirmed' as const,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
