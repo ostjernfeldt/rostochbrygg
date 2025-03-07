@@ -78,7 +78,7 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
       {mounted && (
         <PopoverContent 
           ref={contentRef}
-          className="w-[calc(100vw-2rem)] p-0 sm:w-[300px] max-h-[80vh]" 
+          className="w-[calc(100vw-2rem)] p-0 sm:w-[300px]" 
           align={isMobile ? "center" : "start"}
           side={isMobile ? "bottom" : undefined}
           sideOffset={isMobile ? 5 : 4}
@@ -90,7 +90,7 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
           }}
           forceMount
         >
-          <div className="flex flex-col w-full h-full max-h-[80vh]">
+          <div className="flex flex-col w-full h-full">
             {/* Search input */}
             <div className="flex items-center border-b px-3 py-2 bg-[#1A1F2C] sticky top-0 z-10">
               <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
@@ -102,53 +102,60 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
               />
             </div>
             
-            {/* Loading state */}
-            {loading && (
-              <div className="p-4 text-center bg-[#1A1F2C]">
-                <div className="h-4 w-4 border-2 border-current/30 border-t-current/90 rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-sm text-muted-foreground">Laddar säljare...</p>
-              </div>
-            )}
-            
-            {/* Empty state */}
-            {!loading && sellers.length === 0 && (
-              <div className="py-6 text-center text-sm bg-[#1A1F2C] text-white">
-                Ingen säljare hittades.
-              </div>
-            )}
-            
-            {/* Sellers list */}
-            {!loading && sellers.length > 0 && (
-              <div 
-                className="overflow-y-auto overflow-x-hidden bg-[#1A1F2C] flex-1 max-h-[40vh]"
-                style={{ overscrollBehavior: 'contain' }}
-              >
-                {sellers.map((seller) => (
-                  <div
-                    key={seller.user_display_name}
-                    role="button"
-                    tabIndex={0}
-                    className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-3 py-3 text-sm outline-none hover:bg-primary/20 hover:text-white my-1 transition-colors"
-                    onClick={() => handleSellerSelect(seller)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleSellerSelect(seller);
-                      }
-                    }}
-                  >
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-white mr-2 flex-shrink-0">
-                      {seller.user_display_name[0].toUpperCase()}
+            <div className="bg-[#1A1F2C] max-h-[60vh] flex flex-col">
+              {/* Loading state */}
+              {loading && (
+                <div className="p-4 text-center">
+                  <div className="h-4 w-4 border-2 border-current/30 border-t-current/90 rounded-full animate-spin mx-auto mb-2"></div>
+                  <p className="text-sm text-muted-foreground">Laddar säljare...</p>
+                </div>
+              )}
+              
+              {/* Empty state */}
+              {!loading && sellers.length === 0 && (
+                <div className="py-6 text-center text-sm text-white">
+                  Ingen säljare hittades.
+                </div>
+              )}
+              
+              {/* Sellers list */}
+              {!loading && sellers.length > 0 && (
+                <div 
+                  className="overflow-y-auto touch-auto -webkit-overflow-scrolling-touch max-h-[60vh] overscroll-contain"
+                  style={{ 
+                    WebkitOverflowScrolling: 'touch',
+                    overscrollBehavior: 'contain',
+                    msOverflowStyle: 'none',
+                    scrollbarWidth: 'none' 
+                  }}
+                >
+                  {sellers.map((seller) => (
+                    <div
+                      key={seller.user_display_name}
+                      role="button"
+                      tabIndex={0}
+                      className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-3 py-3 text-sm outline-none hover:bg-primary/20 hover:text-white my-1 transition-colors active:bg-primary/30"
+                      onClick={() => handleSellerSelect(seller)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSellerSelect(seller);
+                        }
+                      }}
+                    >
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-white mr-2 flex-shrink-0">
+                        {seller.user_display_name[0].toUpperCase()}
+                      </div>
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <span className="text-white font-medium truncate">{seller.user_display_name}</span>
+                        <span className="text-xs text-primary truncate">{seller.role}</span>
+                      </div>
+                      <Check className="ml-auto h-4 w-4 opacity-0 text-primary flex-shrink-0" />
                     </div>
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <span className="text-white font-medium truncate">{seller.user_display_name}</span>
-                      <span className="text-xs text-primary truncate">{seller.role}</span>
-                    </div>
-                    <Check className="ml-auto h-4 w-4 opacity-0 text-primary flex-shrink-0" />
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </PopoverContent>
       )}
