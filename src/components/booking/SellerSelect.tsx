@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { useSellerSearch } from "@/hooks/booking/useSellerSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Seller {
   user_display_name: string;
@@ -27,6 +28,11 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
   const [open, setOpen] = useState(false);
   const { sellers, loading, search, setSearch } = useSellerSearch();
   const isMobile = useIsMobile();
+
+  const handleSellerSelect = (seller: Seller) => {
+    onSellerSelect(seller);
+    setOpen(false);
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -80,27 +86,31 @@ export function SellerSelect({ onSellerSelect, disabled = false }: SellerSelectP
           
           {/* Sellers list */}
           {!loading && sellers.length > 0 && (
-            <div className="max-h-[40vh] sm:max-h-[200px] overflow-y-auto p-1 bg-[#1A1F2C]">
-              {sellers.map((seller) => (
-                <div
-                  key={seller.user_display_name}
-                  className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-3 sm:py-1.5 text-sm outline-none hover:bg-primary/20 hover:text-white data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 my-1"
-                  onClick={() => {
-                    onSellerSelect(seller);
-                    setOpen(false);
-                  }}
-                >
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-white mr-2">
-                    {seller.user_display_name[0].toUpperCase()}
-                  </div>
-                  <div className="flex flex-col flex-1">
-                    <span className="text-white font-medium">{seller.user_display_name}</span>
-                    <span className="text-xs text-primary">{seller.role}</span>
-                  </div>
-                  <Check className="ml-auto h-4 w-4 opacity-0 text-primary" />
-                </div>
-              ))}
-            </div>
+            <ScrollArea className="h-[40vh] sm:h-[200px] bg-[#1A1F2C]">
+              <div className="p-1">
+                {sellers.map((seller) => (
+                  <button
+                    key={seller.user_display_name}
+                    type="button"
+                    className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-3 sm:py-1.5 text-sm outline-none hover:bg-primary/20 hover:text-white data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 my-1"
+                    onClick={() => handleSellerSelect(seller)}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      handleSellerSelect(seller);
+                    }}
+                  >
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-white mr-2">
+                      {seller.user_display_name[0].toUpperCase()}
+                    </div>
+                    <div className="flex flex-col flex-1">
+                      <span className="text-white font-medium">{seller.user_display_name}</span>
+                      <span className="text-xs text-primary">{seller.role}</span>
+                    </div>
+                    <Check className="ml-auto h-4 w-4 opacity-0 text-primary" />
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
           )}
         </div>
       </PopoverContent>
