@@ -1,3 +1,4 @@
+
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { Calendar, Clock, Users, Check } from "lucide-react";
@@ -12,6 +13,7 @@ interface ShiftCardProps {
   isSelectable?: boolean;
   isSelected?: boolean;
   onSelectShift?: (shiftId: string) => void;
+  showDateInCard?: boolean;
 }
 
 export function ShiftCard({ 
@@ -20,7 +22,8 @@ export function ShiftCard({
   onViewDetails, 
   isSelectable = false,
   isSelected = false,
-  onSelectShift 
+  onSelectShift,
+  showDateInCard = false
 }: ShiftCardProps) {
   if (!shift || !shift.start_time || !shift.end_time || !shift.date) {
     return null;
@@ -74,6 +77,16 @@ export function ShiftCard({
       <div className="h-[2px] w-full bg-gradient-to-r from-primary/5 via-primary/30 to-primary/5"></div>
       
       <div className="p-4">
+        {showDateInCard && (
+          <div className="flex items-center mb-3 text-white">
+            <Calendar className="h-4 w-4 mr-2 text-primary" />
+            <div>
+              <span className="font-medium capitalize">{day}</span>
+              <span className="ml-1 text-muted-foreground">{dateNumber}</span>
+            </div>
+          </div>
+        )}
+        
         <div className="flex items-center justify-between mb-3">
           <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-2 py-1 text-xs font-medium flex items-center gap-1.5">
             <Clock className="h-3 w-3" />

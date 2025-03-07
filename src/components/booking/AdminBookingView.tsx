@@ -121,29 +121,16 @@ export const AdminBookingView = ({
                 const dayShifts = groupedShifts[dateKey] || [];
                 if (dayShifts.length === 0) return null;
                 
-                const dayDate = new Date(dateKey);
-                const dayName = format(dayDate, 'EEEE', { locale: sv });
-                const dayNumber = format(dayDate, 'd MMMM', { locale: sv });
-                
                 return (
-                  <div key={dateKey} className="space-y-5">
-                    <div className="flex items-center gap-2">
-                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Calendar className="h-4 w-4 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="text-base font-medium capitalize">{dayName}</h3>
-                        <p className="text-sm text-muted-foreground">{dayNumber}</p>
-                      </div>
-                    </div>
-                    
+                  <div key={dateKey} className="space-y-5">                    
                     <div className="grid grid-cols-1 gap-5">
                       {dayShifts.map(shift => (
                         <ShiftCard 
                           key={shift.id} 
                           shift={shift} 
                           isUserAdmin={true} 
-                          onViewDetails={onViewShiftDetails} 
+                          onViewDetails={onViewShiftDetails}
+                          showDateInCard={true} 
                         />
                       ))}
                     </div>
