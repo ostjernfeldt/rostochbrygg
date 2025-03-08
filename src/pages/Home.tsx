@@ -173,17 +173,6 @@ const Home = () => {
     }, 2000);
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem("isAuthenticated");
-    toast({
-      title: "Utloggad",
-      description: "Du har loggats ut",
-      className: "bg-green-500 text-white border-none rounded-xl shadow-lg",
-      duration: 1000,
-    });
-    navigate("/login");
-  };
-
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
     setSelectedSeller("all");
@@ -242,13 +231,6 @@ const Home = () => {
                 />
               </PopoverContent>
             </Popover>
-            <Button 
-              variant="ghost" 
-              onClick={handleSignOut} 
-              className="hover:bg-primary/10 transition-colors"
-            >
-              Logga ut
-            </Button>
           </div>
         </div>
 
