@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ShiftBooking } from '@/types/booking';
 import { SellerBooking, BatchBookingResult } from '@/hooks/booking/useBatchBookShifts';
@@ -53,7 +52,14 @@ export async function checkExistingSellerBookings(shiftId: string, userDisplayNa
     return null;
   }
     
-  return existingSellerBookings;
+  if (existingSellerBookings) {
+    return existingSellerBookings.map(booking => ({
+      ...booking,
+      status: booking.status === 'cancelled' ? 'cancelled' : 'confirmed'
+    } as ShiftBooking));
+  }
+    
+  return [];
 }
 
 /**
@@ -65,7 +71,7 @@ export async function reactivateCancelledBooking(bookingId: string): Promise<Shi
   const { data, error } = await supabase
     .from('shift_bookings')
     .update({ 
-      status: 'confirmed',
+      status: 'confirmed' as const,
       updated_at: new Date().toISOString()
     })
     .eq('id', bookingId)
@@ -77,7 +83,10 @@ export async function reactivateCancelledBooking(bookingId: string): Promise<Shi
     return null;
   }
   
-  return data as ShiftBooking;
+  return data ? {
+    ...data,
+    status: data.status === 'cancelled' ? 'cancelled' : 'confirmed'
+  } as ShiftBooking : null;
 }
 
 /**
@@ -116,7 +125,7 @@ export async function createNewBooking(
         user_display_name: userDisplayName,
         user_email: userEmail,
         user_id: userId,
-        status: 'confirmed'
+        status: 'confirmed' as const
       }])
       .select()
       .single();
@@ -126,7 +135,10 @@ export async function createNewBooking(
       return null;
     }
 
-    return data as ShiftBooking;
+    return data ? {
+      ...data,
+      status: data.status === 'cancelled' ? 'cancelled' : 'confirmed'
+    } as ShiftBooking : null;
   } catch (insertError) {
     console.error('Exception during booking creation:', insertError);
     return null;
@@ -152,7 +164,7 @@ export async function retryBookingWithAdminId(
         user_display_name: userDisplayName,
         user_email: userEmail,
         user_id: adminId,
-        status: 'confirmed'
+        status: 'confirmed' as const
       }])
       .select()
       .single();
@@ -162,7 +174,10 @@ export async function retryBookingWithAdminId(
       return null;
     }
     
-    return retryResult as ShiftBooking;
+    return retryResult ? {
+      ...retryResult,
+      status: retryResult.status === 'cancelled' ? 'cancelled' : 'confirmed'
+    } as ShiftBooking : null;
   } catch (retryException) {
     console.error('Exception during retry booking:', retryException);
     return null;
