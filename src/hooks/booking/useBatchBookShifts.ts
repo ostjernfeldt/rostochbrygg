@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { ShiftBooking } from '@/types/booking';
-import { fetchUserStaffRole } from './utils/bookingOperations';
 
 export interface SellerBooking {
   shiftId: string;
@@ -64,7 +63,8 @@ export const useBatchBookShifts = () => {
       // Process each booking
       for (const booking of bookings) {
         try {
-          // First check if there's an existing booking (including cancelled ones) for this seller on this shift
+          // First check if there's ANY existing booking for this seller on this shift
+          // This includes ALL bookings for this seller on this shift, regardless of status
           const { data: existingSellerBookings } = await supabase
             .from('shift_bookings')
             .select('*')
@@ -100,7 +100,7 @@ export const useBatchBookShifts = () => {
             continue;
           }
           
-          // Case 3: New booking - we need a valid user_id, either from the admin or use a default
+          // Case 3: New booking - we need a valid user_id
           let userId = adminId || '00000000-0000-0000-0000-000000000000';
           
           if (booking.userEmail) {
@@ -117,50 +117,53 @@ export const useBatchBookShifts = () => {
           }
           
           // Create new booking
-          const newBookingData = {
-            shift_id: booking.shiftId,
-            user_display_name: booking.userDisplayName,
-            user_email: booking.userEmail,
-            user_id: userId,
-            status: 'confirmed'
-          };
-
-          const { data, error } = await supabase
-            .from('shift_bookings')
-            .insert([newBookingData])
-            .select()
-            .single();
-
-          if (error) {
-            // If foreign key error, try a different approach with admin ID
-            if (error.message.includes('violates foreign key constraint')) {
-              console.log('Foreign key constraint error, retrying with admin ID');
-              
-              // Always use the admin ID as a fallback
-              const retryData = {
+          try {
+            const { data, error } = await supabase
+              .from('shift_bookings')
+              .insert([{
                 shift_id: booking.shiftId,
                 user_display_name: booking.userDisplayName,
                 user_email: booking.userEmail,
-                user_id: adminId || '00000000-0000-0000-0000-000000000000',
+                user_id: userId,
                 status: 'confirmed'
-              };
-              
-              const { data: retryResult, error: retryError } = await supabase
-                .from('shift_bookings')
-                .insert([retryData])
-                .select()
-                .single();
+              }])
+              .select()
+              .single();
+
+            if (error) {
+              // Try with admin ID as a fallback
+              if (error.message.includes('violates foreign key constraint') || 
+                  error.message.includes('violates unique constraint')) {
+                console.log('Constraint error, retrying with admin ID');
                 
-              if (retryError) {
-                errors.push(`Fel vid bokning för ${booking.userDisplayName}: ${retryError.message}`);
-              } else if (retryResult) {
-                results.push(retryResult as ShiftBooking);
+                // Always use the admin ID as a fallback
+                const { data: retryResult, error: retryError } = await supabase
+                  .from('shift_bookings')
+                  .insert([{
+                    shift_id: booking.shiftId,
+                    user_display_name: booking.userDisplayName,
+                    user_email: booking.userEmail,
+                    user_id: adminId || '00000000-0000-0000-0000-000000000000',
+                    status: 'confirmed'
+                  }])
+                  .select()
+                  .single();
+                  
+                if (retryError) {
+                  errors.push(`Fel vid bokning för ${booking.userDisplayName}: ${retryError.message}`);
+                } else if (retryResult) {
+                  results.push(retryResult as ShiftBooking);
+                }
+              } else {
+                errors.push(`Fel vid bokning för ${booking.userDisplayName}: ${error.message}`);
               }
-            } else {
-              errors.push(`Fel vid bokning för ${booking.userDisplayName}: ${error.message}`);
+            } else if (data) {
+              results.push(data as ShiftBooking);
             }
-          } else if (data) {
-            results.push(data as ShiftBooking);
+          } catch (insertError) {
+            // This is a more general catch for any other errors that might occur during the insertion
+            const message = insertError instanceof Error ? insertError.message : 'Ett okänt fel uppstod';
+            errors.push(`Fel för ${booking.userDisplayName}: ${message}`);
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Ett okänt fel uppstod';

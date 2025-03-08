@@ -707,6 +707,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_column_info: {
+        Args: {
+          table_name: string
+          column_name: string
+        }
+        Returns: Json
+      }
       get_user_role: {
         Args: {
           user_id: string
