@@ -1,5 +1,4 @@
-
-import { UserRound, Filter } from "lucide-react";
+import { UserRound, Filter, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { useEffect, useState } from "react";
@@ -23,17 +22,19 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TotalPurchase } from "@/types/purchase";
 import { SellerFilter } from "@/components/filters/SellerFilter";
 import { DailyTransactions } from "@/components/transactions/DailyTransactions";
 
 const Home = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [username, setUsername] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedSeller, setSelectedSeller] = useState("all");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { data: allStaff } = useQuery({
     queryKey: ['allStaff'],
@@ -41,7 +42,7 @@ const Home = () => {
       const { data, error } = await supabase
         .from('staff_roles')
         .select('user_display_name')
-        .eq('hidden', false); // Only fetch visible staff members
+        .eq('hidden', false);
       
       if (error) throw error;
       return new Set((data || []).map(s => s.user_display_name));
@@ -51,7 +52,6 @@ const Home = () => {
   const { data: latestDate } = useQuery({
     queryKey: ['latestTransactionDate', allStaff],
     queryFn: async () => {
-      // Get the set of visible staff names
       const visibleStaffSet = allStaff;
       
       const { data, error } = await supabase
@@ -62,7 +62,6 @@ const Home = () => {
 
       if (error) throw error;
 
-      // Filter for transactions only from visible staff
       const visibleStaffTransactions = data.filter(
         trans => trans.user_display_name && visibleStaffSet.has(trans.user_display_name)
       );
@@ -105,7 +104,6 @@ const Home = () => {
         throw error;
       }
 
-      // Filter transactions to only include those from visible staff members
       const visibleStaffSet = allStaff;
       const filteredTransactions = data.filter(
         trans => trans.user_display_name && visibleStaffSet.has(trans.user_display_name)
@@ -154,6 +152,27 @@ const Home = () => {
     };
   }, []);
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    setShouldAnimate(true);
+    
+    await queryClient.invalidateQueries({ queryKey: ['latestTransactionDate'] });
+    await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    await queryClient.invalidateQueries({ queryKey: ['latestSales'] });
+    await queryClient.invalidateQueries({ queryKey: ['dailyLeaderboard'] });
+    
+    toast({
+      title: "Uppdaterar statistik",
+      description: "Hämtar senaste datan",
+      className: "bg-primary text-white border-none rounded-xl shadow-lg",
+      duration: 2000,
+    });
+    
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 2000);
+  };
+
   const handleSignOut = () => {
     localStorage.removeItem("isAuthenticated");
     toast({
@@ -167,7 +186,7 @@ const Home = () => {
 
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
-    setSelectedSeller("all"); // Reset seller filter when date changes
+    setSelectedSeller("all");
     if (date) {
       toast({
         title: "Datum valt",
@@ -193,6 +212,15 @@ const Home = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="bg-primary hover:bg-primary/80 border-none rounded-lg"
+            >
+              <RefreshCw className={`h-4 w-4 text-white ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
             <Popover>
               <PopoverTrigger asChild>
                 <Button 
