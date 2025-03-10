@@ -1,4 +1,3 @@
-
 import { LeaderboardItem } from "./LeaderboardItem";
 import { LeaderboardFilter } from "./LeaderboardFilter";
 import { Button } from "@/components/ui/button";
@@ -59,22 +58,20 @@ export const LeaderboardSection = ({
       <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-center'} mb-4`}>
         <h2 className="text-2xl font-bold">{title}</h2>
         {filter && (
-          <div className={`${isMobile ? 'w-full' : 'w-auto'}`}>
+          <div className={`${isMobile ? 'w-full' : 'w-auto'} flex gap-2 items-center`}>
             <LeaderboardFilter {...filter} />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => copyToClipboard(data)}
+              className="w-10 h-10 bg-primary hover:bg-primary/80 border-none rounded-lg flex-shrink-0"
+            >
+              <Copy className="h-4 w-4 text-white" />
+            </Button>
           </div>
         )}
       </div>
       <div className="space-y-3">
-        <div className="flex justify-end mb-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => copyToClipboard(data)}
-            className="w-10 h-10 bg-primary hover:bg-primary/80 border-none rounded-lg"
-          >
-            <Copy className="h-4 w-4 text-white" />
-          </Button>
-        </div>
         {isLoading ? (
           <div className="p-4">Laddar data...</div>
         ) : !data || data.length === 0 ? (
