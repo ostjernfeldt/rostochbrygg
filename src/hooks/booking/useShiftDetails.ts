@@ -78,6 +78,20 @@ export const useShiftDetails = (shiftId: string) => {
           });
           // Still continue, just with empty bookings
         }
+
+        // Fetch the current user's staff role to get the display name
+        const { data: staffRole, error: staffRoleError } = await supabase
+          .from('staff_roles')
+          .select('user_display_name')
+          .eq('email', user.email)
+          .maybeSingle();
+
+        if (staffRoleError) {
+          console.error('Error fetching staff role:', staffRoleError);
+        }
+        
+        const currentUserDisplayName = staffRole?.user_display_name || null;
+        console.log('Current user display name from staff_roles:', currentUserDisplayName);
         
         // Initialize bookings as empty array if undefined
         const processedBookings = Array.isArray(bookings) ? bookings.map(booking => {
@@ -86,8 +100,13 @@ export const useShiftDetails = (shiftId: string) => {
           // Ensure status is correctly typed
           const typedStatus = booking.status === 'cancelled' ? 'cancelled' : 'confirmed';
           
-          // Use user_display_name from the booking if available, otherwise use the email, or fallback to "Unknown seller"
-          const displayName = booking.user_display_name || booking.user_email || 'Unknown seller';
+          // If this is the current user's booking, use their display name from staff_roles
+          let displayName = booking.user_display_name || booking.user_email || 'Unknown seller';
+          
+          // Update the current user's booking with their proper display name
+          if (booking.user_id === user.id && currentUserDisplayName) {
+            displayName = currentUserDisplayName;
+          }
           
           return {
             ...booking,
