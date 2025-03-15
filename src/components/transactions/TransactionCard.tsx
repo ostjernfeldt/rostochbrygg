@@ -1,4 +1,3 @@
-
 import { CheckCircle, XCircle, Clock, Info, RotateCcw } from "lucide-react";
 import { formatSEK } from "@/utils/formatters";
 import { format } from "date-fns";
@@ -79,23 +78,17 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
   const { isAdmin } = useAuth();
   const { undoVerification, isUndoing, verifySingleTransaction, isVerifyingSingle } = useVerifyPayments();
   
-  // Use Swedish locale for dates
   const formattedDate = format(new Date(transaction.timestamp), 'HH:mm', { locale: sv });
   const fullFormattedDate = format(new Date(transaction.timestamp), 'yyyy-MM-dd HH:mm', { locale: sv });
   
-  // Determine if the transaction needs verification icon
   const needsVerification = transaction.payment_type === 'SWISH' || transaction.payment_type === 'IZETTLE_CASH';
   const isPending = needsVerification && (!transaction.verification_status || transaction.verification_status === 'pending');
   const canUndoVerification = isAdmin && needsVerification && 
     (transaction.verification_status === 'verified' || transaction.verification_status === 'rejected');
   
-  // Calculate points for the transaction
   const calculateTransactionPoints = () => {
-    // Check if products exist and is an array
     if (transaction.products && Array.isArray(transaction.products) && transaction.products.length > 0) {
-      // Safely cast and process each product
       return transaction.products.reduce((total: number, item) => {
-        // Ensure item is a valid Product before passing to calculateProductPoints
         if (
           typeof item === 'object' && 
           item !== null && 
@@ -111,7 +104,6 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
       }, 0);
     }
     
-    // Fallback to using quantity field
     return calculatePoints(transaction.quantity);
   };
   
@@ -183,14 +175,12 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
               <div className="text-sm text-muted-foreground">Poäng</div>
               <div className="text-sm font-medium">{transactionPoints} poäng</div>
               
-              {/* Display products if available, otherwise show product_name */}
               {transaction.products && Array.isArray(transaction.products) && transaction.products.length > 0 ? (
                 <>
                   <div className="text-sm text-muted-foreground">Produkt</div>
                   <div className="text-sm font-medium">
                     <ul className="list-none space-y-1">
                       {transaction.products.map((product, index) => {
-                        // Ensure product is a valid Product object
                         if (
                           typeof product === 'object' && 
                           product !== null && 
@@ -206,7 +196,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
                           );
                         }
                         return null;
-                      }).filter(Boolean)}
+                      })}
                     </ul>
                   </div>
                 </>
