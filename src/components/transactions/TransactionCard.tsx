@@ -1,4 +1,3 @@
-
 import { CheckCircle, XCircle, Clock, Info, RotateCcw } from "lucide-react";
 import { formatSEK } from "@/utils/formatters";
 import { format } from "date-fns";
@@ -129,7 +128,6 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
     }
   };
   
-  // Helper function to check if an item is a valid Product
   const isValidProduct = (item: any): item is Product => {
     return (
       typeof item === 'object' && 
@@ -140,8 +138,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
     );
   };
   
-  // Helper function to render product items safely
-  const renderProductItem = (product: Json | any, index: number) => {
+  const renderProductItem = (product: unknown, index: number) => {
     if (isValidProduct(product)) {
       return (
         <li key={index}>
@@ -152,7 +149,6 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
     return null;
   };
   
-  // Helper function to safely render the products list
   const renderProductsList = () => {
     if (transaction.products && Array.isArray(transaction.products) && transaction.products.length > 0) {
       return (
@@ -161,8 +157,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
           <div className="text-sm font-medium">
             <ul className="list-none space-y-1">
               {transaction.products.map((product, index) => 
-                // Explicitly cast each product to any to avoid type errors
-                renderProductItem(product as any, index)
+                renderProductItem(product, index)
               )}
             </ul>
           </div>
