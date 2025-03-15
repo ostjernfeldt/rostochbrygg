@@ -45,7 +45,7 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
 
   if (isLoading) {
     return (
-      <>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
         <div className="stat-card animate-pulse">
           <span className="text-gray-400 text-lg">Total poäng</span>
           <div className="h-10 bg-gray-200 rounded mt-1"></div>
@@ -58,13 +58,13 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
           <span className="text-gray-400 text-lg">Snittpoäng</span>
           <div className="h-10 bg-gray-200 rounded mt-1"></div>
         </div>
-      </>
+      </div>
     );
   }
 
   if (!salesData) {
     return (
-      <>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
         <div className="stat-card">
           <span className="text-gray-400 text-lg">Total poäng</span>
           <div className="text-4xl font-bold mt-1">0</div>
@@ -80,7 +80,7 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
           <div className="text-4xl font-bold mt-1">0</div>
           <div className="mt-1 text-gray-400">Ingen data tillgänglig</div>
         </div>
-      </>
+      </div>
     );
   }
 
@@ -90,7 +90,7 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
   };
 
   return (
-    <>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
       <div 
         onClick={() => navigate(`/transactions${selectedDate ? `?date=${selectedDate}` : ''}`)}
         className="stat-card animate-fade-in [animation-delay:200ms] hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
@@ -135,6 +135,7 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
         onClose={() => setDialogType(null)}
         type={dialogType || "sales"}
       />
-    </>
+    </div>
   );
 };
+
