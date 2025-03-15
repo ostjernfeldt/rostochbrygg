@@ -4,6 +4,7 @@ import { formatSEK } from "@/utils/formatters";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 import { TotalPurchase } from "@/types/purchase";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TransactionCardProps {
   transaction: TotalPurchase;
@@ -25,11 +26,44 @@ const PaymentMethodIcon = ({ paymentType }: { paymentType: string | null }) => {
 
 const VerificationStatusIcon = ({ status }: { status?: string }) => {
   if (!status || status === 'pending') {
-    return <Clock className="h-4 w-4 text-yellow-400" title="Väntar på verifiering" />;
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Clock className="h-4 w-4 text-yellow-400" aria-label="Väntar på verifiering" />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Väntar på verifiering</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   } else if (status === 'verified') {
-    return <CheckCircle className="h-4 w-4 text-green-400" title="Verifierad" />;
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <CheckCircle className="h-4 w-4 text-green-400" aria-label="Verifierad" />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Verifierad</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   } else if (status === 'rejected') {
-    return <XCircle className="h-4 w-4 text-red-400" title="Avvisad" />;
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <XCircle className="h-4 w-4 text-red-400" aria-label="Avvisad" />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Avvisad</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   }
   return null;
 };
