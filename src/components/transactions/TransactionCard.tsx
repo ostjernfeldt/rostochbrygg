@@ -1,4 +1,3 @@
-
 import { CheckCircle, XCircle, Clock, Info, RotateCcw } from "lucide-react";
 import { formatSEK } from "@/utils/formatters";
 import { format } from "date-fns";
@@ -158,9 +157,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
           <div className="text-sm font-medium">
             <ul className="list-none space-y-1">
               {transaction.products.map((product, index) => {
-                // Cast product to unknown first to safely check type
-                const productItem = product as unknown;
-                return renderProductItem(productItem, index);
+                return renderProductItem(product as unknown, index);
               })}
             </ul>
           </div>
