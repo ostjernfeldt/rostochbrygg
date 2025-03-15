@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useVerifyPayments } from "@/hooks/useVerifyPayments";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { calculateProductPoints, calculatePoints } from "@/utils/pointsCalculation";
 
 interface TransactionCardProps {
   transaction: TotalPurchase;
@@ -88,6 +89,18 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
   const canUndoVerification = isAdmin && needsVerification && 
     (transaction.verification_status === 'verified' || transaction.verification_status === 'rejected');
   
+  // Calculate points for the transaction
+  const calculateTransactionPoints = () => {
+    if (transaction.products && Array.isArray(transaction.products) && transaction.products.length > 0) {
+      return transaction.products.reduce((total, product) => {
+        return total + calculateProductPoints(product);
+      }, 0);
+    }
+    return calculatePoints(transaction.quantity);
+  };
+  
+  const transactionPoints = calculateTransactionPoints();
+  
   const handleUndoVerification = () => {
     if (transaction.purchase_uuid) {
       undoVerification({ purchaseUuid: transaction.purchase_uuid });
@@ -127,7 +140,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
           </div>
           <div className="text-right">
             <div className="font-medium">{formatSEK(transaction.amount)}</div>
-            {/* Removed the product_name display */}
+            <div className="text-sm text-gray-400">{transactionPoints} poäng</div>
           </div>
         </div>
       </div>
@@ -150,6 +163,9 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
               
               <div className="text-sm text-muted-foreground">Belopp</div>
               <div className="text-sm font-medium">{formatSEK(transaction.amount)}</div>
+              
+              <div className="text-sm text-muted-foreground">Poäng</div>
+              <div className="text-sm font-medium">{transactionPoints} poäng</div>
               
               {/* Display products if available, otherwise show product_name */}
               {transaction.products && Array.isArray(transaction.products) && transaction.products.length > 0 ? (
