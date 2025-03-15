@@ -147,6 +147,30 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
     return null;
   };
   
+  // Helper function to safely render the products list
+  const renderProductsList = () => {
+    if (transaction.products && Array.isArray(transaction.products) && transaction.products.length > 0) {
+      return (
+        <>
+          <div className="text-sm text-muted-foreground">Produkt</div>
+          <div className="text-sm font-medium">
+            <ul className="list-none space-y-1">
+              {transaction.products.map((product, index) => renderProductItem(product, index))}
+            </ul>
+          </div>
+        </>
+      );
+    } else if (transaction.product_name) {
+      return (
+        <>
+          <div className="text-sm text-muted-foreground">Produkt</div>
+          <div className="text-sm font-medium">{transaction.product_name}</div>
+        </>
+      );
+    }
+    return null;
+  };
+  
   return (
     <>
       <div 
@@ -195,21 +219,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
               <div className="text-sm text-muted-foreground">Poäng</div>
               <div className="text-sm font-medium">{transactionPoints} poäng</div>
               
-              {transaction.products && Array.isArray(transaction.products) && transaction.products.length > 0 ? (
-                <>
-                  <div className="text-sm text-muted-foreground">Produkt</div>
-                  <div className="text-sm font-medium">
-                    <ul className="list-none space-y-1">
-                      {transaction.products.map((product, index) => renderProductItem(product, index))}
-                    </ul>
-                  </div>
-                </>
-              ) : transaction.product_name ? (
-                <>
-                  <div className="text-sm text-muted-foreground">Produkt</div>
-                  <div className="text-sm font-medium">{transaction.product_name}</div>
-                </>
-              ) : null}
+              {renderProductsList()}
               
               <div className="text-sm text-muted-foreground">Betalningsmetod</div>
               <div className="text-sm font-medium flex items-center">
