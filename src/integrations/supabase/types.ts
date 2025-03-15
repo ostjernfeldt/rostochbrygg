@@ -572,6 +572,10 @@ export type Database = {
           updated_at: string | null
           user_display_name: string | null
           vat_amount: number | null
+          verification_note: string | null
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           amount: number
@@ -617,6 +621,10 @@ export type Database = {
           updated_at?: string | null
           user_display_name?: string | null
           vat_amount?: number | null
+          verification_note?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           amount?: number
@@ -662,6 +670,10 @@ export type Database = {
           updated_at?: string | null
           user_display_name?: string | null
           vat_amount?: number | null
+          verification_note?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: []
       }
@@ -714,6 +726,15 @@ export type Database = {
         }
         Returns: Json
       }
+      get_unverified_payment_totals: {
+        Args: {
+          check_date: string
+        }
+        Returns: {
+          payment_type: string
+          total_amount: number
+        }[]
+      }
       get_user_role: {
         Args: {
           user_id: string
@@ -762,6 +783,15 @@ export type Database = {
           email: string
           invitation_id: string
         }[]
+      }
+      verify_payments: {
+        Args: {
+          verification_date: string
+          payment_types: string[]
+          user_id: string
+          status?: string
+        }
+        Returns: number
       }
     }
     Enums: {

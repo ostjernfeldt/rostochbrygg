@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle2, XCircle, AlertCircle, RefreshCw } from "lucide-react";
 import { useUnverifiedPayments } from "@/hooks/useUnverifiedPayments";
 import { useVerifyPayments } from "@/hooks/useVerifyPayments";
 import { formatSEK } from "@/utils/formatters";

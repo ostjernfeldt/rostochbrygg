@@ -1,112 +1,40 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+ 
 @layer base {
   :root {
-    color-scheme: dark;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 172 99% 39%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --swish: 109, 70%, 30%;
+    --cash: 40, 80%, 40%;
+    --card: 220, 70%, 40%;
   }
-  
-  html {
-    height: 100%;
-    height: -webkit-fill-available;
+}
+ 
+@layer base {
+  * {
+    @apply border-border;
   }
-  
   body {
-    @apply bg-background text-white;
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-    position: relative;
-    width: 100%;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: none;
+    @apply bg-background text-foreground;
   }
-  
-  #root {
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
-    padding-top: env(safe-area-inset-top);
-  }
-}
-
-@layer utilities {
-  .pt-safe {
-    padding-top: env(safe-area-inset-top);
-  }
-  
-  .mt-safe {
-    margin-top: env(safe-area-inset-top);
-  }
-}
-
-.stat-card {
-  @apply p-4 rounded-xl mb-3;
-  background: linear-gradient(145deg, rgba(26,31,44,0.95) 0%, rgba(26,31,44,0.85) 100%);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.hall-of-fame-card {
-  @apply p-6 rounded-xl mb-3;
-  background: linear-gradient(225deg, rgba(35,40,53,0.95) 0%, rgba(27,32,45,0.90) 100%);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1), 
-              0 8px 30px rgba(51, 195, 240, 0.1), 
-              inset 0 1px 1px rgba(255, 255, 255, 0.1);
-}
-
-.overview-stat-card {
-  @apply p-4 rounded-xl;
-  background: linear-gradient(145deg, rgba(26,31,44,0.95) 0%, rgba(26,31,44,0.85) 100%);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.leaderboard-item {
-  @apply p-4 rounded-xl bg-card flex justify-between items-center mb-3;
-  background: linear-gradient(145deg, rgba(26,31,44,0.95) 0%, rgba(26,31,44,0.85) 100%);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.leaderboard-rank {
-  @apply text-xl font-bold;
-}
-
-.leaderboard-rank.gold {
-  color: #FFD700;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-}
-
-.leaderboard-rank.silver {
-  color: #C0C0C0;
-  text-shadow: 0 0 10px rgba(192, 192, 192, 0.3);
-}
-
-.leaderboard-rank.bronze {
-  color: #CD7F32;
-  text-shadow: 0 0 10px rgba(205, 127, 50, 0.3);
-}
-
-.leaderboard-sales {
-  @apply text-gray-400;
-}
-
-.leaderboard-amount {
-  @apply text-primary font-bold;
-}
-
-.percentage-change {
-  @apply text-sm font-medium ml-2;
-}
-
-.percentage-change.positive {
-  @apply text-green-500;
-}
-
-.percentage-change.negative {
-  @apply text-red-500;
 }

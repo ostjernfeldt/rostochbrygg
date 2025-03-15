@@ -25,7 +25,7 @@ export function useUnverifiedPayments(selectedDate: Date | undefined) {
       }
 
       // Format data for display
-      return data || [];
+      return data as UnverifiedPaymentTotals[] || [];
     },
   });
 }
