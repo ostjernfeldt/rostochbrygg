@@ -127,7 +127,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
           </div>
           <div className="text-right">
             <div className="font-medium">{formatSEK(transaction.amount)}</div>
-            <div className="text-sm text-gray-400">{transaction.product_name || ''}</div>
+            {/* Removed the product_name display */}
           </div>
         </div>
       </div>
