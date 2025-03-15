@@ -11,6 +11,7 @@ import { useVerifyPayments } from "@/hooks/useVerifyPayments";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { calculateProductPoints, calculatePoints } from "@/utils/pointsCalculation";
+import { Json } from "@/types/json";
 
 interface TransactionCardProps {
   transaction: TotalPurchase;
@@ -128,19 +129,23 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
     }
   };
   
+  // Helper function to check if an item is a valid Product
+  const isValidProduct = (item: any): item is Product => {
+    return (
+      typeof item === 'object' && 
+      item !== null && 
+      'name' in item && 
+      'quantity' in item &&
+      typeof item.name === 'string'
+    );
+  };
+  
   // Helper function to render product items safely
-  const renderProductItem = (product: any, index: number) => {
-    if (
-      typeof product === 'object' && 
-      product !== null && 
-      'name' in product && 
-      'quantity' in product &&
-      typeof product.name === 'string'
-    ) {
-      const typedProduct = product as Product;
+  const renderProductItem = (product: Json | any, index: number) => {
+    if (isValidProduct(product)) {
       return (
         <li key={index}>
-          {typedProduct.name} {typedProduct.quantity && typedProduct.quantity !== "1" ? `× ${typedProduct.quantity}` : ""}
+          {product.name} {product.quantity && product.quantity !== "1" ? `× ${product.quantity}` : ""}
         </li>
       );
     }
@@ -155,7 +160,10 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
           <div className="text-sm text-muted-foreground">Produkt</div>
           <div className="text-sm font-medium">
             <ul className="list-none space-y-1">
-              {transaction.products.map((product, index) => renderProductItem(product, index))}
+              {transaction.products.map((product, index) => 
+                // Explicitly cast each product to any to avoid type errors
+                renderProductItem(product as any, index)
+              )}
             </ul>
           </div>
         </>
