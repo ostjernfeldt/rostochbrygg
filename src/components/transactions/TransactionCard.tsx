@@ -76,6 +76,9 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
   const formattedDate = format(new Date(transaction.timestamp), 'HH:mm', { locale: sv });
   const fullFormattedDate = format(new Date(transaction.timestamp), 'yyyy-MM-dd HH:mm', { locale: sv });
   
+  // Determine if the transaction needs verification icon
+  const showVerificationStatus = transaction.payment_type === 'SWISH' || transaction.payment_type === 'IZETTLE_CASH';
+  
   return (
     <>
       <div 
@@ -86,7 +89,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
           <div>
             <div className="flex items-center space-x-1.5">
               <span className="font-medium">{transaction.user_display_name || 'Unknown'}</span>
-              {(transaction.payment_type === 'SWISH' || transaction.payment_type === 'IZETTLE_CASH') && 
+              {showVerificationStatus && 
                 <VerificationStatusIcon status={transaction.verification_status} />
               }
             </div>
@@ -129,7 +132,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
                 <PaymentMethodIcon paymentType={transaction.payment_type} />
               </div>
 
-              {(transaction.payment_type === 'SWISH' || transaction.payment_type === 'IZETTLE_CASH') && (
+              {showVerificationStatus && (
                 <>
                   <div className="text-sm text-muted-foreground">Verifieringsstatus</div>
                   <div className="text-sm font-medium flex items-center space-x-2">

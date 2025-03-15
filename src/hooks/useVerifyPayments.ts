@@ -40,9 +40,10 @@ export function useVerifyPayments() {
       return data as number;
     },
     onSuccess: (count, variables) => {
-      // Invalidate relevant queries
+      // Invalidate all relevant queries to ensure data is refreshed
       queryClient.invalidateQueries({ queryKey: ['unverifiedPayments'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['latestTransactions'] });
       queryClient.invalidateQueries({ queryKey: ['latestTransactionDate'] });
       
       // Show success toast
