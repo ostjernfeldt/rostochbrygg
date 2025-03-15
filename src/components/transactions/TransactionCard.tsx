@@ -151,8 +151,26 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
               <div className="text-sm text-muted-foreground">Belopp</div>
               <div className="text-sm font-medium">{formatSEK(transaction.amount)}</div>
               
-              <div className="text-sm text-muted-foreground">Produkt</div>
-              <div className="text-sm font-medium">{transaction.product_name || 'Ej angiven'}</div>
+              {/* Display products if available, otherwise show product_name */}
+              {transaction.products && Array.isArray(transaction.products) && transaction.products.length > 0 ? (
+                <>
+                  <div className="text-sm text-muted-foreground">Produkt</div>
+                  <div className="text-sm font-medium">
+                    <ul className="list-none space-y-1">
+                      {transaction.products.map((product, index) => (
+                        <li key={index}>
+                          {product.name} {product.quantity && product.quantity !== "1" ? `× ${product.quantity}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              ) : transaction.product_name ? (
+                <>
+                  <div className="text-sm text-muted-foreground">Produkt</div>
+                  <div className="text-sm font-medium">{transaction.product_name}</div>
+                </>
+              ) : null}
               
               <div className="text-sm text-muted-foreground">Betalningsmetod</div>
               <div className="text-sm font-medium flex items-center">
