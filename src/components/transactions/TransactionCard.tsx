@@ -128,7 +128,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
     }
   };
   
-  const isValidProduct = (item: any): item is Product => {
+  const isValidProduct = (item: unknown): item is Product => {
     return (
       typeof item === 'object' && 
       item !== null && 
@@ -156,9 +156,9 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
           <div className="text-sm text-muted-foreground">Produkt</div>
           <div className="text-sm font-medium">
             <ul className="list-none space-y-1">
-              {transaction.products.map((product, index) => 
-                renderProductItem(product, index)
-              )}
+              {transaction.products.map((product, index) => {
+                return renderProductItem(product as unknown, index);
+              })}
             </ul>
           </div>
         </>
