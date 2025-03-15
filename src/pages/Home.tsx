@@ -1,3 +1,4 @@
+
 import { Filter, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -261,6 +262,13 @@ const Home = () => {
         </div>
 
         <SalesStats shouldAnimate={shouldAnimate} selectedDate={formattedDate} />
+        
+        {isAdmin && (
+          <PaymentVerification 
+            selectedDate={selectedDate} 
+            isAdmin={isAdmin} 
+          />
+        )}
         
         <div className="mt-8">
           <LeaderboardSection
