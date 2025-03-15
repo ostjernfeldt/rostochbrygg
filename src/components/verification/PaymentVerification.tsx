@@ -24,7 +24,7 @@ interface PaymentVerificationProps {
 
 export function PaymentVerification({ selectedDate, isAdmin }: PaymentVerificationProps) {
   const { data: unverifiedTotals = [], isLoading } = useUnverifiedPayments(selectedDate);
-  const { mutate: verifyPayments, isPending } = useVerifyPayments();
+  const { verify, isVerifying } = useVerifyPayments();
   const [openDialog, setOpenDialog] = useState<{ open: boolean; action: 'verify' | 'reject'; type: string | null }>({ 
     open: false, action: 'verify', type: null 
   });
@@ -48,7 +48,7 @@ export function PaymentVerification({ selectedDate, isAdmin }: PaymentVerificati
       ? ['SWISH', 'IZETTLE_CASH'] 
       : [openDialog.type];
     
-    verifyPayments({
+    verify({
       date: displayDate,
       paymentTypes,
       status: openDialog.action === 'verify' ? 'verified' : 'rejected'
@@ -216,9 +216,9 @@ export function PaymentVerification({ selectedDate, isAdmin }: PaymentVerificati
               className={openDialog.action === 'verify' 
                 ? "bg-green-600 hover:bg-green-700" 
                 : "bg-orange-600 hover:bg-orange-700"}
-              disabled={isPending}
+              disabled={isVerifying}
             >
-              {isPending ? "Arbetar..." : (openDialog.action === 'verify' ? "Verifiera" : "Avvisa")}
+              {isVerifying ? "Arbetar..." : (openDialog.action === 'verify' ? "Verifiera" : "Avvisa")}
             </Button>
           </DialogFooter>
         </DialogContent>
