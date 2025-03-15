@@ -7,13 +7,17 @@ import { toast } from "@/components/ui/use-toast";
 interface VerifyPaymentsParams {
   date: Date;
   paymentTypes: string[];
-  status: 'verified' | 'rejected';
+  status: 'verified' | 'rejected' | 'pending';
+}
+
+interface UndoVerificationParams {
+  purchaseUuid: string;
 }
 
 export function useVerifyPayments() {
   const queryClient = useQueryClient();
   
-  return useMutation({
+  const verifyMutation = useMutation({
     mutationFn: async ({ date, paymentTypes, status }: VerifyPaymentsParams) => {
       const formattedDate = format(date, 'yyyy-MM-dd');
       console.log(`Verifying payments for date: ${formattedDate}, types: ${paymentTypes.join(', ')}, status: ${status}`);
@@ -47,13 +51,19 @@ export function useVerifyPayments() {
       queryClient.invalidateQueries({ queryKey: ['latestTransactionDate'] });
       
       // Show success toast
-      const action = variables.status === 'verified' ? 'Verifierade' : 'Avvisade';
+      const action = variables.status === 'verified' ? 'Verifierade' : 
+                     variables.status === 'rejected' ? 'Avvisade' : 'Återställde';
       toast({
         title: `${action} betalningar`,
-        description: `${count} ${variables.paymentTypes.join(', ')} betalningar har ${variables.status === 'verified' ? 'verifierats' : 'avvisats'}`,
+        description: `${count} ${variables.paymentTypes.join(', ')} betalningar har ${
+          variables.status === 'verified' ? 'verifierats' : 
+          variables.status === 'rejected' ? 'avvisats' : 'återställts till overifierade'
+        }`,
         className: variables.status === 'verified' 
           ? "bg-green-500 text-white border-none rounded-xl shadow-lg" 
-          : "bg-orange-500 text-white border-none rounded-xl shadow-lg",
+          : variables.status === 'rejected'
+          ? "bg-orange-500 text-white border-none rounded-xl shadow-lg"
+          : "bg-blue-500 text-white border-none rounded-xl shadow-lg",
         duration: 3000,
       });
     },
@@ -67,4 +77,61 @@ export function useVerifyPayments() {
       });
     }
   });
+
+  const undoVerificationMutation = useMutation({
+    mutationFn: async ({ purchaseUuid }: UndoVerificationParams) => {
+      console.log(`Undoing verification for transaction: ${purchaseUuid}`);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User must be logged in to undo verification');
+      
+      const { data, error } = await supabase
+        .from('total_purchases')
+        .update({ 
+          verification_status: 'pending',
+          verified_by: null,
+          verified_at: null
+        })
+        .eq('purchase_uuid', purchaseUuid)
+        .select();
+      
+      if (error) {
+        console.error('Error undoing verification:', error);
+        throw error;
+      }
+      
+      return data;
+    },
+    onSuccess: () => {
+      // Invalidate all relevant queries to ensure data is refreshed
+      queryClient.invalidateQueries({ queryKey: ['unverifiedPayments'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['latestTransactions'] });
+      queryClient.invalidateQueries({ queryKey: ['latestTransactionDate'] });
+      
+      // Show success toast
+      toast({
+        title: "Verifiering ångrades",
+        description: "Transaktionen har återställts till overifierad status",
+        className: "bg-blue-500 text-white border-none rounded-xl shadow-lg",
+        duration: 3000,
+      });
+    },
+    onError: (error) => {
+      console.error('Error in undo verification mutation:', error);
+      toast({
+        title: "Fel vid ångra verifiering",
+        description: error instanceof Error ? error.message : "Ett oväntat fel uppstod",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  });
+  
+  return {
+    verify: verifyMutation.mutate,
+    undoVerification: undoVerificationMutation.mutate,
+    isVerifying: verifyMutation.isPending,
+    isUndoing: undoVerificationMutation.isPending
+  };
 }

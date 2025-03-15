@@ -1,12 +1,15 @@
 
-import { CheckCircle, XCircle, Clock, Info } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Info, RotateCcw } from "lucide-react";
 import { formatSEK } from "@/utils/formatters";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 import { TotalPurchase } from "@/types/purchase";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useVerifyPayments } from "@/hooks/useVerifyPayments";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TransactionCardProps {
   transaction: TotalPurchase;
@@ -72,12 +75,24 @@ const VerificationStatusIcon = ({ status }: { status?: string }) => {
 
 export function TransactionCard({ transaction }: TransactionCardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { isAdmin } = useAuth();
+  const { undoVerification, isUndoing } = useVerifyPayments();
+  
   // Use Swedish locale for dates
   const formattedDate = format(new Date(transaction.timestamp), 'HH:mm', { locale: sv });
   const fullFormattedDate = format(new Date(transaction.timestamp), 'yyyy-MM-dd HH:mm', { locale: sv });
   
   // Determine if the transaction needs verification icon
   const showVerificationStatus = transaction.payment_type === 'SWISH' || transaction.payment_type === 'IZETTLE_CASH';
+  const canUndoVerification = isAdmin && showVerificationStatus && 
+    (transaction.verification_status === 'verified' || transaction.verification_status === 'rejected');
+  
+  const handleUndoVerification = () => {
+    if (transaction.purchase_uuid) {
+      undoVerification({ purchaseUuid: transaction.purchase_uuid });
+      setIsDialogOpen(false);
+    }
+  };
   
   return (
     <>
@@ -173,6 +188,21 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
               <div className="text-sm font-medium text-xs text-gray-500 truncate">{transaction.purchase_uuid}</div>
             </div>
           </div>
+          
+          {canUndoVerification && (
+            <DialogFooter>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleUndoVerification}
+                disabled={isUndoing}
+                className="flex items-center space-x-1"
+              >
+                <RotateCcw className="h-4 w-4 mr-1" />
+                <span>{isUndoing ? "Återställer..." : "Ångra verifiering"}</span>
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </>
