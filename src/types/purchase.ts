@@ -1,4 +1,3 @@
-
 import { Json } from "./json";
 
 export interface DatabasePurchase {
@@ -64,6 +63,10 @@ export interface TotalPurchase {
   products?: Json | Product[] | null;
   vat_amount?: number | null;
   quantity?: number | null;
+  verification_status?: string; // Add verification status
+  verified_by?: string | null;
+  verified_at?: string | null;
+  verification_note?: string | null;
 }
 
 export interface LegacyPurchaseFormat {

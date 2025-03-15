@@ -4,7 +4,7 @@ import { TotalPurchase, Product } from "@/types/purchase";
 import { calculatePoints, calculateProductPoints } from "@/utils/pointsCalculation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
-import { List } from "lucide-react";
+import { List, CheckCircle2, AlertCircle, CircleAlert } from "lucide-react";
 
 interface TransactionCardProps {
   transaction: TotalPurchase;
@@ -23,8 +23,40 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
     if (!paymentType) return "Okänd betalningsmetod";
     if (paymentType === "IZETTLE_CASH") return "KONTANT";
     if (paymentType === "IZETTLE_CARD") return "KORT";
+    if (paymentType === "SWISH") return "SWISH";
     return paymentType;
   };
+  
+  // Check if payment type requires verification
+  const requiresVerification = transaction.payment_type === "SWISH" || transaction.payment_type === "IZETTLE_CASH";
+  
+  // Get verification status
+  const verificationStatus = transaction.verification_status || "pending";
+  
+  // Helper to determine verification status icon and color
+  const getVerificationStatusDetails = () => {
+    if (!requiresVerification) return { icon: null, title: null };
+    
+    switch (verificationStatus) {
+      case "verified":
+        return { 
+          icon: <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />,
+          title: "Betalning verifierad"
+        };
+      case "rejected":
+        return { 
+          icon: <CircleAlert className="h-3.5 w-3.5 text-red-500" />,
+          title: "Betalning avvisad"
+        };
+      default:
+        return { 
+          icon: <AlertCircle className="h-3.5 w-3.5 text-orange-400" />,
+          title: "Betalning ej verifierad"
+        };
+    }
+  };
+  
+  const { icon, title } = getVerificationStatusDetails();
 
   return (
     <>
@@ -58,7 +90,10 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
         </div>
         <div className="flex justify-between items-center gap-2">
           <span className="text-primary text-sm sm:text-base truncate">{transaction.user_display_name}</span>
-          <span className="text-gray-400 text-sm sm:text-base whitespace-nowrap">{formatPaymentType(transaction.payment_type)}</span>
+          <div className="flex items-center gap-1.5">
+            {icon && <div title={title}>{icon}</div>}
+            <span className="text-gray-400 text-sm sm:text-base whitespace-nowrap">{formatPaymentType(transaction.payment_type)}</span>
+          </div>
         </div>
       </div>
 
@@ -82,6 +117,24 @@ export const TransactionCard = ({ transaction }: TransactionCardProps) => {
                 </span>
               )}
             </div>
+            
+            {requiresVerification && (
+              <div className="flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-900">
+                {icon}
+                <span>
+                  {verificationStatus === "verified" 
+                    ? "Betalning verifierad" 
+                    : verificationStatus === "rejected"
+                      ? "Betalning avvisad"
+                      : "Betalning ej verifierad"}
+                </span>
+                {transaction.verified_at && (
+                  <span className="text-gray-400 ml-auto text-xs">
+                    {format(new Date(transaction.verified_at), "yyyy-MM-dd")}
+                  </span>
+                )}
+              </div>
+            )}
             
             {transaction.products && Array.isArray(transaction.products) ? (
               <div className="space-y-3">

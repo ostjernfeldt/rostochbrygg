@@ -26,6 +26,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TotalPurchase } from "@/types/purchase";
 import { SellerFilter } from "@/components/filters/SellerFilter";
 import { DailyTransactions } from "@/components/transactions/DailyTransactions";
+import { PaymentVerification } from "@/components/verification/PaymentVerification";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ const Home = () => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedSeller, setSelectedSeller] = useState("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const { data: allStaff } = useQuery({
     queryKey: ['allStaff'],
@@ -78,7 +80,24 @@ const Home = () => {
     },
     enabled: !!allStaff
   });
-  
+
+  const { data: userRole } = useQuery({
+    queryKey: ['userRole'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      setIsAdmin(data?.role === 'admin');
+      return data?.role || 'user';
+    }
+  });
+
   const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(latestDate || new Date(), 'yyyy-MM-dd');
   const { data: leaderboardData, isLoading: isLeaderboardLoading } = useLeaderboardData('daily', formattedDate);
 
@@ -160,6 +179,7 @@ const Home = () => {
     await queryClient.invalidateQueries({ queryKey: ['transactions'] });
     await queryClient.invalidateQueries({ queryKey: ['latestSales'] });
     await queryClient.invalidateQueries({ queryKey: ['dailyLeaderboard'] });
+    await queryClient.invalidateQueries({ queryKey: ['unverifiedPayments'] });
     
     toast({
       title: "Uppdaterar statistik",
@@ -229,6 +249,12 @@ const Home = () => {
                   initialFocus
                   className="bg-card rounded-md"
                 />
+                {isAdmin && (
+                  <PaymentVerification 
+                    selectedDate={selectedDate} 
+                    isAdmin={isAdmin} 
+                  />
+                )}
               </PopoverContent>
             </Popover>
           </div>
