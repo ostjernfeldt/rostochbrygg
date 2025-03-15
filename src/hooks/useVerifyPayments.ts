@@ -14,6 +14,12 @@ interface UndoVerificationParams {
   purchaseUuid: string;
 }
 
+interface SingleTransactionVerifyParams {
+  purchaseUuid: string;
+  paymentType: string;
+  status: 'verified' | 'rejected';
+}
+
 export function useVerifyPayments() {
   const queryClient = useQueryClient();
   
@@ -128,10 +134,68 @@ export function useVerifyPayments() {
     }
   });
   
+  const singleTransactionVerifyMutation = useMutation({
+    mutationFn: async ({ purchaseUuid, paymentType, status }: SingleTransactionVerifyParams) => {
+      console.log(`Verifying single transaction: ${purchaseUuid}, type: ${paymentType}, status: ${status}`);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User must be logged in to verify payments');
+      
+      const { data, error } = await supabase
+        .from('total_purchases')
+        .update({ 
+          verification_status: status,
+          verified_by: user.id,
+          verified_at: new Date().toISOString()
+        })
+        .eq('purchase_uuid', purchaseUuid)
+        .select();
+      
+      if (error) {
+        console.error('Error verifying single transaction:', error);
+        throw error;
+      }
+      
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate all relevant queries to ensure data is refreshed
+      queryClient.invalidateQueries({ queryKey: ['unverifiedPayments'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['latestTransactions'] });
+      queryClient.invalidateQueries({ queryKey: ['latestTransactionDate'] });
+      
+      // Show success toast
+      const action = variables.status === 'verified' ? 'Verifierad' : 'Avvisad';
+      const type = variables.paymentType === 'SWISH' ? 'Swish' : 
+                  variables.paymentType === 'IZETTLE_CASH' ? 'Kontant' : variables.paymentType;
+      
+      toast({
+        title: `Transaktion ${variables.status === 'verified' ? 'verifierad' : 'avvisad'}`,
+        description: `${type}-betalningen har ${variables.status === 'verified' ? 'verifierats' : 'avvisats'}`,
+        className: variables.status === 'verified' 
+          ? "bg-green-500 text-white border-none rounded-xl shadow-lg" 
+          : "bg-orange-500 text-white border-none rounded-xl shadow-lg",
+        duration: 3000,
+      });
+    },
+    onError: (error) => {
+      console.error('Error in single transaction verification mutation:', error);
+      toast({
+        title: "Fel vid verifiering",
+        description: error instanceof Error ? error.message : "Ett oväntat fel uppstod",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  });
+  
   return {
     verify: verifyMutation.mutate,
     undoVerification: undoVerificationMutation.mutate,
+    verifySingleTransaction: singleTransactionVerifyMutation.mutate,
     isVerifying: verifyMutation.isPending,
-    isUndoing: undoVerificationMutation.isPending
+    isUndoing: undoVerificationMutation.isPending,
+    isVerifyingSingle: singleTransactionVerifyMutation.isPending
   };
 }

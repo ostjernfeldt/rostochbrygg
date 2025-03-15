@@ -76,20 +76,32 @@ const VerificationStatusIcon = ({ status }: { status?: string }) => {
 export function TransactionCard({ transaction }: TransactionCardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { isAdmin } = useAuth();
-  const { undoVerification, isUndoing } = useVerifyPayments();
+  const { undoVerification, isUndoing, verifySingleTransaction, isVerifyingSingle } = useVerifyPayments();
   
   // Use Swedish locale for dates
   const formattedDate = format(new Date(transaction.timestamp), 'HH:mm', { locale: sv });
   const fullFormattedDate = format(new Date(transaction.timestamp), 'yyyy-MM-dd HH:mm', { locale: sv });
   
   // Determine if the transaction needs verification icon
-  const showVerificationStatus = transaction.payment_type === 'SWISH' || transaction.payment_type === 'IZETTLE_CASH';
-  const canUndoVerification = isAdmin && showVerificationStatus && 
+  const needsVerification = transaction.payment_type === 'SWISH' || transaction.payment_type === 'IZETTLE_CASH';
+  const isPending = needsVerification && (!transaction.verification_status || transaction.verification_status === 'pending');
+  const canUndoVerification = isAdmin && needsVerification && 
     (transaction.verification_status === 'verified' || transaction.verification_status === 'rejected');
   
   const handleUndoVerification = () => {
     if (transaction.purchase_uuid) {
       undoVerification({ purchaseUuid: transaction.purchase_uuid });
+      setIsDialogOpen(false);
+    }
+  };
+  
+  const handleVerifySingle = (status: 'verified' | 'rejected') => {
+    if (transaction.purchase_uuid && transaction.payment_type) {
+      verifySingleTransaction({
+        purchaseUuid: transaction.purchase_uuid,
+        paymentType: transaction.payment_type,
+        status: status
+      });
       setIsDialogOpen(false);
     }
   };
@@ -104,7 +116,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
           <div>
             <div className="flex items-center space-x-1.5">
               <span className="font-medium">{transaction.user_display_name || 'Unknown'}</span>
-              {showVerificationStatus && 
+              {needsVerification && 
                 <VerificationStatusIcon status={transaction.verification_status} />
               }
             </div>
@@ -147,7 +159,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
                 <PaymentMethodIcon paymentType={transaction.payment_type} />
               </div>
 
-              {showVerificationStatus && (
+              {needsVerification && (
                 <>
                   <div className="text-sm text-muted-foreground">Verifieringsstatus</div>
                   <div className="text-sm font-medium flex items-center space-x-2">
@@ -189,20 +201,44 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
             </div>
           </div>
           
-          {canUndoVerification && (
-            <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            {isAdmin && isPending && (
+              <div className="flex space-x-2 w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleVerifySingle('rejected')}
+                  disabled={isVerifyingSingle}
+                  className="bg-red-950/30 hover:bg-red-900/50 border-red-900/50 flex-1"
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  <span>{isVerifyingSingle ? "Avvisar..." : "Avvisa"}</span>
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleVerifySingle('verified')}
+                  disabled={isVerifyingSingle}
+                  className="bg-green-950/30 hover:bg-green-900/50 border-green-900/50 flex-1"
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  <span>{isVerifyingSingle ? "Verifierar..." : "Verifiera"}</span>
+                </Button>
+              </div>
+            )}
+            
+            {canUndoVerification && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleUndoVerification}
                 disabled={isUndoing}
-                className="flex items-center space-x-1"
+                className="flex items-center space-x-1 ml-auto"
               >
                 <RotateCcw className="h-4 w-4 mr-1" />
                 <span>{isUndoing ? "Återställer..." : "Ångra verifiering"}</span>
               </Button>
-            </DialogFooter>
-          )}
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
