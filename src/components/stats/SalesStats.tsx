@@ -67,17 +67,17 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
         <div className="stat-card">
           <span className="text-gray-400 text-lg">Total poäng</span>
-          <div className="text-4xl font-bold mt-1">0</div>
+          <div className="text-4xl font-bold mt-1 text-white">0</div>
           <div className="mt-1 text-gray-400">Ingen data tillgänglig</div>
         </div>
         <div className="stat-card">
           <span className="text-gray-400 text-lg">Antal sälj</span>
-          <div className="text-4xl font-bold mt-1">0</div>
+          <div className="text-4xl font-bold mt-1 text-white">0</div>
           <div className="mt-1 text-gray-400">Ingen data tillgänglig</div>
         </div>
         <div className="stat-card">
           <span className="text-gray-400 text-lg">Snittpoäng</span>
-          <div className="text-4xl font-bold mt-1">0</div>
+          <div className="text-4xl font-bold mt-1 text-white">0</div>
           <div className="mt-1 text-gray-400">Ingen data tillgänglig</div>
         </div>
       </div>
@@ -96,7 +96,7 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
         className="stat-card animate-fade-in [animation-delay:200ms] hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
       >
         <span className="text-gray-400 text-lg">Total poäng</span>
-        <div className="text-4xl font-bold mt-1">
+        <div className="text-4xl font-bold mt-1 text-white">
           {shouldAnimate ? Math.round(animatedTotalPoints) : totalPoints} p
         </div>
         <div className={`mt-1 ${salesData.percentageChanges.totalAmount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
@@ -109,7 +109,7 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
         className="stat-card animate-fade-in [animation-delay:400ms] hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
       >
         <span className="text-gray-400 text-lg">Antal sälj</span>
-        <div className="text-4xl font-bold mt-1">
+        <div className="text-4xl font-bold mt-1 text-white">
           {shouldAnimate ? animatedSalesCount : salesData.salesCount}
         </div>
         <div className={`mt-1 ${salesData.percentageChanges.salesCount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
@@ -122,7 +122,7 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
         className="stat-card animate-fade-in [animation-delay:600ms] hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
       >
         <span className="text-gray-400 text-lg">Snittpoäng</span>
-        <div className="text-4xl font-bold mt-1">
+        <div className="text-4xl font-bold mt-1 text-white">
           {shouldAnimate ? Math.round(animatedAveragePoints) : averagePoints} p
         </div>
         <div className={`mt-1 ${salesData.percentageChanges.averageValue >= 0 ? 'text-green-500' : 'text-red-500'}`}>
@@ -138,4 +138,3 @@ export const SalesStats = ({ shouldAnimate = false, selectedDate }: SalesStatsPr
     </div>
   );
 };
-
