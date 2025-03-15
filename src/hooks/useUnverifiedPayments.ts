@@ -17,7 +17,10 @@ export function useUnverifiedPayments(selectedDate: Date | undefined) {
       console.log(`Fetching unverified payment totals for date: ${formattedDate}`);
       
       const { data, error } = await supabase
-        .rpc('get_unverified_payment_totals', { check_date: formattedDate });
+        .rpc('get_unverified_payment_totals', { check_date: formattedDate }) as {
+          data: UnverifiedPaymentTotals[] | null;
+          error: Error | null;
+        };
       
       if (error) {
         console.error('Error fetching unverified payment totals:', error);

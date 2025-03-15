@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, AlertCircle, RefreshCw } from "lucide-react";
 import { useUnverifiedPayments } from "@/hooks/useUnverifiedPayments";
@@ -35,7 +34,6 @@ export function PaymentVerification({ selectedDate, isAdmin }: PaymentVerificati
   const displayDate = selectedDate || new Date();
   const formattedDate = format(displayDate, 'd MMMM yyyy', { locale: sv });
   
-  // Find unverified totals by payment type
   const swishTotal = unverifiedTotals.find(t => t.payment_type === 'SWISH')?.total_amount || 0;
   const cashTotal = unverifiedTotals.find(t => t.payment_type === 'IZETTLE_CASH')?.total_amount || 0;
   
@@ -69,7 +67,6 @@ export function PaymentVerification({ selectedDate, isAdmin }: PaymentVerificati
     });
   };
   
-  // If user is not admin or there are no unverified payments, return null
   if (!isAdmin) return null;
   if (!isLoading && swishTotal === 0 && cashTotal === 0) return null;
   

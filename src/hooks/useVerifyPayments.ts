@@ -27,14 +27,17 @@ export function useVerifyPayments() {
           payment_types: paymentTypes,
           user_id: user.id,
           status: status
-        });
+        }) as {
+          data: number | null;
+          error: Error | null;
+        };
       
       if (error) {
         console.error('Error verifying payments:', error);
         throw error;
       }
       
-      return data;
+      return data as number;
     },
     onSuccess: (count, variables) => {
       // Invalidate relevant queries
