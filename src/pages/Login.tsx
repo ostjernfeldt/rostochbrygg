@@ -272,8 +272,8 @@ const Login = () => {
       />
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>{isResetMode ? "Återställ lösenord" : "Logga in"}</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-white">{isResetMode ? "Återställ lösenord" : "Logga in"}</CardTitle>
+          <CardDescription className="text-gray-400">
             {isResetMode 
               ? "Ange din e-postadress för att få en återställningslänk" 
               : "Välkommen tillbaka! Logga in för att fortsätta."}
@@ -308,6 +308,7 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
+                className="text-white placeholder:text-gray-500"
               />
               {!isResetMode && (
                 <Input
@@ -317,6 +318,7 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
+                  className="text-white placeholder:text-gray-500"
                 />
               )}
             </div>
@@ -333,7 +335,7 @@ const Login = () => {
               <Button
                 type="button"
                 variant="link"
-                className="w-full"
+                className="w-full text-primary"
                 onClick={() => setIsResetMode(!isResetMode)}
                 disabled={isLoading}
               >
@@ -343,7 +345,7 @@ const Login = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full"
+                className="w-full text-white"
                 onClick={() => navigate('/create-account')}
                 disabled={isLoading}
               >

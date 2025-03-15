@@ -14,7 +14,7 @@ const Index = () => {
       />
       
       <div className="space-y-6 text-center">
-        <h1 className="text-3xl font-bold">Välkommen till R&B Sales Tracking</h1>
+        <h1 className="text-3xl font-bold text-white">Välkommen till R&B Sales Tracking</h1>
         
         <div className="space-y-4 w-full max-w-xs mx-auto">
           <Button 
@@ -27,7 +27,7 @@ const Index = () => {
           <Button 
             onClick={() => navigate("/create-account")} 
             variant="outline"
-            className="w-full"
+            className="w-full text-white"
           >
             Skapa konto med inbjudan
           </Button>

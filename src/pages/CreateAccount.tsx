@@ -79,8 +79,8 @@ const CreateAccount = () => {
       />
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Skapa konto</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-white">Skapa konto</CardTitle>
+          <CardDescription className="text-gray-400">
             Har du fått en inbjudan? Ange din e-postadress för att skapa ditt konto.
           </CardDescription>
         </CardHeader>
@@ -120,6 +120,7 @@ const CreateAccount = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
+                className="text-white placeholder:text-gray-500"
               />
             </div>
             
@@ -139,7 +140,7 @@ const CreateAccount = () => {
             <Button 
               type="button" 
               variant="link" 
-              className="w-full"
+              className="w-full text-primary"
               onClick={() => navigate("/login")}
             >
               Redan har ett konto? Logga in
