@@ -3,7 +3,7 @@ import { CheckCircle, XCircle, Clock, Info, RotateCcw } from "lucide-react";
 import { formatSEK } from "@/utils/formatters";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
-import { TotalPurchase } from "@/types/purchase";
+import { TotalPurchase, Product } from "@/types/purchase";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -91,9 +91,16 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
   
   // Calculate points for the transaction
   const calculateTransactionPoints = () => {
+    // Check if products exist and is an array
     if (transaction.products && Array.isArray(transaction.products) && transaction.products.length > 0) {
-      return transaction.products.reduce((total, product) => {
-        return total + calculateProductPoints(product);
+      // Safely cast and process each product
+      return transaction.products.reduce((total, item) => {
+        // Ensure item is a valid Product before passing to calculateProductPoints
+        if (typeof item === 'object' && item !== null && 'name' in item && 'quantity' in item) {
+          const product = item as Product;
+          return total + calculateProductPoints(product);
+        }
+        return total;
       }, 0);
     }
     return calculatePoints(transaction.quantity);
@@ -173,11 +180,18 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
                   <div className="text-sm text-muted-foreground">Produkt</div>
                   <div className="text-sm font-medium">
                     <ul className="list-none space-y-1">
-                      {transaction.products.map((product, index) => (
-                        <li key={index}>
-                          {product.name} {product.quantity && product.quantity !== "1" ? `× ${product.quantity}` : ""}
-                        </li>
-                      ))}
+                      {transaction.products.map((product, index) => {
+                        // Ensure product is a valid Product object
+                        if (typeof product === 'object' && product !== null && 'name' in product && 'quantity' in product) {
+                          const typedProduct = product as Product;
+                          return (
+                            <li key={index}>
+                              {typedProduct.name} {typedProduct.quantity && typedProduct.quantity !== "1" ? `× ${typedProduct.quantity}` : ""}
+                            </li>
+                          );
+                        }
+                        return null;
+                      }).filter(Boolean)}
                     </ul>
                   </div>
                 </>
