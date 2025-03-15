@@ -94,15 +94,24 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
     // Check if products exist and is an array
     if (transaction.products && Array.isArray(transaction.products) && transaction.products.length > 0) {
       // Safely cast and process each product
-      return transaction.products.reduce((total, item) => {
+      return transaction.products.reduce((total: number, item) => {
         // Ensure item is a valid Product before passing to calculateProductPoints
-        if (typeof item === 'object' && item !== null && 'name' in item && 'quantity' in item) {
+        if (
+          typeof item === 'object' && 
+          item !== null && 
+          'name' in item && 
+          'quantity' in item && 
+          typeof item.name === 'string' && 
+          (typeof item.quantity === 'string' || typeof item.quantity === 'number')
+        ) {
           const product = item as Product;
           return total + calculateProductPoints(product);
         }
         return total;
       }, 0);
     }
+    
+    // Fallback to using quantity field
     return calculatePoints(transaction.quantity);
   };
   
@@ -182,7 +191,13 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
                     <ul className="list-none space-y-1">
                       {transaction.products.map((product, index) => {
                         // Ensure product is a valid Product object
-                        if (typeof product === 'object' && product !== null && 'name' in product && 'quantity' in product) {
+                        if (
+                          typeof product === 'object' && 
+                          product !== null && 
+                          'name' in product && 
+                          'quantity' in product &&
+                          typeof product.name === 'string'
+                        ) {
                           const typedProduct = product as Product;
                           return (
                             <li key={index}>
